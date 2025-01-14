@@ -1,0 +1,30 @@
+name: Sync Changes from Source Repository
+
+on:
+  repository_dispatch:
+    types: [sync_changes]
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Target Repository
+      uses: actions/checkout@v4
+
+    - name: Clone Source Repository
+      run: |
+        git clone --branch ${{ github.event.client_payload.branch }} \
+        https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/akhadir/flat-maintenance.git source-repo
+
+    - name: Copy Changes from Source Repository
+      run: |
+        rsync -av --exclude='.git/' source-repo/ ./
+
+    - name: Commit and Push Changes
+      run: |
+        git config --global user.name "github-actions"
+        git config --global user.email "github-actions@github.com"
+        git add .
+        git commit -m "Sync changes from source repository"
+        git push origin master
