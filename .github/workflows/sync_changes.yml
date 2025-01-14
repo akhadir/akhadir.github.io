@@ -20,6 +20,7 @@ jobs:
     - name: Copy Changes from Source Repository
       run: |
         rsync -av --exclude='.git/' source-repo/ ./
+        rm -rf source-repo
 
     - name: Commit and Push Changes
       run: |
