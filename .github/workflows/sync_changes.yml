@@ -15,7 +15,7 @@ jobs:
     - name: Clone Source Repository
       run: |
         git clone --branch ${{ github.event.client_payload.branch }} \
-        https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/akhadir/flat-maintenance.git source-repo
+        https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/akhadir/flatmaintenance.git source-repo
 
     - name: Copy Changes from Source Repository
       run: |
