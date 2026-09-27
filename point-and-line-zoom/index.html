@@ -1,0 +1,1121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Zoom Animation — Point, Line, Ray &amp; Angle</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { height:100%; }
+  body {
+    background:#0a0a2e;
+    overflow:hidden;
+    font-family:'Comic Sans MS','Chalkboard SE','Marker Felt',cursive;
+    color:#fff;
+    cursor:none;
+    user-select:none;
+    -webkit-user-select:none;
+    touch-action:manipulation;
+  }
+  body::before {
+    content:"";
+    position:fixed; inset:0; pointer-events:none; z-index:1;
+    background:
+      radial-gradient(ellipse at 50% 45%, rgba(78,205,196,.10), transparent 62%),
+      radial-gradient(ellipse at 12% 88%, rgba(255,107,107,.12), transparent 55%),
+      radial-gradient(ellipse at 88% 10%, rgba(255,183,3,.08), transparent 55%);
+  }
+
+  /* ---------------- Scenes ---------------- */
+  .scene {
+    position:absolute; inset:0;
+    display:flex; align-items:center; justify-content:center;
+    transition: transform .8s ease, opacity .6s ease;
+    will-change: transform, opacity;
+  }
+  .scene.hidden  { transform:scale(.1); opacity:0; pointer-events:none; }
+  .scene.active  { transform:scale(1);   opacity:1; }
+  .scene.past    { transform:scale(3);   opacity:0; pointer-events:none; }
+  .scene svg { width:100%; height:100%; display:block; }
+
+  /* ---------------- Captions ---------------- */
+  .label {
+    position:absolute; left:0; right:0; bottom:8%;
+    text-align:center; z-index:5; padding:0 16px;
+  }
+  .label h2 {
+    font-size:2.5rem; letter-spacing:2px; line-height:1.1; color:#fff;
+    text-shadow:0 0 22px rgba(78,205,196,.75), 0 3px 0 rgba(0,0,0,.35);
+  }
+  .label p { font-size:1.12rem; opacity:.85; margin-top:.45rem; text-shadow:0 2px 6px rgba(0,0,0,.6); }
+  .scene:not(.active) .label h2, .scene:not(.active) .label p { animation:none; }
+  .scene.active .label h2 { animation:popIn .7s cubic-bezier(.34,1.56,.64,1) both; }
+  .scene.active .label p  { animation:fadeUp .7s ease .12s both; }
+
+  /* ---------------- Hint + controls ---------------- */
+  .hint {
+    position:fixed; top:2%; left:3%;
+    background:rgba(255,255,255,.13); border:2px solid rgba(78,205,196,.45);
+    padding:.5rem 1.4rem; border-radius:999px; font-size:.95rem;
+    z-index:20; transition:opacity .5s ease; white-space:nowrap;
+  }
+  .btn {
+    position:fixed; z-index:20;
+    padding:.55rem 1.2rem; border-radius:999px;
+    border:2px solid #4ecdc4; background:rgba(78,205,196,.14);
+    color:#4ecdc4; font-family:inherit; font-size:.95rem; cursor:pointer;
+    transition:background .2s ease, transform .15s ease;
+  }
+  .btn:hover { background:rgba(78,205,196,.32); transform:translateY(-2px); }
+  .btn:active { transform:translateY(0); }
+  #btnBack { left:3%; bottom:3%; }
+  #btnSay  { left:3%; bottom:11%; }
+  #btnMute { left:3%; bottom:19%; }
+  #restart { right:3%; bottom:3%; display:none; border-color:#ffd166; color:#ffd166; background:rgba(255,209,102,.14); }
+  #restart:hover { background:rgba(255,209,102,.3); }
+
+  #btnSay::after {
+    content:""; position:absolute; inset:-6px; border-radius:999px;
+    border:2px solid rgba(78,205,196,.8); opacity:0;
+  }
+  body.speaking #btnSay::after { animation:talk 1s ease-out infinite; }
+  @keyframes talk {
+    0%   { opacity:.85; transform:scale(.9); }
+    100% { opacity:0;   transform:scale(1.35); }
+  }
+
+  /* in-scene buttons */
+  .scene-actions {
+    position:absolute; left:0; right:0; bottom:23%;
+    display:flex; gap:14px; justify-content:center; flex-wrap:wrap; z-index:6;
+    padding:0 12px;
+  }
+  .big-btn {
+    padding:.65rem 1.5rem; border-radius:999px; font-family:inherit; font-size:1.1rem;
+    border:3px solid #ffd166; background:rgba(255,209,102,.16); color:#ffd166;
+    cursor:pointer; transition:background .2s ease, transform .15s ease;
+  }
+  .big-btn:hover { background:rgba(255,209,102,.34); transform:translateY(-2px); }
+  .big-btn.on { background:rgba(255,209,102,.4); }
+  .scene:not(.active) .scene-actions { visibility:hidden; }
+
+  /* ---------------- Magnifier lens ---------------- */
+  #lens {
+    position:fixed; pointer-events:none; z-index:999;
+    width:60px; height:60px; left:-100px; top:-100px;
+  }
+  @media (hover:none) { #lens { display:none; } body { cursor:auto; } }
+  body.interactive #lens { display:none; }
+  body.interactive { cursor:auto; }
+  #s7, #s7 svg { cursor:grab; touch-action:none; }
+  body.dragging #s7, body.dragging #s7 svg { cursor:grabbing; }
+
+  /* ---------------- SVG text styles ---------------- */
+  .card-word  { font-family:inherit; font-size:46px; font-weight:bold; letter-spacing:8px; fill:#0d2b3e; }
+  .card-word-sm { font-family:inherit; font-size:32px; font-weight:bold; letter-spacing:5px; fill:#0d2b3e; }
+  .callout  { font-family:inherit; font-size:21px; font-weight:bold; fill:#0d2b3e; }
+  .mini     { font-family:inherit; font-size:21px; fill:rgba(255,255,255,.72); }
+  .equation { font-family:inherit; font-size:38px; font-weight:bold; fill:#fff; }
+  .note     { font-family:inherit; font-size:19px; fill:rgba(255,255,255,.6); }
+  .dlabel   { font-family:inherit; font-size:19px; fill:rgba(255,255,255,.55); }
+  .bignum   { font-family:inherit; font-weight:bold; fill:#fff; text-anchor:middle; }
+
+  /* ---------------- Continuous motion ---------------- */
+  @keyframes orbit-spin  { to { transform:rotate(360deg); } }
+  @keyframes orbit-spin-r{ to { transform:rotate(-360deg); } }
+  @keyframes float-bob   { 0%,100% { transform:translateY(0); } 50% { transform:translateY(-13px); } }
+  @keyframes float-bob-s { 0%,100% { transform:translateY(0); } 50% { transform:translateY(-7px); } }
+  @keyframes pulse       { 0%,100% { transform:scale(1); } 50% { transform:scale(1.07); } }
+  @keyframes twinkle     { 0%,100% { opacity:.25; transform:scale(.7) rotate(0deg); } 50% { opacity:1; transform:scale(1.1) rotate(45deg); } }
+
+  .spin        { animation:orbit-spin 14s linear infinite; transform-box:fill-box; transform-origin:center; }
+  .spin-rev    { animation:orbit-spin-r 20s linear infinite; transform-box:fill-box; transform-origin:center; }
+  .float-bob   { animation:float-bob 3.2s ease-in-out infinite; }
+  .float-bob-s { animation:float-bob-s 4.4s ease-in-out infinite; }
+  .pulse       { animation:pulse 2.4s ease-in-out infinite; transform-box:fill-box; transform-origin:center; }
+  .twinkle     { animation:twinkle 2.6s ease-in-out infinite; transform-box:fill-box; transform-origin:center; }
+
+  /* pause continuous motion on off-screen scenes (perf) */
+  .scene:not(.active) .spin, .scene:not(.active) .spin-rev,
+  .scene:not(.active) .float-bob, .scene:not(.active) .float-bob-s,
+  .scene:not(.active) .pulse, .scene:not(.active) .twinkle { animation-play-state:paused; }
+
+  /* ---------------- Gated intro animations ----------------
+     Base CSS = final state, so a non-active scene still looks correct. */
+  @keyframes dotPop  { 0% { transform:scale(0); } 62% { transform:scale(1.28); } 100% { transform:scale(1); } }
+  @keyframes mergeStretch { 0% { transform:scaleX(1); opacity:1; } 70% { transform:scaleX(2.3); } 100% { transform:scaleX(3); opacity:.28; } }
+  @keyframes wipeIn   { from { transform:scaleX(0); } to { transform:scaleX(1); } }
+  @keyframes openAngle{ from { transform:scale(.2); opacity:0; } to { transform:scale(1); opacity:1; } }
+  @keyframes fadeUp   { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:translateY(0); } }
+  @keyframes popIn    { 0% { transform:scale(.4); opacity:0; } 100% { transform:scale(1); opacity:1; } }
+  @keyframes knock     { 0% { transform:scale(1); } 45% { transform:scale(1.14); } 100% { transform:scale(1); } }
+
+  .scene .bead-pop   { animation:none; }
+  .scene .bead-merge { animation:none; }
+  .scene .merge-bar  { animation:none; }
+  .scene .fade-up    { animation:none; }
+  .scene .open-up    { animation:none; }
+  .scene .knock      { animation:none; }
+
+  .scene.active .bead-pop   { animation:dotPop .55s cubic-bezier(.34,1.56,.64,1) both; transform-box:fill-box; transform-origin:center; }
+  .scene.active .bead-merge { animation:mergeStretch .9s ease-in-out 3s both; transform-box:fill-box; transform-origin:center; }
+  .scene.active .merge-bar  { animation:wipeIn .9s cubic-bezier(.4,0,.2,1) 3s both; transform-box:fill-box; transform-origin:center; }
+  .scene.active .fade-up    { animation:fadeUp .55s ease both; }
+  .scene.active .open-up    { animation:openAngle .8s cubic-bezier(.34,1.56,.64,1) both; transform-box:fill-box; transform-origin:center; }
+  .scene.active .knock      { animation:knock .6s ease-in-out both; transform-box:fill-box; transform-origin:center; }
+
+  /* the drag knob grows while you hold it */
+  #knob { transform-box:fill-box; transform-origin:center; transition:transform .12s ease; }
+  body.dragging #knob { transform:scale(1.22); }
+
+  /* ---------------- Glows ---------------- */
+  .glow-red    { filter:drop-shadow(0 0 16px rgba(255,107,107,.85)); }
+  .glow-cyan   { filter:drop-shadow(0 0 14px rgba(78,205,196,.8)); }
+  .glow-warm   { filter:drop-shadow(0 0 14px rgba(255,209,102,.85)); }
+  .glow-violet { filter:drop-shadow(0 0 14px rgba(167,139,250,.8)); }
+
+  /* ---------------- Clickable angle cards ---------------- */
+  .hit { cursor:pointer; }
+  .scene:not(.active) .hit { cursor:inherit; }
+  .hit-inner { transform-box:fill-box; transform-origin:center; }
+  .scene.active .hit-inner { transition:transform .18s ease; }
+  @media (hover:hover) {
+    .scene.active .hit:hover .hit-inner { transform:scale(1.06); }
+  }
+  .scene.active .hit:hover .card-edge { stroke-width:8; }
+
+  /* "open" clue under each recap card */
+  .open-clue {
+    font-size:15px; letter-spacing:.22em; text-transform:uppercase;
+    fill:rgba(255,255,255,.5); opacity:0;
+    transition:opacity .25s ease;
+  }
+  .scene.active .hit .open-clue { opacity:1; }
+  @media (hover:hover) {
+    .scene.active .hit:hover .open-clue { opacity:1; fill:#ffd166; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ================= SHARED DEFS ================= -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <radialGradient id="gDot" cx="38%" cy="34%" r="72%">
+      <stop offset="0%"   stop-color="#ffb3b3"/>
+      <stop offset="45%"  stop-color="#ff6b6b"/>
+      <stop offset="100%" stop-color="#d62839"/>
+    </radialGradient>
+    <linearGradient id="gCard" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#d8f4ff"/>
+    </linearGradient>
+    <linearGradient id="gLine" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%"   stop-color="#45b7d1"/>
+      <stop offset="50%"  stop-color="#7ef0e0"/>
+      <stop offset="100%" stop-color="#45b7d1"/>
+    </linearGradient>
+    <linearGradient id="gRay" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%"   stop-color="#7ef0e0"/>
+      <stop offset="100%" stop-color="#a78bfa"/>
+    </linearGradient>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M40 0H0V40" fill="none" stroke="rgba(78,205,196,.07)" stroke-width="1"/>
+    </pattern>
+    <path id="star" d="M0 -17 L5.5 -5.5 L17 0 L5.5 5.5 L0 17 L-5.5 5.5 L-17 0 L-5.5 -5.5 Z"/>
+  </defs>
+</svg>
+
+<!-- ================= SCENE 0 — POINT CARD ================= -->
+<div class="scene active" id="s0">
+  <svg viewBox="0 0 800 600" role="img" aria-label="A flash card showing one single dot, labelled POINT">
+    <rect width="800" height="600" fill="url(#grid)"/>
+
+    <g transform="translate(400,286)">
+      <g class="float-bob-s" opacity=".2">
+        <rect x="-192" y="-152" width="384" height="304" rx="32" fill="#132a4a" stroke="#ffb703" stroke-width="3"/>
+        <rect x="-118" y="-36" width="236" height="12" rx="6" fill="#ffd166"/>
+        <text class="card-word" x="0" y="100" text-anchor="middle" style="fill:#ffd166">LINE</text>
+      </g>
+    </g>
+
+    <g transform="translate(400,290)">
+      <rect x="-176" y="-152" width="352" height="304" rx="32" fill="url(#gCard)" stroke="#4ecdc4" stroke-width="5" class="glow-cyan"/>
+      <rect x="-161" y="-137" width="322" height="274" rx="24" fill="none" stroke="rgba(78,205,196,.4)" stroke-width="2.5" stroke-dasharray="12 9"/>
+      <g class="float-bob">
+        <g class="pulse glow-red"><circle cx="0" cy="-30" r="42" fill="url(#gDot)"/></g>
+      </g>
+      <g class="spin">
+        <circle cx="0" cy="-30" r="60" fill="none" stroke="rgba(255,107,107,.55)" stroke-width="3" stroke-dasharray="11 13"/>
+      </g>
+      <text class="card-word" x="0" y="108" text-anchor="middle">POINT</text>
+    </g>
+  </svg>
+  <div class="label">
+    <h2>🔴 POINT</h2>
+    <p>A point is just one little dot.</p>
+  </div>
+</div>
+
+<!-- ================= SCENE 1 — ZOOM INTO THE POINT ================= -->
+<div class="scene hidden" id="s1">
+  <svg viewBox="0 0 800 600" role="img" aria-label="A single big glowing dot, zoomed in, with callouts">
+    <rect width="800" height="600" fill="url(#grid)"/>
+
+    <g transform="translate(400,278)">
+      <g class="float-bob"><circle r="200" fill="rgba(255,107,107,.08)"/></g>
+      <g class="spin">
+        <circle r="140" fill="none" stroke="rgba(255,209,102,.45)" stroke-width="3" stroke-dasharray="14 16"/>
+      </g>
+      <g class="spin-rev">
+        <circle r="178" fill="none" stroke="rgba(78,205,196,.42)" stroke-width="3" stroke-dasharray="6 20"/>
+      </g>
+      <g stroke="rgba(255,255,255,.3)" stroke-width="2" stroke-dasharray="9 9">
+        <line x1="-300" y1="0" x2="-95"  y2="0"/>
+        <line x1="95"   y1="0" x2="300"  y2="0"/>
+        <line x1="0" y1="-190" x2="0" y2="-95"/>
+        <line x1="0" y1="95"   x2="0" y2="190"/>
+      </g>
+      <g class="pulse glow-red"><circle r="78" fill="url(#gDot)"/></g>
+      <circle r="78" fill="none" stroke="#fff" stroke-width="3" opacity=".5"/>
+      <ellipse cx="-26" cy="-28" rx="21" ry="15" fill="rgba(255,255,255,.38)"/>
+    </g>
+
+    <g transform="translate(150,120)"><g class="twinkle glow-warm"><use href="#star" fill="#ffd166"/></g></g>
+    <g transform="translate(655,132)"><g class="twinkle glow-warm" style="animation-delay:.5s"><use href="#star" fill="#ffd166"/></g></g>
+    <g transform="translate(120,432)"><g class="twinkle glow-warm" style="animation-delay:1s"><use href="#star" fill="#ffd166"/></g></g>
+    <g transform="translate(680,428)"><g class="twinkle glow-warm" style="animation-delay:1.5s"><use href="#star" fill="#ffd166"/></g></g>
+    <g transform="translate(400,62)"><g class="twinkle glow-warm" style="animation-delay:.8s"><use href="#star" fill="#ffd166"/></g></g>
+
+    <g class="fade-up" style="animation-delay:.5s">
+      <line x1="352" y1="132" x2="330" y2="196" stroke="rgba(255,255,255,.45)" stroke-width="2.5"/>
+      <rect x="60" y="96" width="272" height="52" rx="18" fill="url(#gCard)" stroke="#ffd166" stroke-width="3"/>
+      <text class="callout" x="196" y="130" text-anchor="middle">One tiny dot!</text>
+    </g>
+    <g class="fade-up" style="animation-delay:.9s">
+      <line x1="448" y1="132" x2="470" y2="196" stroke="rgba(255,255,255,.45)" stroke-width="2.5"/>
+      <rect x="468" y="96" width="272" height="52" rx="18" fill="url(#gCard)" stroke="#4ecdc4" stroke-width="3"/>
+      <text class="callout" x="604" y="130" text-anchor="middle">Marks one spot</text>
+    </g>
+    <g class="fade-up" style="animation-delay:1.3s">
+      <line x1="300" y1="392" x2="356" y2="344" stroke="rgba(255,255,255,.45)" stroke-width="2.5"/>
+      <rect x="222" y="392" width="156" height="48" rx="16" fill="rgba(78,205,196,.22)" stroke="#4ecdc4" stroke-width="3"/>
+      <text class="mini" x="300" y="424" text-anchor="middle" style="fill:#7ef0e0;font-weight:bold">Point A</text>
+    </g>
+  </svg>
+  <div class="label">
+    <h2>POINT</h2>
+    <p>A point is a single dot. It marks one exact spot — and we can give it a name, like Point A.</p>
+  </div>
+</div>
+
+<!-- ================= SCENE 2 — LINE CARD ================= -->
+<div class="scene hidden" id="s2">
+  <svg viewBox="0 0 800 600" role="img" aria-label="A flash card showing a straight line with arrows, labelled LINE">
+    <rect width="800" height="600" fill="url(#grid)"/>
+
+    <g transform="translate(400,290)">
+      <rect x="-176" y="-152" width="352" height="304" rx="32" fill="url(#gCard)" stroke="#ffb703" stroke-width="5" class="glow-warm"/>
+      <rect x="-161" y="-137" width="322" height="274" rx="24" fill="none" stroke="rgba(255,183,3,.4)" stroke-width="2.5" stroke-dasharray="12 9"/>
+
+      <g class="float-bob">
+        <rect x="-104" y="-38" width="208" height="12" rx="6" fill="url(#gLine)" class="glow-cyan"/>
+        <path d="M-124 -32 L-100 -46 L-100 -18 Z" fill="#45b7d1"/>
+        <path d="M124 -32 L100 -46 L100 -18 Z" fill="#45b7d1"/>
+        <circle cx="-52" cy="-32" r="9" fill="#ff6b6b"/>
+        <circle cx="0"   cy="-32" r="9" fill="#ff6b6b"/>
+        <circle cx="52"  cy="-32" r="9" fill="#ff6b6b"/>
+      </g>
+      <text class="card-word" x="0" y="108" text-anchor="middle">LINE</text>
+    </g>
+  </svg>
+  <div class="label">
+    <h2>➡️ LINE</h2>
+    <p>What do you think a line is made of?</p>
+  </div>
+</div>
+
+<!-- ================= SCENE 3 — POINTS MERGE INTO THE LINE ================= -->
+<div class="scene hidden" id="s3">
+  <svg viewBox="0 0 800 600" role="img" aria-label="Nine touching points stretch and merge into one single line">
+    <rect width="800" height="600" fill="url(#grid)"/>
+
+    <!-- magnifier: two points, no space between them -->
+    <g transform="translate(400,124)">
+      <g class="fade-up" style="animation-delay:1.2s">
+        <line x1="31" y1="31" x2="60" y2="60" stroke="#4ecdc4" stroke-width="7" stroke-linecap="round"/>
+        <circle r="45" fill="rgba(8,16,44,.82)" stroke="#4ecdc4" stroke-width="4"/>
+        <circle cx="-21" cy="0" r="21" fill="url(#gDot)"/>
+        <circle cx="21"  cy="0" r="21" fill="url(#gDot)"/>
+        <text class="mini" x="0" y="78" text-anchor="middle" style="fill:#7ef0e0;font-weight:bold">no gap!</text>
+      </g>
+    </g>
+
+    <g transform="translate(400,268)">
+      <!-- where the line will end up -->
+      <rect x="-220" y="-20" width="440" height="40" rx="20" fill="rgba(255,255,255,.07)"/>
+
+      <!-- nine points, touching, popping in one after another -->
+      <g transform="translate(-160,0)"><g class="bead-pop" style="animation-delay:.10s"><g class="bead-merge" style="animation-delay:3s"><circle r="20" fill="url(#gDot)"/><circle r="20" fill="none" stroke="#fff" stroke-width="2" opacity=".5"/></g></g></g>
+      <g transform="translate(-120,0)"><g class="bead-pop" style="animation-delay:.35s"><g class="bead-merge" style="animation-delay:3s"><circle r="20" fill="url(#gDot)"/><circle r="20" fill="none" stroke="#fff" stroke-width="2" opacity=".5"/></g></g></g>
+      <g transform="translate(-80,0)"><g class="bead-pop" style="animation-delay:.60s"><g class="bead-merge" style="animation-delay:3s"><circle r="20" fill="url(#gDot)"/><circle r="20" fill="none" stroke="#fff" stroke-width="2" opacity=".5"/></g></g></g>
+      <g transform="translate(-40,0)"><g class="bead-pop" style="animation-delay:.85s"><g class="bead-merge" style="animation-delay:3s"><circle r="20" fill="url(#gDot)"/><circle r="20" fill="none" stroke="#fff" stroke-width="2" opacity=".5"/></g></g></g>
+      <g transform="translate(0,0)"><g class="bead-pop" style="animation-delay:1.10s"><g class="bead-merge" style="animation-delay:3s"><circle r="20" fill="url(#gDot)"/><circle r="20" fill="none" stroke="#fff" stroke-width="2" opacity=".5"/></g></g></g>
+      <g transform="translate(40,0)"><g class="bead-pop" style="animation-delay:1.35s"><g class="bead-merge" style="animation-delay:3s"><circle r="20" fill="url(#gDot)"/><circle r="20" fill="none" stroke="#fff" stroke-width="2" opacity=".5"/></g></g></g>
+      <g transform="translate(80,0)"><g class="bead-pop" style="animation-delay:1.60s"><g class="bead-merge" style="animation-delay:3s"><circle r="20" fill="url(#gDot)"/><circle r="20" fill="none" stroke="#fff" stroke-width="2" opacity=".5"/></g></g></g>
+      <g transform="translate(120,0)"><g class="bead-pop" style="animation-delay:1.85s"><g class="bead-merge" style="animation-delay:3s"><circle r="20" fill="url(#gDot)"/><circle r="20" fill="none" stroke="#fff" stroke-width="2" opacity=".5"/></g></g></g>
+      <g transform="translate(160,0)"><g class="bead-pop" style="animation-delay:2.10s"><g class="bead-merge" style="animation-delay:3s"><circle r="20" fill="url(#gDot)"/><circle r="20" fill="none" stroke="#fff" stroke-width="2" opacity=".5"/></g></g></g>
+
+      <!-- the points become the line -->
+      <rect class="merge-bar glow-cyan" x="-220" y="-20" width="440" height="40" rx="20" fill="url(#gLine)"/>
+
+      <!-- the nine points hiding inside the finished line -->
+      <g class="fade-up" style="animation-delay:4.2s">
+        <circle cx="-160" r="20" fill="none" stroke="rgba(255,255,255,.4)" stroke-width="2"/>
+        <circle cx="-120" r="20" fill="none" stroke="rgba(255,255,255,.4)" stroke-width="2"/>
+        <circle cx="-80"  r="20" fill="none" stroke="rgba(255,255,255,.4)" stroke-width="2"/>
+        <circle cx="-40"  r="20" fill="none" stroke="rgba(255,255,255,.4)" stroke-width="2"/>
+        <circle cx="0"    r="20" fill="none" stroke="rgba(255,255,255,.4)" stroke-width="2"/>
+        <circle cx="40"   r="20" fill="none" stroke="rgba(255,255,255,.4)" stroke-width="2"/>
+        <circle cx="80"   r="20" fill="none" stroke="rgba(255,255,255,.4)" stroke-width="2"/>
+        <circle cx="120"  r="20" fill="none" stroke="rgba(255,255,255,.4)" stroke-width="2"/>
+        <circle cx="160"  r="20" fill="none" stroke="rgba(255,255,255,.4)" stroke-width="2"/>
+      </g>
+
+      <text class="mini fade-up" style="animation-delay:.4s"  x="-160" y="52" text-anchor="middle">point</text>
+      <text class="mini fade-up" style="animation-delay:1.2s" x="0"    y="52" text-anchor="middle">point</text>
+      <text class="mini fade-up" style="animation-delay:2.2s" x="160"  y="52" text-anchor="middle">point</text>
+
+      <text class="note fade-up" style="animation-delay:4.3s" x="-268" y="-48" text-anchor="middle">✖ no start</text>
+      <text class="note fade-up" style="animation-delay:4.3s" x="268"  y="-48" text-anchor="middle">no end ✖</text>
+
+      <g class="fade-up glow-cyan" style="animation-delay:4.3s">
+        <path d="M-226 0 L-180 -23 L-180 23 Z" fill="#4ecdc4"/>
+        <path d="M226 0 L180 -23 L180 23 Z" fill="#4ecdc4"/>
+      </g>
+    </g>
+
+    <g class="fade-up" style="animation-delay:4.6s">
+      <text class="equation" x="400" y="404" text-anchor="middle">
+        <tspan fill="#ff9a9a">point</tspan><tspan fill="#ffd166"> + </tspan><tspan fill="#ff9a9a">point</tspan><tspan fill="#ffd166"> + </tspan><tspan fill="#ff9a9a">point</tspan><tspan fill="#ffd166"> = </tspan><tspan fill="#7ef0e0">line</tspan>
+      </text>
+      <text class="note" x="400" y="440" text-anchor="middle" style="animation:none">the points squash together and become one line</text>
+    </g>
+  </svg>
+  <div class="label">
+    <h2>LINE</h2>
+    <p>Points join together — with no space between them — and they become one line.</p>
+  </div>
+</div>
+
+<!-- ================= SCENE 4 — RAY CARD ================= -->
+<div class="scene hidden" id="s4">
+  <svg viewBox="0 0 800 600" role="img" aria-label="A flash card showing a point with a line going one way, labelled RAY">
+    <rect width="800" height="600" fill="url(#grid)"/>
+
+    <g transform="translate(400,290)">
+      <rect x="-176" y="-152" width="352" height="304" rx="32" fill="url(#gCard)" stroke="#a78bfa" stroke-width="5" class="glow-violet"/>
+      <rect x="-161" y="-137" width="322" height="274" rx="24" fill="none" stroke="rgba(167,139,250,.45)" stroke-width="2.5" stroke-dasharray="12 9"/>
+
+      <g class="float-bob">
+        <circle cx="-104" cy="-32" r="17" fill="url(#gDot)" class="glow-red"/>
+        <rect x="-86" y="-38" width="180" height="12" rx="6" fill="url(#gRay)" class="glow-cyan"/>
+        <path d="M116 -32 L90 -46 L90 -18 Z" fill="#a78bfa"/>
+      </g>
+      <text class="card-word" x="0" y="108" text-anchor="middle">RAY</text>
+    </g>
+  </svg>
+  <div class="label">
+    <h2>➡️ RAY</h2>
+    <p>What if the line begins at a point and goes only one way?</p>
+  </div>
+</div>
+
+<!-- ================= SCENE 5 — ZOOM INTO THE RAY ================= -->
+<div class="scene hidden" id="s5">
+  <svg viewBox="0 0 800 600" role="img" aria-label="A ray: one end point with a line going off in one direction only">
+    <rect width="800" height="600" fill="url(#grid)"/>
+
+    <g class="fade-up" style="animation-delay:2.6s">
+      <rect x="42" y="292" width="106" height="15" rx="7" fill="none" stroke="rgba(255,255,255,.18)" stroke-width="2" stroke-dasharray="11 13"/>
+      <text x="92" y="250" text-anchor="middle" style="font-family:inherit;font-size:34px;fill:rgba(255,107,107,.8)">✖</text>
+      <text class="note" x="92" y="352" text-anchor="middle">not this way</text>
+    </g>
+
+    <rect class="fade-up glow-cyan" x="176" y="289" width="436" height="22" rx="11" fill="url(#gRay)" style="animation-delay:.8s"/>
+    <g class="fade-up" style="animation-delay:1.6s">
+      <path d="M672 300 L612 270 L612 330 Z" fill="#a78bfa" class="glow-violet"/>
+    </g>
+
+    <!-- the points the ray is made of -->
+    <g class="fade-up" style="animation-delay:2s">
+      <circle cx="300" cy="300" r="11" fill="none" stroke="rgba(255,255,255,.45)" stroke-width="2"/>
+      <circle cx="400" cy="300" r="11" fill="none" stroke="rgba(255,255,255,.45)" stroke-width="2"/>
+      <circle cx="500" cy="300" r="11" fill="none" stroke="rgba(255,255,255,.45)" stroke-width="2"/>
+      <text class="note" x="400" y="352" text-anchor="middle">made of points too</text>
+    </g>
+
+    <circle cx="176" cy="300" r="64" fill="none" stroke="rgba(255,107,107,.5)" stroke-width="3" stroke-dasharray="13 15" class="spin"/>
+    <g class="pulse glow-red"><circle cx="176" cy="300" r="44" fill="url(#gDot)"/></g>
+    <circle cx="176" cy="300" r="44" fill="none" stroke="#fff" stroke-width="3" opacity=".5"/>
+    <g class="fade-up" style="animation-delay:1.2s">
+      <rect x="72" y="376" width="208" height="50" rx="17" fill="rgba(255,107,107,.2)" stroke="#ff6b6b" stroke-width="3"/>
+      <text class="mini" x="176" y="409" text-anchor="middle" style="fill:#ffb3b3;font-weight:bold">end point</text>
+    </g>
+
+    <g class="fade-up" style="animation-delay:.5s">
+      <line x1="178" y1="168" x2="178" y2="246" stroke="rgba(255,255,255,.45)" stroke-width="2.5"/>
+      <rect x="44" y="114" width="268" height="54" rx="18" fill="url(#gCard)" stroke="#ff6b6b" stroke-width="3"/>
+      <text class="callout" x="178" y="149" text-anchor="middle">It starts HERE!</text>
+    </g>
+    <g class="fade-up" style="animation-delay:1s">
+      <line x1="602" y1="168" x2="628" y2="256" stroke="rgba(255,255,255,.45)" stroke-width="2.5"/>
+      <rect x="452" y="114" width="300" height="54" rx="18" fill="url(#gCard)" stroke="#4ecdc4" stroke-width="3"/>
+      <text class="callout" x="602" y="149" text-anchor="middle">then it goes on…</text>
+    </g>
+    <text class="note fade-up" style="animation-delay:2.2s" x="560" y="432" text-anchor="middle">✔ one direction, forever</text>
+
+    <g transform="translate(120,110)"><g class="twinkle glow-warm"><use href="#star" fill="#ffd166"/></g></g>
+    <g transform="translate(700,120)"><g class="twinkle glow-warm" style="animation-delay:.5s"><use href="#star" fill="#ffd166"/></g></g>
+    <g transform="translate(660,430)"><g class="twinkle glow-warm" style="animation-delay:1s"><use href="#star" fill="#a78bfa"/></g></g>
+  </svg>
+  <div class="label">
+    <h2>RAY</h2>
+    <p>A ray has one end point. It starts there and goes on forever in one direction.</p>
+  </div>
+</div>
+
+<!-- ================= SCENE 6 — WHAT IS AN ANGLE ================= -->
+<div class="scene hidden" id="s6">
+  <svg viewBox="0 0 800 600" role="img" aria-label="Two rays sharing one end point, forming an angle">
+    <rect width="800" height="600" fill="url(#grid)"/>
+
+    <g transform="translate(400,340)">
+      <!-- ray 1 : flat -->
+      <g class="fade-up" style="animation-delay:.3s">
+        <rect x="0" y="-9" width="250" height="18" rx="9" fill="url(#gRay)" class="glow-cyan"/>
+        <path d="M262 0 L238 -15 L238 15 Z" fill="#a78bfa"/>
+      </g>
+      <!-- ray 2 : tilted up -->
+      <g class="fade-up" style="animation-delay:.9s">
+        <g transform="rotate(-54)">
+          <rect x="0" y="-9" width="228" height="18" rx="9" fill="url(#gRay)" class="glow-cyan"/>
+          <path d="M240 0 L216 -15 L216 15 Z" fill="#a78bfa"/>
+        </g>
+      </g>
+      <!-- the angle between them -->
+      <path class="open-up" style="animation-delay:1.5s" d="M0 0 L96 0 A96 96 0 0 0 56.4 -77.7 Z"
+            fill="rgba(255,183,3,.34)" stroke="rgba(255,209,102,.65)" stroke-width="2.5"/>
+      <text class="mini" x="74" y="-34" text-anchor="middle" style="fill:#ffd166;font-weight:bold">angle</text>
+      <!-- shared end point -->
+      <g class="pulse glow-red"><circle r="19" fill="url(#gDot)"/></g>
+      <circle r="19" fill="none" stroke="#fff" stroke-width="2.5" opacity=".5"/>
+    </g>
+
+    <text class="mini" x="540" y="316" text-anchor="middle">ray</text>
+    <text class="mini" x="500" y="196" text-anchor="middle">ray</text>
+    <line x1="497" y1="206" x2="489" y2="228" stroke="rgba(255,255,255,.4)" stroke-width="2"/>
+
+    <g class="fade-up" style="animation-delay:2s">
+      <line x1="400" y1="392" x2="400" y2="364" stroke="rgba(255,255,255,.45)" stroke-width="2.5"/>
+      <rect x="278" y="392" width="244" height="50" rx="17" fill="rgba(255,107,107,.2)" stroke="#ff6b6b" stroke-width="3"/>
+      <text class="mini" x="400" y="424" text-anchor="middle" style="fill:#ffb3b3;font-weight:bold">vertex</text>
+    </g>
+    <text class="note fade-up" style="animation-delay:2.4s" x="400" y="466" text-anchor="middle">both rays share this one end point</text>
+
+    <g transform="translate(120,140)"><g class="twinkle glow-warm"><use href="#star" fill="#ffd166"/></g></g>
+    <g transform="translate(690,150)"><g class="twinkle glow-warm" style="animation-delay:.6s"><use href="#star" fill="#ffd166"/></g></g>
+  </svg>
+  <div class="label">
+    <h2>📐 ANGLE</h2>
+    <p>Two rays that share the same end point make an angle. That shared point is the vertex.</p>
+  </div>
+</div>
+
+<!-- ================= SCENE 7 — INTERACTIVE ANGLE (drag 0 to 360) ================= -->
+<div class="scene hidden" id="s7">
+  <svg viewBox="0 0 800 600" role="img" aria-label="Drag the tilting ray to open the angle from zero to three hundred sixty degrees">
+    <rect width="800" height="600" fill="url(#grid)"/>
+
+    <!-- protractor guide : centre (400,245)  radius 145 -->
+    <circle cx="400" cy="245" r="145" fill="rgba(255,255,255,.03)" stroke="rgba(255,255,255,.16)" stroke-width="2" stroke-dasharray="6 10"/>
+    <circle cx="400" cy="245" r="105" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="1.5"/>
+
+    <g stroke="rgba(255,255,255,.3)" stroke-width="2">
+      <line x1="545" y1="245" x2="557" y2="245"/>
+      <line x1="400" y1="100" x2="400" y2="88"/>
+      <line x1="255" y1="245" x2="243" y2="245"/>
+      <line x1="400" y1="390" x2="400" y2="402"/>
+    </g>
+    <g stroke="rgba(255,255,255,.16)" stroke-width="1.5">
+      <line x1="528.2" y1="171"   x2="534.2" y2="167.5"/>
+      <line x1="474"   y1="116.8" x2="477.5" y2="110.8"/>
+      <line x1="326"   y1="116.8" x2="322.5" y2="110.8"/>
+      <line x1="271.8" y1="171"   x2="265.8" y2="167.5"/>
+      <line x1="271.8" y1="319"   x2="265.8" y2="322.5"/>
+      <line x1="326"   y1="373.2" x2="322.5" y2="379.2"/>
+      <line x1="474"   y1="373.2" x2="477.5" y2="379.2"/>
+      <line x1="528.2" y1="319"   x2="534.2" y2="322.5"/>
+    </g>
+    <g id="tick90" opacity=".25">
+      <line x1="400" y1="100" x2="400" y2="81" stroke="#ffd166" stroke-width="4"/>
+    </g>
+
+    <text class="dlabel" x="595" y="252" text-anchor="middle">0°</text>
+    <text class="dlabel" x="595" y="276" text-anchor="middle">360°</text>
+    <text class="dlabel" x="400" y="57"  text-anchor="middle">90°</text>
+    <text class="dlabel" x="205" y="252" text-anchor="middle">180°</text>
+    <text class="dlabel" x="400" y="447" text-anchor="middle">270°</text>
+
+    <!-- fixed ray -->
+    <rect x="400" y="236" width="145" height="18" rx="9" fill="url(#gRay)" opacity=".5"/>
+    <path d="M565 245 L541 230 L541 260 Z" fill="#a78bfa" opacity=".5"/>
+
+    <!-- swept angle area : recoloured as it grows -->
+    <path id="sector" d="M400 245 L545 245 A145 145 0 0 0 545 245 Z"
+          fill="rgba(255,183,3,.34)" stroke="rgba(255,209,102,.7)" stroke-width="2.5"/>
+
+    <!-- the tilting ray : lives in a group anchored on the vertex so rotate() pivots there -->
+    <g transform="translate(400,245)">
+      <g id="rayG" transform="rotate(0)">
+        <rect x="0" y="-10" width="145" height="20" rx="10" fill="url(#gRay)" class="glow-violet"/>
+        <path d="M157 0 L131 -17 L131 17 Z" fill="#a78bfa" class="glow-violet"/>
+        <circle id="knob" cx="145" cy="0" r="16" fill="#ffd166" stroke="#fff" stroke-width="3"/>
+      </g>
+    </g>
+
+    <g class="pulse glow-red"><circle cx="400" cy="245" r="12" fill="url(#gDot)"/></g>
+
+    <!-- big number sitting inside the coloured angle -->
+    <g id="bigNumG" transform="translate(456,245)">
+      <text id="bigNum" class="bignum" x="0" y="8" font-size="20">0°</text>
+    </g>
+
+    <!-- degree box riding the curve: the box turns with the arc, its text stays upright -->
+    <g id="degBox" transform="translate(500,245) rotate(90)">
+      <rect x="-42" y="-23" width="84" height="46" rx="17" fill="rgba(255,209,102,.94)" stroke="#fff" stroke-width="3"/>
+      <g id="degBoxT" transform="rotate(-90)">
+        <text id="degTxt" x="0" y="9" text-anchor="middle" style="font-family:inherit;font-size:27px;font-weight:bold;fill:#3a2a00">0°</text>
+      </g>
+    </g>
+
+    <g transform="translate(115,120)"><g class="twinkle glow-warm"><use href="#star" fill="#ffd166"/></g></g>
+    <g transform="translate(700,130)"><g class="twinkle glow-warm" style="animation-delay:.5s"><use href="#star" fill="#ffd166"/></g></g>
+  </svg>
+
+  <div class="scene-actions">
+    <button class="big-btn" id="btnSweep" type="button">▶ Sweep again</button>
+    <button class="big-btn" id="btnZero" type="button" style="margin-left:auto">⟲ 0°</button>
+    <button class="big-btn" id="btnNext" type="button">Next ▶</button>
+  </div>
+
+  <div class="label">
+    <h2>📐 HOW BIG IS THE ANGLE?</h2>
+    <p>Drag the yellow knob to tilt the ray. The angle grows from 0° all the way to 360°.</p>
+  </div>
+</div>
+
+<!-- ================= SCENE 8 — THREE KINDS OF ANGLE (cards) ================= -->
+<div class="scene hidden" id="s8">
+  <svg viewBox="0 0 800 600" role="img" aria-label="Three cards: acute angle, right angle, obtuse angle">
+    <rect width="800" height="600" fill="url(#grid)"/>
+
+    <!-- ACUTE -->
+    <g class="hit" data-type="acute" transform="translate(160,290)">
+      <g class="hit-inner">
+        <rect class="card-edge glow-cyan" x="-98" y="-140" width="196" height="280" rx="26" fill="url(#gCard)" stroke="#7ef0e0" stroke-width="5"/>
+        <g transform="translate(0,42)">
+          <path d="M0 0 L74 0 A74 74 0 0 0 59.9 -43.5 Z" fill="rgba(255,183,3,.34)"/>
+          <rect x="0" y="-6" width="70" height="12" rx="6" fill="url(#gRay)"/>
+          <g transform="rotate(-36)"><rect x="0" y="-6" width="64" height="12" rx="6" fill="url(#gRay)"/></g>
+          <circle r="9" fill="url(#gDot)"/>
+        </g>
+        <text class="card-word-sm" x="0" y="-30" text-anchor="middle">ACUTE</text>
+        <text class="note" x="0" y="122" text-anchor="middle" style="fill:#0d2b3e;opacity:.75">less than 90°</text>
+      </g>
+    </g>
+
+    <!-- RIGHT -->
+    <g class="hit" data-type="right" transform="translate(400,290)">
+      <g class="hit-inner">
+        <rect class="card-edge glow-warm" x="-98" y="-140" width="196" height="280" rx="26" fill="url(#gCard)" stroke="#ffd166" stroke-width="5"/>
+        <g transform="translate(0,52)">
+          <path d="M0 0 L74 0 A74 74 0 0 0 0 -74 Z" fill="rgba(255,183,3,.34)"/>
+          <rect x="0" y="-6" width="70" height="12" rx="6" fill="url(#gRay)"/>
+          <g transform="rotate(-90)"><rect x="0" y="-6" width="70" height="12" rx="6" fill="url(#gRay)"/></g>
+          <path d="M26 0 L26 -26 L0 -26" fill="none" stroke="#3a2a00" stroke-width="3"/>
+          <circle r="9" fill="url(#gDot)"/>
+        </g>
+        <text class="card-word-sm" x="0" y="-30" text-anchor="middle">RIGHT</text>
+        <text class="note" x="0" y="122" text-anchor="middle" style="fill:#0d2b3e;opacity:.75">exactly 90°</text>
+      </g>
+    </g>
+
+    <!-- OBTUSE -->
+    <g class="hit" data-type="obtuse" transform="translate(640,290)">
+      <g class="hit-inner">
+        <rect class="card-edge glow-violet" x="-98" y="-140" width="196" height="280" rx="26" fill="url(#gCard)" stroke="#a78bfa" stroke-width="5"/>
+        <g transform="translate(-6,58)">
+          <path d="M0 0 L74 0 A74 74 0 0 0 -41.3 -61.3 Z" fill="rgba(255,183,3,.34)"/>
+          <rect x="0" y="-6" width="70" height="12" rx="6" fill="url(#gRay)"/>
+          <g transform="rotate(-124)"><rect x="0" y="-6" width="66" height="12" rx="6" fill="url(#gRay)"/></g>
+          <circle r="9" fill="url(#gDot)"/>
+        </g>
+        <text class="card-word-sm" x="0" y="-30" text-anchor="middle">OBTUSE</text>
+        <text class="note" x="0" y="122" text-anchor="middle" style="fill:#0d2b3e;opacity:.75">more than 90°</text>
+      </g>
+    </g>
+
+    <text class="note" x="400" y="468" text-anchor="middle">👆 tap a card to see its angle open up</text>
+  </svg>
+  <div class="label">
+    <h2>THREE KINDS OF ANGLES</h2>
+    <p>Angles can be small, exactly a right angle, or wide open.</p>
+  </div>
+</div>
+
+<!-- ================= SCENE 9 — ANGLE TYPE DETAIL (swappable) ================= -->
+<div class="scene hidden" id="s9">
+  <svg viewBox="0 0 800 600" role="img" aria-label="The selected kind of angle opening up">
+    <rect width="800" height="600" fill="url(#grid)"/>
+
+    <!-- ACUTE variant -->
+    <g class="type-v" data-variant="acute">
+      <g transform="translate(400,320)">
+        <rect x="0" y="-9" width="215" height="18" rx="9" fill="url(#gRay)" class="glow-cyan"/>
+        <g transform="rotate(-42)"><rect x="0" y="-9" width="200" height="18" rx="9" fill="url(#gRay)" class="glow-cyan"/></g>
+        <path class="open-up" d="M0 0 L150 0 A150 150 0 0 0 111.5 -100.3 Z" fill="rgba(255,183,3,.34)" stroke="rgba(255,209,102,.65)" stroke-width="2.5"/>
+        <text class="bignum" x="89" y="-24" font-size="40" style="fill:#ffd166">42°</text>
+        <g class="pulse glow-red"><circle r="19" fill="url(#gDot)"/></g>
+      </g>
+      <text class="note" x="400" y="408" text-anchor="middle" style="fill:#7ef0e0">42° is smaller than 90°</text>
+    </g>
+
+    <!-- RIGHT variant -->
+    <g class="type-v" data-variant="right" style="display:none">
+      <g transform="translate(400,320)">
+        <rect x="0" y="-9" width="215" height="18" rx="9" fill="url(#gRay)" class="glow-cyan"/>
+        <g transform="rotate(-90)"><rect x="0" y="-9" width="200" height="18" rx="9" fill="url(#gRay)" class="glow-cyan"/></g>
+        <path class="open-up" d="M0 0 L150 0 A150 150 0 0 0 0 -150 Z" fill="rgba(255,183,3,.34)" stroke="rgba(255,209,102,.65)" stroke-width="2.5"/>
+        <path class="knock" d="M44 0 L44 -44 L0 -44" fill="none" stroke="#fff" stroke-width="4"/>
+        <text class="bignum" x="68" y="-52" font-size="40" style="fill:#ffd166">90°</text>
+        <g class="pulse glow-red"><circle r="19" fill="url(#gDot)"/></g>
+      </g>
+      <text class="note" x="400" y="408" text-anchor="middle" style="fill:#7ef0e0">the little square marks a right angle</text>
+    </g>
+
+    <!-- OBTUSE variant -->
+    <g class="type-v" data-variant="obtuse" style="display:none">
+      <g transform="translate(400,320)">
+        <rect x="0" y="-9" width="215" height="18" rx="9" fill="url(#gRay)" class="glow-cyan"/>
+        <g transform="rotate(-125)"><rect x="0" y="-9" width="200" height="18" rx="9" fill="url(#gRay)" class="glow-cyan"/></g>
+        <path class="open-up" d="M0 0 L150 0 A150 150 0 0 0 -86 -122.9 Z" fill="rgba(255,183,3,.34)" stroke="rgba(255,209,102,.65)" stroke-width="2.5"/>
+        <text class="bignum" x="46" y="-72" font-size="40" style="fill:#ffd166">125°</text>
+        <g class="pulse glow-red"><circle r="19" fill="url(#gDot)"/></g>
+      </g>
+      <text class="note" x="400" y="408" text-anchor="middle" style="fill:#a78bfa">125° is wider than 90°</text>
+    </g>
+
+    <g transform="translate(120,120)"><g class="twinkle glow-warm"><use href="#star" fill="#ffd166"/></g></g>
+    <g transform="translate(690,130)"><g class="twinkle glow-warm" style="animation-delay:.5s"><use href="#star" fill="#ffd166"/></g></g>
+  </svg>
+
+  <div class="scene-actions">
+    <button class="big-btn" id="btnPrevType" type="button">◀ Previous</button>
+    <button class="big-btn" id="btnNextType" type="button">Next ▶</button>
+  </div>
+
+  <div class="label">
+    <h2 id="t9h2">📐 ACUTE ANGLE</h2>
+    <p id="t9p">Smaller than a right angle — less than 90°.</p>
+  </div>
+</div>
+
+<!-- ================= SCENE 10 — RECAP ================= -->
+<div class="scene hidden" id="s10">
+  <svg viewBox="0 0 800 600" role="img" aria-label="Recap of point, line, ray, angle and the three kinds of angles">
+    <rect width="800" height="600" fill="url(#grid)"/>
+
+    <!-- POINT -->
+    <g class="hit" data-goto="1" transform="translate(97,190)">
+      <g class="hit-inner">
+      <g class="float-bob">
+        <rect class="card-edge" x="-86" y="-74" width="172" height="148" rx="24" fill="url(#gCard)" stroke="#4ecdc4" stroke-width="4"/>
+        <g class="pulse glow-red"><circle cy="-22" r="24" fill="url(#gDot)"/></g>
+        <text class="card-word-sm" x="0" y="48" text-anchor="middle" style="font-size:26px">POINT</text>
+      </g>
+      <text class="open-clue" x="0" y="92" text-anchor="middle">open</text>
+      </g>
+    </g>
+    <!-- LINE -->
+    <g class="hit" data-goto="3" transform="translate(299,190)">
+      <g class="hit-inner">
+      <g class="float-bob">
+        <rect class="card-edge" x="-86" y="-74" width="172" height="148" rx="24" fill="url(#gCard)" stroke="#ffb703" stroke-width="4"/>
+        <rect x="-56" y="-30" width="112" height="12" rx="6" fill="url(#gLine)"/>
+        <path d="M-64 -24 L-50 -38 L-50 -10 Z" fill="#45b7d1"/>
+        <path d="M64 -24 L50 -38 L50 -10 Z" fill="#45b7d1"/>
+        <text class="card-word-sm" x="0" y="48" text-anchor="middle" style="font-size:26px">LINE</text>
+      </g>
+      <text class="open-clue" x="0" y="92" text-anchor="middle">open</text>
+      </g>
+    </g>
+    <!-- RAY -->
+    <g class="hit" data-goto="5" transform="translate(501,190)">
+      <g class="hit-inner">
+      <g class="float-bob">
+        <rect class="card-edge" x="-86" y="-74" width="172" height="148" rx="24" fill="url(#gCard)" stroke="#a78bfa" stroke-width="4"/>
+        <circle cx="-40" cy="-24" r="11" fill="url(#gDot)"/>
+        <rect x="-28" y="-30" width="76" height="12" rx="6" fill="url(#gRay)"/>
+        <path d="M64 -24 L48 -37 L48 -11 Z" fill="#a78bfa"/>
+        <text class="card-word-sm" x="0" y="48" text-anchor="middle" style="font-size:26px">RAY</text>
+      </g>
+      <text class="open-clue" x="0" y="92" text-anchor="middle">open</text>
+      </g>
+    </g>
+    <!-- ANGLE -->
+    <g class="hit" data-goto="6" transform="translate(703,190)">
+      <g class="hit-inner">
+      <g class="float-bob">
+        <rect class="card-edge" x="-86" y="-74" width="172" height="148" rx="24" fill="url(#gCard)" stroke="#ffd166" stroke-width="4"/>
+        <g transform="translate(-6,4)">
+          <path d="M0 0 L52 0 A52 52 0 0 0 32 -41 Z" fill="rgba(255,183,3,.4)"/>
+          <rect x="0" y="-5" width="48" height="10" rx="5" fill="url(#gRay)"/>
+          <g transform="rotate(-52)"><rect x="0" y="-5" width="44" height="10" rx="5" fill="url(#gRay)"/></g>
+          <circle r="7" fill="url(#gDot)"/>
+        </g>
+        <text class="card-word-sm" x="0" y="48" text-anchor="middle" style="font-size:26px">ANGLE</text>
+      </g>
+      <text class="open-clue" x="0" y="92" text-anchor="middle">open</text>
+      </g>
+    </g>
+
+    <!-- three kinds strip -->
+    <g transform="translate(220,372)">
+      <rect x="-80" y="-32" width="160" height="64" rx="20" fill="rgba(126,240,224,.14)" stroke="#7ef0e0" stroke-width="3"/>
+      <text class="mini" x="0" y="-4" text-anchor="middle" style="font-weight:bold">ACUTE</text>
+      <text class="note" x="0" y="20" text-anchor="middle">&lt; 90°</text>
+    </g>
+    <g transform="translate(400,372)">
+      <rect x="-80" y="-32" width="160" height="64" rx="20" fill="rgba(255,209,102,.14)" stroke="#ffd166" stroke-width="3"/>
+      <text class="mini" x="0" y="-4" text-anchor="middle" style="font-weight:bold">RIGHT</text>
+      <text class="note" x="0" y="20" text-anchor="middle">= 90°</text>
+    </g>
+    <g transform="translate(580,372)">
+      <rect x="-80" y="-32" width="160" height="64" rx="20" fill="rgba(167,139,250,.16)" stroke="#a78bfa" stroke-width="3"/>
+      <text class="mini" x="0" y="-4" text-anchor="middle" style="font-weight:bold">OBTUSE</text>
+      <text class="note" x="0" y="20" text-anchor="middle">&gt; 90°</text>
+    </g>
+
+    <g transform="translate(80,120)"><g class="twinkle glow-warm"><use href="#star" fill="#ffd166"/></g></g>
+    <g transform="translate(720,126)"><g class="twinkle glow-warm" style="animation-delay:.4s"><use href="#star" fill="#ffd166"/></g></g>
+    <g transform="translate(400,88)"><g class="twinkle glow-warm" style="animation-delay:.8s"><use href="#star" fill="#7ef0e0"/></g></g>
+  </svg>
+
+  <div class="label">
+    <h2>You learned Point, Line, Ray &amp; Angle! 🎉</h2>
+    <p>Point = a dot · Line = 0 ends · Ray = 1 end · Angle = 2 rays joined at a vertex</p>
+  </div>
+</div>
+
+<!-- ================= Magnifier lens ================= -->
+<svg id="lens" viewBox="0 0 60 60" aria-hidden="true">
+  <circle cx="25" cy="25" r="20" fill="rgba(255,255,255,.08)" stroke="#4ecdc4" stroke-width="2.5"/>
+  <line x1="39" y1="39" x2="54" y2="54" stroke="#4ecdc4" stroke-width="3" stroke-linecap="round"/>
+</svg>
+
+<div class="hint" id="hint">🔍 Click the POINT card to zoom in</div>
+<button class="btn" id="btnSay"  type="button">🔊 Say it again</button>
+<button class="btn" id="btnMute" type="button">🔇 Mute</button>
+<button class="btn" id="btnBack" type="button" style="display:none">◀ Back</button>
+<button class="btn" id="restart" type="button">🔄 Start over</button>
+
+<script>
+(() => {
+  'use strict';
+
+  const $  = id => document.getElementById(id);
+  const scenes  = Array.from(document.querySelectorAll('.scene'));
+  const lens    = $('lens'), hint = $('hint'), restart = $('restart');
+  const btnBack = $('btnBack'), btnSay = $('btnSay'), btnMute = $('btnMute');
+  const max     = scenes.length - 1;
+
+  const HINTS = [
+    '🔍 Click the POINT card to zoom in',
+    '🔍 Click anywhere to continue',
+    '🔍 Click the LINE card to zoom in',
+    '👀 Watch the points join into a line',
+    '🔍 Click the RAY card to zoom in',
+    '🔍 Click anywhere to continue',
+    '🔍 Click to build an angle',
+    '✋ Drag the yellow knob — tap the edge to go on',
+    '👆 Tap a card: acute, right or obtuse',
+    '◀ ▶ buttons change the angle type',
+    '👆 Tap any card to open it again'
+  ];
+
+  const TYPES = ['acute', 'right', 'obtuse'];
+  const TYPE_META = {
+    acute:  { h2:'📐 ACUTE ANGLE', p:'Narrow and pointy — smaller than a right angle.', deg:42,
+              speech:'An acute angle is less than ninety degrees. This one opens only forty two degrees.' },
+    right:  { h2:'📐 RIGHT ANGLE', p:'Exactly 90°. The little square is the special sign for it.', deg:90,
+              speech:'A right angle is exactly ninety degrees. See the little square? That is how we mark a right angle.' },
+    obtuse: { h2:'📐 OBTUSE ANGLE', p:'Wide open — bigger than a right angle.', deg:125,
+              speech:'An obtuse angle is more than ninety degrees. This one opens all the way to a hundred twenty five degrees.' }
+  };
+  let type = 'acute';
+
+  let level = 0, timers = [], muted = localStorage.getItem('pl_muted') === '1', reviewing = false;
+
+  /* ---------------- Narration (Web Speech API, offline) ---------------- */
+  const synth = window.speechSynthesis || null;
+  let voice = null;
+
+  function pickVoice() {
+    if (!synth) return;
+    const vs = synth.getVoices() || [];
+    voice = vs.find(v => /^en-IN/i.test(v.lang) && /female|woman|heera|lekha|priya/i.test(v.name))
+        || vs.find(v => /^en-IN/i.test(v.lang))
+        || vs.find(v => /^en(-|_|$)/i.test(v.lang))
+        || null;
+  }
+  if (synth) {
+    pickVoice();
+    if (typeof synth.addEventListener === 'function') synth.addEventListener('voiceschanged', pickVoice);
+    document.addEventListener('pointerdown', () => {
+      synth.resume();
+      const warm = new SpeechSynthesisUtterance(' ');
+      warm.volume = 0; synth.speak(warm);
+    }, { once: true });
+  }
+  const setSpeaking = on => document.body.classList.toggle('speaking', !!on);
+
+  function say(text, opts) {
+    if (!synth || muted) { setSpeaking(false); return; }
+    const o = opts || {};
+    synth.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    if (voice) u.voice = voice;
+    u.lang = (voice && voice.lang) || 'en-IN';
+    u.rate = o.rate != null ? o.rate : 0.9;
+    u.pitch = o.pitch != null ? o.pitch : 1.1;
+    u.volume = o.volume != null ? o.volume : 1;
+    setSpeaking(true);
+    u.onend = () => setSpeaking(false);
+    u.onerror = () => setSpeaking(false);
+    synth.speak(u);
+  }
+  const clearTimers = () => { timers.forEach(clearTimeout); timers = []; };
+  const stopSpeech  = () => { clearTimers(); if (synth) synth.cancel(); setSpeaking(false); };
+
+  /* ---------------- Interactive angle engine (scene 7) ---------------- */
+  const V = { x: 400, y: 245 }, R = 145, BOX_R = 100, NUM_R = 56;
+  const rayG    = $('rayG'), sector = $('sector'), degBox = $('degBox'), degBoxT = $('degBoxT'), degTxt = $('degTxt');
+  const bigNumG = $('bigNumG'), bigNum = $('bigNum'), knob = $('knob'), tick90 = $('tick90');
+  let ang = 0, dragging = false, raf = null, sweepTimer = null, spoke = false, eatClick = false;
+
+  function setAngle(a) {
+    ang = ((a % 360) + 360) % 360;
+    const rad = ang * Math.PI / 180;
+    const cx = Math.cos(rad), sy = -Math.sin(rad);
+    rayG.setAttribute('transform', 'rotate(' + (-ang).toFixed(2) + ')');
+    const large = ang > 180 ? 1 : 0;
+    sector.setAttribute('d',
+      'M' + V.x + ' ' + V.y + ' L' + (V.x + R) + ' ' + V.y +
+      ' A' + R + ' ' + R + ' 0 ' + large + ' 0 ' +
+      (V.x + R * cx).toFixed(1) + ' ' + (V.y + R * sy).toFixed(1) + ' Z');
+    degBox.setAttribute('transform', 'translate(' + (V.x + BOX_R * cx).toFixed(1) + ',' + (V.y + BOX_R * sy).toFixed(1) + ') rotate(' + (90 - ang).toFixed(2) + ')');
+    degBoxT.setAttribute('transform', 'rotate(' + (ang - 90).toFixed(2) + ')');
+    bigNumG.setAttribute('transform', 'translate(' + (V.x + NUM_R * cx).toFixed(1) + ',' + (V.y + NUM_R * sy).toFixed(1) + ')');
+    bigNum.setAttribute('font-size', (20 + 10 * ang / 360).toFixed(1));
+    const txt = Math.round(ang) + '°';
+    degTxt.textContent = txt;
+    bigNum.textContent = txt;
+    tick90.style.opacity = (Math.abs(ang - 90) < 7) ? '1' : '0.25';
+  }
+  function stopSweep() {
+    if (raf) { cancelAnimationFrame(raf); raf = null; }
+    if (sweepTimer) { clearTimeout(sweepTimer); sweepTimer = null; }
+  }
+  function sweep() {
+    stopSweep();
+    setAngle(0);
+    sweepTimer = setTimeout(() => {
+      const t0 = performance.now(), dur = 4200;
+      const step = now => {
+        const p = Math.min(1, (now - t0) / dur);
+        setAngle(p * 360);
+        raf = p < 1 ? requestAnimationFrame(step) : null;
+      };
+      raf = requestAnimationFrame(step);
+    }, 900);
+  }
+  function angleAt(clientX, clientY) {
+    const r = scenes[7].querySelector('svg').getBoundingClientRect();
+    const sc = Math.min(r.width / 800, r.height / 600);
+    const ox = r.left + (r.width - 800 * sc) / 2;
+    const oy = r.top + (r.height - 600 * sc) / 2;
+    const ux = (clientX - ox) / sc, uy = (clientY - oy) / sc;
+    return Math.atan2(-(uy - V.y), ux - V.x) * 180 / Math.PI;
+  }
+  /* a press right on the protractor belongs to the angle, a press on the
+     empty margins keeps the usual "click anywhere to continue" behaviour */
+  function onDisc(clientX, clientY) {
+    const r = scenes[7].querySelector('svg').getBoundingClientRect();
+    const sc = Math.min(r.width / 800, r.height / 600);
+    const ox = r.left + (r.width - 800 * sc) / 2;
+    const oy = r.top + (r.height - 600 * sc) / 2;
+    const ux = (clientX - ox) / sc, uy = (clientY - oy) / sc;
+    return Math.hypot(ux - V.x, uy - V.y) < 170;
+  }
+  scenes[7].addEventListener('pointerdown', e => {
+    /* the scene's own buttons must keep their clicks, and a press on the empty
+       margin keeps the usual "click anywhere to continue" behaviour */
+    if (e.target.closest && e.target.closest('button')) return;
+    if (!onDisc(e.clientX, e.clientY)) return;
+    stopSweep();
+    dragging = true; spoke = false; eatClick = true;
+    document.body.classList.add('dragging');
+    try { scenes[7].setPointerCapture(e.pointerId); } catch (_) {}
+    setAngle(angleAt(e.clientX, e.clientY));
+  });
+  scenes[7].addEventListener('pointermove', e => {
+    if (!dragging) return;
+    setAngle(angleAt(e.clientX, e.clientY));
+  });
+  const endDrag = () => {
+    if (!dragging) return;
+    dragging = false;
+    document.body.classList.remove('dragging');
+    if (!spoke) { spoke = true; say(Math.round(ang) + ' degrees', { rate: 0.85 }); }
+  };
+  scenes[7].addEventListener('pointerup', endDrag);
+  scenes[7].addEventListener('pointercancel', endDrag);
+  $('btnSweep').addEventListener('click', e => { e.stopPropagation(); spoke = true; sweep(); });
+  $('btnZero').addEventListener('click', e => { e.stopPropagation(); stopSweep(); setAngle(0); });
+  $('btnNext').addEventListener('click', e => { e.stopPropagation(); go(8); });
+
+  /* ---------------- Angle type (scene 9) ---------------- */
+  function setType(t, withVoice) {
+    type = TYPES.indexOf(t) >= 0 ? t : 'acute';
+    document.querySelectorAll('#s9 .type-v').forEach(g => {
+      g.style.display = g.getAttribute('data-variant') === type ? '' : 'none';
+    });
+    $('t9h2').textContent = TYPE_META[type].h2;
+    $('t9p').textContent  = TYPE_META[type].p;
+    const s9 = scenes[9];
+    s9.classList.remove('active'); void s9.offsetWidth; s9.classList.add('active');
+    if (withVoice !== false && NARRATION[9]) NARRATION[9]();
+  }
+  $('btnPrevType').addEventListener('click', e => {
+    e.stopPropagation();
+    setType(TYPES[(TYPES.indexOf(type) + 2) % 3]);
+  });
+  $('btnNextType').addEventListener('click', e => {
+    e.stopPropagation();
+    setType(TYPES[(TYPES.indexOf(type) + 1) % 3]);
+  });
+
+  /* ---------------- Per-scene narration ---------------- */
+  const NARRATION = [
+    null,
+    () => say('Point! A point is a single dot. It marks one exact spot.'),
+    () => say('Line! Let us see how a line is made.'),
+    () => {
+      [150, 600, 1050, 1500, 1950].forEach(t =>
+        timers.push(setTimeout(() => say('point', { rate: 1.05, volume: 0.5 }), t)));
+      timers.push(setTimeout(
+        () => say('Line! The points squash together and become one line.'), 4200));
+    },
+    () => say('Ray! A ray is a line that starts at a point and goes one way.'),
+    () => say('Ray! A ray has one end point. It starts there and goes on forever in one direction.'),
+    () => say('Angle! An angle is made when two rays share the same end point. That shared point is called the vertex.'),
+    () => say('Drag the line to open the angle. Watch the degrees count up!'),
+    () => say('Which kind of angle shall we look at? Tap a card!'),
+    () => say(TYPE_META[type].speech),
+    () => say('Great job! You learned point, line, ray and angle.')
+  ];
+
+  /* ---------------- Navigation ---------------- */
+  function go(i) {
+    if (i < 0 || i > max) return;
+    if (i === max) reviewing = false;
+    if (level === 7 && i !== 7) { stopSweep(); }
+    stopSpeech();
+    scenes.forEach((s, k) => {
+      s.classList.remove('active', 'past', 'hidden');
+      s.classList.add(k === i ? 'active' : (k < i ? 'past' : 'hidden'));
+    });
+    level = i;
+    document.body.classList.toggle('interactive', i === 7);
+    hint.textContent = HINTS[i] || '';
+    hint.style.opacity = (i === 0 || i === 7 || i === 8 || i === 10) ? '1' : '0';
+    /* after a recap-card jump the last button becomes a way back to the summary */
+    restart.textContent = reviewing ? '↩ Summary' : '🔄 Start over';
+    restart.style.display = (i === max || (reviewing && i > 0)) ? 'block' : 'none';
+    btnBack.style.display = (i > 0) ? 'block' : 'none';
+    btnSay.style.display  = (i > 0) ? 'block' : 'none';
+    if (i === 7) { spoke = true; sweep(); }
+    const n = NARRATION[i];
+    if (n) n();
+  }
+
+  /* ---------------- Lens, clicks, controls ---------------- */
+  document.addEventListener('pointermove', e => {
+    if (document.body.classList.contains('interactive')) return;
+    lens.style.left = (e.clientX - 25) + 'px';
+    lens.style.top  = (e.clientY - 25) + 'px';
+  }, { passive: true });
+
+  document.addEventListener('click', e => {
+    /* a tap/drag inside the interactive scene sets the angle — it must not skip ahead */
+    if (eatClick) { eatClick = false; return; }
+    const card = e.target.closest ? e.target.closest('[data-goto]') : null;
+    if (card) { const n = parseInt(card.getAttribute('data-goto'), 10);
+                if (!isNaN(n) && n >= 0 && n <= max) { reviewing = true; go(n); } return; }
+    const hit = e.target.closest ? e.target.closest('[data-type]') : null;
+    if (hit) { stopSpeech(); setType(hit.getAttribute('data-type'), false); go(9); return; }
+    if (level < max) go(level + 1);
+  });
+
+  const refreshMute = () => {
+    btnMute.textContent = muted ? '🔇 Muted' : '🔊 Sound on';
+    btnMute.setAttribute('aria-pressed', String(muted));
+  };
+  refreshMute();
+
+  btnSay.addEventListener('click', e => { e.stopPropagation(); if (NARRATION[level]) NARRATION[level](); });
+  btnMute.addEventListener('click', e => {
+    e.stopPropagation();
+    muted = !muted;
+    localStorage.setItem('pl_muted', muted ? '1' : '0');
+    if (muted) stopSpeech();
+    refreshMute();
+  });
+  btnBack.addEventListener('click', e => { e.stopPropagation(); go(level - 1); });
+  restart.addEventListener('click', e => { e.stopPropagation(); reviewing ? go(max) : go(0); });
+
+  /* ---------------- Keyboard ---------------- */
+  document.addEventListener('keydown', e => {
+    if (level === 7) {
+      const step = e.shiftKey ? 1 : 5;
+      if (e.key === 'ArrowUp' || e.key === 'ArrowRight') { e.preventDefault(); stopSweep(); setAngle(ang + step); return; }
+      if (e.key === 'ArrowDown' || e.key === 'ArrowLeft') { e.preventDefault(); stopSweep(); setAngle(ang - step); return; }
+      if (e.key === 'Home') { e.preventDefault(); stopSweep(); setAngle(0); return; }
+    }
+    if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'Enter') {
+      e.preventDefault(); if (level < max) go(level + 1);
+    } else if (e.key === 'ArrowLeft') {
+      e.preventDefault(); go(level - 1);
+    } else if (e.key === 'm' || e.key === 'M') {
+      btnMute.click();
+    } else if (e.key === 'r' || e.key === 'R') {
+      reviewing ? go(max) : go(0);
+    }
+  });
+
+  go(0);
+})();
+</script>
+</body>
+</html>

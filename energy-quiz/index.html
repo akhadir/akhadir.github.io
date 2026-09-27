@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Energy — Quiz</title>
+<style>
+  /* ══════════════ KID-FRIENDLY PALETTE (bright daylight) ══════════════ */
+  :root {
+    --bg: linear-gradient(160deg, #fff8e1 0%, #e0f7fa 60%, #dff4ff 100%);
+    --panel: #ffffff;
+    --ink: #2d3436;
+    --ink-soft: #6b7a85;
+    --coral: #ff6b6b;
+    --sunny: #ffd93d;
+    --teal: #4ecdc4;
+    --sky: #4f9de8;
+    --violet: #9b59b6;
+    --green: #2ecc71;
+    --amber: #ffb300;
+    --red: #ff6b6b;
+    --sidebar-w: 264px;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { height:100%; }
+  body {
+    background: var(--bg); color: var(--ink); overflow:hidden;
+    font-family: 'Comic Sans MS','Chalkboard SE','Marker Felt','Segoe UI','Trebuchet MS',sans-serif;
+    display:flex;
+  }
+
+  /* ── Sidebar tree ── */
+  .sidebar {
+    width: var(--sidebar-w); min-width: var(--sidebar-w); height:100vh;
+    background: rgba(255,255,255,0.82); border-right:1px solid rgba(0,0,0,0.08);
+    display:flex; flex-direction:column; z-index:20; overflow-y:auto;
+    backdrop-filter: blur(4px);
+    transition: transform .3s ease;
+  }
+  .sidebar-header {
+    padding:1.1rem 1rem .8rem; border-bottom:1px solid rgba(0,0,0,0.08);
+    font-size:1.05rem; font-weight:bold; cursor:pointer; display:flex; gap:.4rem; align-items:center;
+    flex-shrink:0;
+  }
+  .sidebar-header .ticker { color:var(--sky); }
+  .tree { flex:1; padding:.5rem 0; overflow-y:auto; }
+  .tree-node {
+    padding:.5rem .8rem .5rem 1rem; cursor:pointer; display:flex; align-items:center; gap:.45rem;
+    font-size:.86rem; transition: background .15s; border-left:3px solid transparent;
+    user-select:none; color:var(--ink);
+  }
+  .tree-node:hover { background:rgba(79,157,232,0.1); }
+  .tree-node.active { border-left-color: var(--amber); background:rgba(255,217,61,0.14); }
+  .tree-node .arrow { font-size:.65rem; width:12px; text-align:center; flex-shrink:0; transition:transform .2s; color:var(--ink-soft); }
+  .tree-node .arrow.open { transform:rotate(90deg); }
+  .tree-node .dot { width:11px; height:11px; border-radius:50%; flex-shrink:0; }
+  .tree-node .badge {
+    margin-left:auto; font-size:.68rem; background:rgba(78,205,196,0.2); color:var(--teal);
+    border-radius:999px; padding:.05rem .5rem; flex-shrink:0;
+  }
+  .tree-children { overflow:hidden; max-height:0; transition:max-height .3s ease; }
+  .tree-children.open { max-height:600px; }
+  .tree-children .tree-node { padding-left:2.2rem; font-size:.8rem; }
+  .tree-leaf .st {
+    margin-left:auto; font-size:.72rem; width:1.1rem; text-align:center; flex-shrink:0;
+  }
+  .st.good { color:var(--green); }
+  .st.bad { color:var(--red); }
+  .st.slow { color:var(--amber); }
+
+  /* ── Main column ── */
+  .main { flex:1; display:flex; flex-direction:column; position:relative; z-index:5; min-width:0; }
+  .topbar {
+    padding:.6rem 1.1rem; display:flex; align-items:center; gap:.8rem; flex-shrink:0;
+    background:rgba(255,255,255,0.6); border-bottom:1px solid rgba(0,0,0,0.08);
+  }
+  .topbar .app-title { font-size:1.05rem; font-weight:bold; display:flex; gap:.4rem; align-items:center; }
+  .topbar .spacer { flex:1; }
+  .score-chip {
+    background:#fff; border:2px solid var(--sunny); color:var(--ink); border-radius:999px;
+    padding:.3rem .9rem; font-size:.9rem; font-weight:bold; box-shadow:0 2px 8px rgba(0,0,0,0.08);
+  }
+  .mute-btn {
+    background:#fff; border:2px solid rgba(0,0,0,0.12); border-radius:999px; cursor:pointer;
+    font-size:1rem; padding:.25rem .6rem; font-family:inherit;
+  }
+  .mute-btn:hover { border-color:var(--sky); }
+  .progress-track {
+    height:8px; border-radius:99px; background:rgba(0,0,0,0.08); overflow:hidden; flex:1; max-width:260px;
+  }
+  .progress-fill { height:100%; width:0%; background:linear-gradient(90deg,var(--teal),var(--sky)); border-radius:99px; transition:width .4s ease; }
+
+  /* ── Stage / views ── */
+  .stage { flex:1; display:flex; justify-content:center; align-content:center; padding:1.4rem; overflow:auto; min-height:0; }
+  .card {
+    background:var(--panel); border-radius:22px; box-shadow:0 14px 44px rgba(45,52,54,0.16);
+    width:100%; max-width:720px; padding:1.8rem 2rem 2rem; position:relative;
+    border:1px solid rgba(0,0,0,0.05); margin:auto;
+  }
+
+  /* Intro */
+  .intro { text-align:center; }
+  .intro .big-emoji { font-size:4rem; animation: bob 3s ease-in-out infinite; display:inline-block; }
+  .intro h1 { font-size:2rem; margin:.4rem 0 .3rem; background:linear-gradient(135deg,var(--sky),var(--violet)); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
+  .intro .sub { color:var(--ink-soft); margin-bottom:1.2rem; }
+  .intro .meta-chip { color:var(--ink-soft); font-size:.9rem; margin-bottom:1.4rem; }
+  .big-btn {
+    font-family:inherit; font-size:1.15rem; font-weight:bold; color:#fff; cursor:pointer;
+    background:linear-gradient(135deg,var(--green),#27ae60); border:none; border-radius:999px;
+    padding:.85rem 2.2rem; box-shadow:0 6px 18px rgba(46,204,113,0.4); transition:transform .15s, box-shadow .15s;
+  }
+  .big-btn:hover { transform:translateY(-2px); }
+  .big-btn.ghost { background:#fff; color:var(--ink); box-shadow:0 2px 8px rgba(0,0,0,0.1); border:2px solid rgba(0,0,0,0.1); margin-left:.7rem; }
+  .ghost-row { margin-top:1.1rem; display:flex; justify-content:center; gap:.4rem; flex-wrap:wrap; }
+  .hint-line { font-size:.82rem; color:var(--ink-soft); margin-top:1rem; }
+
+  /* Question */
+  .q-head { display:flex; justify-content:space-between; align-items:center; gap:.6rem; flex-wrap:wrap; }
+  .q-progress { font-size:.82rem; color:var(--ink-soft); font-weight:bold; padding:.2rem 0; }
+  .timer-wrap { position:relative; width:74px; height:74px; flex-shrink:0; }
+  .timer-wrap svg { width:74px; height:74px; transform:rotate(-90deg); }
+  .timer-wrap .circle-bg { fill:none; stroke:rgba(0,0,0,0.08); stroke-width:7; }
+  .timer-wrap .circle-fg { fill:none; stroke:var(--sky); stroke-width:7; stroke-linecap:round; }
+  .timer-wrap .t-count {
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    font-size:1.5rem; font-weight:bold; color:var(--ink);
+  }
+  .timer-wrap.low .circle-fg { stroke:var(--red); }
+  .timer-wrap.low .t-count { color:var(--red); }
+  .q-text { font-size:1.35rem; line-height:1.45; margin:.7rem 0 1rem; font-weight:bold; }
+  .qimg-wrap { text-align:center; margin:.2rem 0 1rem; }
+  .qimg-wrap img.qimg {
+    max-width:100%; max-height:240px; border-radius:14px; object-fit:contain;
+    border:1px solid rgba(0,0,0,0.08);
+  }
+  .qimg-wrap .emoji-big { font-size:4.2rem; animation: pop 0.5s ease; }
+  .qimg-wrap .caption { font-size:.78rem; color:var(--ink-soft); margin-top:.35rem; }
+
+  .options { display:flex; flex-direction:column; gap:.7rem; }
+  .opt {
+    display:flex; align-items:center; gap:.8rem; width:100%; text-align:left;
+    font-family:inherit; font-size:1.02rem; color:var(--ink); cursor:pointer;
+    background:#f7fbfc; border:2px solid rgba(0,0,0,0.08); border-radius:14px;
+    padding:.72rem 1rem; min-height:48px; transition:border-color .15s, background .15s, transform .1s;
+    position:relative; overflow:hidden;
+  }
+  .opt:hover { border-color:var(--sky); background:#eef6ff; transform:translateY(-1px); }
+  .opt .key {
+    width:30px; height:30px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center;
+    background:#fff; border:2px solid rgba(0,0,0,0.14); font-size:.9rem; font-weight:bold; color:var(--ink-soft);
+  }
+  .opt.correct { border-color:var(--green); background:#eafaf1; }
+  .opt.correct .key { border-color:var(--green); color:var(--green); background:#d5f5e3; }
+  .opt.wrong-chosen { border-color:var(--red); background:#fdecea; }
+  .opt.wrong-chosen .key { border-color:var(--red); color:var(--red); background:#fadbd8; }
+  .opt.dim { opacity:.55; }
+  .opt .mark { margin-left:auto; font-size:1.1rem; }
+
+  /* Reveal banner */
+  .reveal-banner {
+    margin-top:1rem; border-radius:14px; padding:.8rem 1rem; font-size:1.02rem; font-weight:bold;
+    display:flex; gap:.6rem; align-items:center; animation: slideUp .35s ease both;
+  }
+  .reveal-banner.good { background:#eafaf1; color:#1e8449; }
+  .reveal-banner.bad { background:#fdecea; color:#c0392b; }
+  .reveal-banner.slow { background:#fef5e7; color:#b9770e; }
+  .reveal-exp { margin-top:.6rem; background:#f4f8fa; border-radius:12px; padding:.8rem 1rem; font-size:.95rem; color:var(--ink-soft); line-height:1.5; }
+  .reveal-exp b { color:var(--ink); }
+  .next-row { display:flex; align-items:center; justify-content:space-between; gap:.6rem; }
+  .pts-gain { font-weight:bold; font-size:1rem; }
+  .pts-gain.gain { color:var(--green); }
+  .pts-gain.none { color:var(--ink-soft); }
+  .next-btn {
+    font-family:inherit; font-size:1.02rem; font-weight:bold; cursor:pointer; color:#fff;
+    background:linear-gradient(135deg,var(--sky),#2e86de); border:none; border-radius:999px;
+    padding:.7rem 1.7rem; box-shadow:0 4px 14px rgba(79,157,232,0.4); transition:transform .15s;
+  }
+  .next-btn:hover { transform:translateY(-2px); }
+
+  .q-foot { display:flex; justify-content:center; margin-top:1rem; }
+  .speak-btn {
+    font-family:inherit; font-size:.9rem; color:var(--ink-soft); cursor:pointer; background:none;
+    border:1px solid rgba(0,0,0,0.1); border-radius:999px; padding:.35rem 1rem;
+  }
+  .speak-btn:hover { border-color:var(--sky); color:var(--sky); }
+
+  /* Results */
+  .results { text-align:center; }
+  .results h2 { font-size:1.7rem; margin-bottom:.3rem; }
+  .results .sub { color:var(--ink-soft); margin-bottom:1rem; }
+  .ring-wrap { width:150px; height:150px; margin:0 auto .6rem; position:relative; }
+  .ring-wrap svg { width:150px; height:150px; transform:rotate(-90deg); }
+  .ring-wrap .rbg { fill:none; stroke:rgba(0,0,0,0.08); stroke-width:12; }
+  .ring-wrap .rfg { fill:none; stroke:url(#gradA); stroke-width:12; stroke-linecap:round;
+    stroke-dasharray:283; stroke-dashoffset:283; transition:stroke-dashoffset 1s ease; }
+  .ring-wrap .rscore {
+    position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
+  }
+  .ring-wrap .rscore .n { font-size:2rem; font-weight:bold; }
+  .ring-wrap .rscore .pts { font-size:.8rem; color:var(--ink-soft); }
+  .stars { font-size:1.9rem; letter-spacing:.15rem; margin:.2rem 0 .9rem; }
+  .review { text-align:left; margin:1rem 0; }
+  .review-row { display:flex; gap:.7rem; padding:.6rem .4rem; border-bottom:1px solid rgba(0,0,0,0.06); font-size:.86rem; align-items:flex-start; }
+  .review-row .qi { font-weight:bold; color:var(--ink-soft); min-width:1.6rem; }
+  .review-row .qbody { flex:1; }
+  .review-row .qbody .qq { font-weight:bold; margin-bottom:.15rem; }
+  .review-row .qbody .aa { color:var(--ink-soft); }
+  .review-row .pts { font-weight:bold; flex-shrink:0; }
+  .review-row .pts.gain { color:var(--green); }
+  .review-row .pts.none { color:var(--ink-soft); }
+
+  /* Confetti */
+  #confetti { position:fixed; inset:0; pointer-events:none; z-index:200; overflow:hidden; }
+  .confetti {
+    position:absolute; top:-3vh; width:12px; height:12px; border-radius:2px;
+    animation: confetti-fall linear forwards;
+  }
+
+  /* Hamburger / overlay (mobile) */
+  .hamburger { display:none; position:fixed; top:.7rem; left:.7rem; z-index:40;
+    background:#fff; border:1px solid rgba(0,0,0,0.15); border-radius:10px;
+    padding:.35rem .65rem; font-size:1.25rem; cursor:pointer; font-family:inherit; }
+  .overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:19; }
+  .overlay.open { display:block; }
+
+  /* Keyframes */
+  @keyframes bob { 0%,100%{ transform:translateY(0);} 50%{ transform:translateY(-8px);} }
+  @keyframes pop { 0%{ transform:scale(0.4); opacity:0;} 100%{ transform:scale(1); opacity:1;} }
+  @keyframes slideUp { from{ opacity:0; transform:translateY(14px);} to{ opacity:1; transform:translateY(0);} }
+  @keyframes cardIn { from{ opacity:0; transform:translateY(20px) scale(0.97);} to{ opacity:1; transform:none;} }
+  @keyframes confetti-fall { to { transform:translateY(108vh) rotate(var(--rx,180deg)); opacity:.9; } }
+  .card-in { animation:cardIn .35s ease both; }
+
+  @media (max-width:768px) {
+    .sidebar { position:fixed; left:0; top:0; bottom:0; transform:translateX(-100%); z-index:100; box-shadow:0 0 40px rgba(0,0,0,0.2); }
+    .sidebar.open { transform:translateX(0); }
+    .hamburger { display:block; }
+    .card { padding:1.4rem 1.2rem 1.6rem; }
+    .q-text { font-size:1.15rem; }
+  }
+</style>
+</head>
+<body>
+
+<div id="confetti"></div>
+
+<button class="hamburger" id="hamburger">☰</button>
+<div class="overlay" id="overlay"></div>
+
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header" id="sidebar-home"><span class="ticker">🧠</span> <span id="side-title">Energy</span></div>
+  <div class="tree" id="tree"></div>
+</aside>
+
+<main class="main">
+  <div class="topbar">
+    <span class="app-title"><span>🧠</span><span id="top-title" title="Energy">Energy</span></span>
+    <span class="spacer"></span>
+    <div class="progress-track" title="Progress"><div class="progress-fill" id="progress-fill"></div></div>
+    <span class="score-chip" id="score-chip">⭐ Score: 0</span>
+    <button class="mute-btn" id="mute-btn" title="Toggle read-aloud (TTS)">🔊</button>
+  </div>
+  <div class="stage" id="stage"></div>
+</main>
+
+<script type="application/json" id="quiz-data">{"title": "Energy", "subtitle": "Concise Physics (Middle School) · Forms, Transformation & Conservation of Energy", "emoji": "⚡", "sections": [{"id": "energy", "title": "Energy", "emoji": "⚡", "questions": [{"id": "energy-ocr-pdf-q1", "section": "Energy", "question": "What does the chapter say energy is?", "options": ["The capacity to do work", "The distance a body moves", "The force of gravity", "The matter inside a body"], "correctIndex": 0, "explanation": "Energy lets a body do work, so it is called the capacity to do work.", "suggestImage": false}, {"id": "energy-ocr-pdf-q2", "section": "Energy", "question": "How much work is done when a force of 1 newton moves a body 1 metre?", "options": ["1 newton", "1 metre", "1 joule", "1 calorie"], "correctIndex": 2, "explanation": "One joule of work equals a one-newton force moving a body one metre.", "suggestImage": false}]}, {"id": "units-of-energy", "title": "Units of Energy", "emoji": "📏", "questions": [{"id": "energy-ocr-pdf-q3", "section": "Units of Energy", "question": "Which is the S.I. unit of energy?", "options": ["Newton", "Joule", "Metre", "Kilocalorie"], "correctIndex": 1, "explanation": "Energy is measured like work, so its S.I. unit is the joule.", "suggestImage": false}, {"id": "energy-ocr-pdf-q4", "section": "Units of Energy", "question": "Nearly how many joules are there in one calorie?", "options": ["4.2 joules", "42 joules", "0.42 joules", "420 joules"], "correctIndex": 0, "explanation": "A calorie is a small energy unit worth about 4.2 joules.", "suggestImage": false}]}, {"id": "different-forms-of-energy", "title": "Different Forms of Energy", "emoji": "🌟", "questions": [{"id": "energy-ocr-pdf-q5", "section": "Different Forms of Energy", "question": "Which form of energy comes in two kinds: potential and kinetic?", "options": ["Heat energy", "Mechanical energy", "Sound energy", "Light energy"], "correctIndex": 1, "explanation": "Mechanical energy is the sum of a body's potential and kinetic energies.", "suggestImage": false}, {"id": "energy-ocr-pdf-q6", "section": "Different Forms of Energy", "question": "Which form of energy is released when we burn coal, wood or gas?", "options": ["Heat energy", "Light energy", "Sound energy", "Magnetic energy"], "correctIndex": 0, "explanation": "Burning fuels releases their stored chemical energy as heat energy.", "suggestImage": false}, {"id": "energy-ocr-pdf-q7", "section": "Different Forms of Energy", "question": "Who invented the steam engine in the year 1765?", "options": ["J. P. Joule", "James Watt", "Thomas Edison", "Alexander Graham Bell"], "correctIndex": 1, "explanation": "The chapter says James Watt invented the steam engine in 1765.", "suggestImage": false}, {"id": "energy-ocr-pdf-q8", "section": "Different Forms of Energy", "question": "By which process do plants convert light energy into chemical energy?", "options": ["Respiration", "Photosynthesis", "Combustion", "Evaporation"], "correctIndex": 1, "explanation": "During photosynthesis, plants turn light energy into the chemical energy of food.", "suggestImage": true, "imageNote": "Simple diagram of a plant using sunlight to make food (photosynthesis).", "image": {"type": "svg", "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0MDAgMzAwIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgcng9IjI0IiBmaWxsPSIjZmRmNmUzIi8+PGcgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj4KICA8Y2lyY2xlIGN4PSI3MCIgY3k9IjYyIiByPSIzMCIgZmlsbD0iI2ZmZDkzZCIgc3Ryb2tlPSIjZjViMzAxIiBzdHJva2Utd2lkdGg9IjQiLz4KICA8ZyBzdHJva2U9IiNmNWIzMDEiIHN0cm9rZS13aWR0aD0iNSI+CiAgICA8bGluZSB4MT0iNzAiIHkxPSIxNCIgeDI9IjcwIiB5Mj0iMjYiLz48bGluZSB4MT0iNzAiIHkxPSI5OCIgeDI9IjcwIiB5Mj0iMTEwIi8+CiAgICA8bGluZSB4MT0iMjIiIHkxPSI2MiIgeDI9IjM0IiB5Mj0iNjIiLz48bGluZSB4MT0iMTA2IiB5MT0iNjIiIHgyPSIxMTgiIHkyPSI2MiIvPgogICAgPGxpbmUgeDE9IjM2IiB5MT0iMjgiIHgyPSI0NSIgeTI9IjM3Ii8+PGxpbmUgeDE9Ijk1IiB5MT0iODciIHgyPSIxMDQiIHkyPSI5NiIvPgogICAgPGxpbmUgeDE9IjEwNCIgeTE9IjI4IiB4Mj0iOTUiIHkyPSIzNyIvPjxsaW5lIHgxPSI0NSIgeTE9Ijg3IiB4Mj0iMzYiIHkyPSI5NiIvPgogIDwvZz4KICA8cGF0aCBkPSJNMjEwIDIyMCBDIDIxMCAxNTAsIDI1MCAxMzAsIDI1MCAyMjAgWiIgZmlsbD0iI2FlZDU4MSIvPgogIDxlbGxpcHNlIGN4PSIyMzgiIGN5PSIxMzAiIHJ4PSI1MiIgcnk9IjI2IiBmaWxsPSIjN2NiMzQyIiBzdHJva2U9IiM1NThiMmYiIHN0cm9rZS13aWR0aD0iNCIgdHJhbnNmb3JtPSJyb3RhdGUoLTE4IDIzOCAxMzApIi8+CiAgPGVsbGlwc2UgY3g9IjIyNSIgY3k9Ijk2IiByeD0iNDAiIHJ5PSIyMCIgZmlsbD0iIzhiYzM0YSIgc3Ryb2tlPSIjNTU4YjJmIiBzdHJva2Utd2lkdGg9IjQiIHRyYW5zZm9ybT0icm90YXRlKDIyIDIyNSA5NikiLz4KICA8ZWxsaXBzZSBjeD0iMjAwIiBjeT0iMzAwIiByeD0iNjAiIHJ5PSIyNiIgZmlsbD0iIzhkNmU2MyIvPgogIDxyZWN0IHg9IjEzMCIgeT0iMjQ4IiB3aWR0aD0iMTMwIiBoZWlnaHQ9IjE0IiByeD0iNyIgZmlsbD0iIzZkNGM0MSIvPgogIDxwYXRoIGQ9Ik0xMjggMTc4IHExNCAtMTIgMjggMCBxMTQgLTEyIDI4IDAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzRmOWRlOCIgc3Ryb2tlLXdpZHRoPSI1Ii8+CiAgPHRleHQgeD0iMjgiIHk9IjE1MCIgZm9udC1mYW1pbHk9IkNvbWljIFNhbnMgTVMsQXJpYWwiIGZvbnQtc2l6ZT0iMTciIGZvbnQtd2VpZ2h0PSJib2xkIiBmaWxsPSIjMmQzNDM2Ij5MaWdodCBlbmVyZ3k8L3RleHQ+CiAgPHRleHQgeD0iMTc2IiB5PSIyMDUiIGZvbnQtZmFtaWx5PSJDb21pYyBTYW5zIE1TLEFyaWFsIiBmb250LXNpemU9IjE3IiBmb250LXdlaWdodD0iYm9sZCIgZmlsbD0iIzJlN2QzMiI+Rm9vZCAoY2hlbWljYWwpPC90ZXh0Pgo8L2c+PC9zdmc+", "alt": "Simple diagram of a plant using sunlight to make food (photosynthesis).", "caption": ""}}, {"id": "energy-ocr-pdf-q9", "section": "Different Forms of Energy", "question": "Which of these stores chemical energy according to the chapter?", "options": ["A stretched bow", "Water at a height", "The food we eat", "A compressed spring"], "correctIndex": 2, "explanation": "Food holds chemical energy that our bodies release to do work.", "suggestImage": false}, {"id": "energy-ocr-pdf-q10", "section": "Different Forms of Energy", "question": "Human ears can hear sound with how many vibrations per second?", "options": ["Only 5 to 10", "200,000 to 400,000", "20 to 20,000", "2,000,000 to 5,000,000"], "correctIndex": 2, "explanation": "Our ears hear vibrations only in the range of 20 to 20,000 per second.", "suggestImage": false}, {"id": "energy-ocr-pdf-q11", "section": "Different Forms of Energy", "question": "What produces the magnetic field inside an electromagnet?", "options": ["Electric current", "A stretched spring", "Sunlight", "Heat from fire"], "correctIndex": 0, "explanation": "An electromagnet gets its magnetic field when electric current flows through it.", "suggestImage": true, "imageNote": "Crane with an electromagnet lifting iron pieces from a heap of waste (Fig. 3.5).", "image": {"type": "svg", "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0MDAgMzAwIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgcng9IjI0IiBmaWxsPSIjZmRmNmUzIi8+PGcgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj4KICA8cmVjdCB4PSIyMCIgeT0iMTgiIHdpZHRoPSIxMjAiIGhlaWdodD0iMTQiIHJ4PSI3IiBmaWxsPSIjOTBhNGFlIi8+CiAgPHJlY3QgeD0iMzgiIHk9IjMyIiB3aWR0aD0iMTgiIGhlaWdodD0iNTIiIHJ4PSI4IiBmaWxsPSIjNzg5MDljIi8+CiAgPGxpbmUgeDE9IjQ3IiB5MT0iODQiIHgyPSI0NyIgeTI9IjE1MCIgc3Ryb2tlPSIjNjA3ZDhiIiBzdHJva2Utd2lkdGg9IjkiLz4KICA8bGluZSB4MT0iNDciIHkxPSIxNTAiIHgyPSIyNTAiIHkyPSIxMTgiIHN0cm9rZT0iIzYwN2Q4YiIgc3Ryb2tlLXdpZHRoPSI5Ii8+CiAgPHBhdGggZD0iTTI1MCAxMTggbDAgMjYgbC03MCAxNCBsMCAtMjQgWiIgZmlsbD0iIzllOWU5ZSIgc3Ryb2tlPSIjNzU3NTc1IiBzdHJva2Utd2lkdGg9IjQiLz4KICA8cGF0aCBkPSJNMjE1IDE1MCBsMCAzMCBsMzQgLTYgbDAgLTI2IFoiIGZpbGw9IiM4ODgiIHN0cm9rZT0iIzYxNjE2MSIgc3Ryb2tlLXdpZHRoPSI0Ii8+CiAgPHJlY3QgeD0iMjEyIiB5PSIxNjgiIHdpZHRoPSI0MCIgaGVpZ2h0PSIxMCIgcng9IjUiIGZpbGw9IiNmZjZiNmIiLz4KICA8cmVjdCB4PSIyMjUiIHk9IjE4MiIgd2lkdGg9IjE0IiBoZWlnaHQ9IjgiIHJ4PSI0IiBmaWxsPSIjZmY2YjZiIi8+CiAgPHJlY3QgeD0iMjEwIiB5PSIxOTYiIHdpZHRoPSIyNiIgaGVpZ2h0PSIxMCIgcng9IjQiIGZpbGw9IiNiMGJlYzUiLz4KICA8cmVjdCB4PSIyMjYiIHk9IjIwOCIgd2lkdGg9IjE4IiBoZWlnaHQ9IjgiIHJ4PSIzIiBmaWxsPSIjOTBhNGFlIi8+CiAgPHJlY3QgeD0iMTk2IiB5PSIyMjIiIHdpZHRoPSIyMiIgaGVpZ2h0PSIxMiIgcng9IjQiIGZpbGw9IiNjZmQ4ZGMiLz4KICA8cmVjdCB4PSIwIiB5PSIyNTIiIHdpZHRoPSI0MDAiIGhlaWdodD0iMTIiIGZpbGw9IiM4ZDZlNjMiLz4KICA8Y2lyY2xlIGN4PSI2MCIgY3k9IjI1NiIgcj0iMTMiIGZpbGw9IiNiMGJlYzUiLz48Y2lyY2xlIGN4PSIxMTAiIGN5PSIyNTYiIHI9IjEwIiBmaWxsPSIjOTBhNGFlIi8+CiAgPGNpcmNsZSBjeD0iMTYwIiBjeT0iMjU2IiByPSIxMiIgZmlsbD0iI2NmZDhkYyIvPjxjaXJjbGUgY3g9IjMyMCIgY3k9IjI1NiIgcj0iOSIgZmlsbD0iI2IwYmVjNSIvPgogIDxjaXJjbGUgY3g9IjM2MCIgY3k9IjI1NiIgcj0iMTEiIGZpbGw9IiM5MGE0YWUiLz4KICA8dGV4dCB4PSIxNDAiIHk9IjI5MiIgZm9udC1mYW1pbHk9IkNvbWljIFNhbnMgTVMsQXJpYWwiIGZvbnQtc2l6ZT0iMTciIGZvbnQtd2VpZ2h0PSJib2xkIiBmaWxsPSIjMmQzNDM2Ij5FbGVjdHJvbWFnbmV0IGxpZnRzIGlyb24gc2NyYXA8L3RleHQ+CjwvZz48L3N2Zz4=", "alt": "Crane with an electromagnet lifting iron pieces from a heap of waste (Fig. 3.5).", "caption": ""}}, {"id": "energy-ocr-pdf-q12", "section": "Different Forms of Energy", "question": "In a table fan, which form of energy changes into mechanical energy?", "options": ["Electrical energy", "Chemical energy", "Sound energy", "Heat energy"], "correctIndex": 0, "explanation": "The fan's motor changes electrical energy into mechanical energy that spins the blades.", "suggestImage": false}, {"id": "energy-ocr-pdf-q13", "section": "Different Forms of Energy", "question": "Atomic energy is released when a heavy nucleus does what?", "options": ["Splits into two light nuclei", "Absorbs sunlight", "Burns in air", "Flows down a river"], "correctIndex": 0, "explanation": "Splitting a heavy nucleus releases the energy stored inside atoms.", "suggestImage": true, "imageNote": "Simple diagram of a heavy nucleus splitting into two lighter nuclei (fission).", "image": {"type": "svg", "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0MDAgMzAwIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgcng9IjI0IiBmaWxsPSIjZmRmNmUzIi8+PGcgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj4KICA8Y2lyY2xlIGN4PSIyMDAiIGN5PSIxNTAiIHI9IjQ2IiBmaWxsPSIjZmY5ODAwIiBzdHJva2U9IiNlNjUxMDAiIHN0cm9rZS13aWR0aD0iNSIvPgogIDxjaXJjbGUgY3g9IjE4OCIgY3k9IjEzOCIgcj0iNyIgZmlsbD0iI2ZmY2M4MCIvPgogIDxjaXJjbGUgY3g9IjIxMiIgY3k9IjE0MCIgcj0iNiIgZmlsbD0iI2ZmY2M4MCIvPjxjaXJjbGUgY3g9IjIwMCIgY3k9IjE2MiIgcj0iNiIgZmlsbD0iI2ZmY2M4MCIvPgogIDxnIHN0cm9rZT0iI2U2NTEwMCIgc3Ryb2tlLXdpZHRoPSI1Ij4KICAgIDxsaW5lIHgxPSIyMDAiIHkxPSIxMDQiIHgyPSIyMDAiIHkyPSI4NCIvPjxsaW5lIHgxPSIyMDAiIHkxPSIyMTYiIHgyPSIyMDAiIHkyPSIyMzYiLz4KICAgIDxsaW5lIHgxPSIxNTQiIHkxPSIxNTAiIHgyPSIxMzYiIHkyPSIxNTAiLz48bGluZSB4MT0iMjQ2IiB5MT0iMTUwIiB4Mj0iMjY0IiB5Mj0iMTUwIi8+CiAgICA8bGluZSB4MT0iMTY3IiB5MT0iMTE3IiB4Mj0iMTUzIiB5Mj0iMTAzIi8+PGxpbmUgeDE9IjIzMyIgeTE9IjExNyIgeDI9IjI0NyIgeTI9IjEwMyIvPgogICAgPGxpbmUgeDE9IjIzMyIgeTE9IjE4MyIgeDI9IjI0NyIgeTI9IjE5NyIvPjxsaW5lIHgxPSIxNjciIHkxPSIxODMiIHgyPSIxNTMiIHkyPSIxOTciLz4KICA8L2c+CiAgPGNpcmNsZSBjeD0iOTIiIGN5PSI5MCIgcj0iMzAiIGZpbGw9IiNmZjcwNDMiIHN0cm9rZT0iI2Q4NDMxNSIgc3Ryb2tlLXdpZHRoPSI1Ii8+CiAgPGNpcmNsZSBjeD0iOTgiIGN5PSIxOTYiIHI9IjMwIiBmaWxsPSIjZmY4YTY1IiBzdHJva2U9IiNkODQzMTUiIHN0cm9rZS13aWR0aD0iNSIvPgogIDxjaXJjbGUgY3g9IjMwNCIgY3k9Ijg4IiByPSIxMiIgZmlsbD0iIzRlY2RjNCIgc3Ryb2tlPSIjMmI5Yzk0IiBzdHJva2Utd2lkdGg9IjQiLz4KICA8Y2lyY2xlIGN4PSIzMzAiIGN5PSIxNTAiIHI9IjEyIiBmaWxsPSIjNGVjZGM0IiBzdHJva2U9IiMyYjljOTQiIHN0cm9rZS13aWR0aD0iNCIvPgogIDxjaXJjbGUgY3g9IjMwMCIgY3k9IjIxMCIgcj0iMTIiIGZpbGw9IiM0ZWNkYzQiIHN0cm9rZT0iIzJiOWM5NCIgc3Ryb2tlLXdpZHRoPSI0Ii8+CiAgPGcgc3Ryb2tlPSIjZmZkOTNkIiBzdHJva2Utd2lkdGg9IjYiPgogICAgPHBhdGggZD0iTTE0MCAxNDAgbC0xOCAtMjYgTTE0MCAxNTggbC0zMCA4IE0yNTggMTM4IGwyMCAtMjQgTTI2MiAxNTggbDMwIDYiIC8+CiAgPC9nPgogIDx0ZXh0IHg9IjUyIiB5PSIyODIiIGZvbnQtZmFtaWx5PSJDb21pYyBTYW5zIE1TLEFyaWFsIiBmb250LXNpemU9IjE3IiBmb250LXdlaWdodD0iYm9sZCIgZmlsbD0iIzJkMzQzNiI+SGVhdnkgbnVjbGV1cyBzcGxpdHMgaW50byBsaWdodGVyIG51Y2xlaTwvdGV4dD4KICA8dGV4dCB4PSI2NiIgeT0iNjQiIGZvbnQtZmFtaWx5PSJDb21pYyBTYW5zIE1TLEFyaWFsIiBmb250LXNpemU9IjE2IiBmb250LXdlaWdodD0iYm9sZCIgZmlsbD0iI2U2NTEwMCI+aGVhdCArIGxpZ2h0IGVuZXJneTwvdGV4dD4KPC9nPjwvc3ZnPg==", "alt": "Simple diagram of a heavy nucleus splitting into two lighter nuclei (fission).", "caption": ""}}, {"id": "energy-ocr-pdf-q14", "section": "Different Forms of Energy", "question": "Which of these is made using energy from the Sun?", "options": ["A steam engine", "A solar cooker", "A tuning fork", "A compressed spring"], "correctIndex": 1, "explanation": "Solar cookers use the Sun's energy directly to cook food.", "suggestImage": false}]}, {"id": "potential-energy", "title": "Potential Energy", "emoji": "🛝", "questions": [{"id": "energy-ocr-pdf-q15", "section": "Potential Energy", "question": "A body's potential energy is due to what?", "options": ["Its state of motion", "Its state of rest or position", "The sound it makes", "The light around it"], "correctIndex": 1, "explanation": "Potential energy comes from a body's state of rest or where it is placed.", "suggestImage": false}, {"id": "energy-ocr-pdf-q16", "section": "Potential Energy", "question": "Which two factors decide the potential energy of a body raised above the ground?", "options": ["Its mass and its height", "Its mass and its speed", "Its height and its colour", "Its speed and its sound"], "correctIndex": 0, "explanation": "Heavier or higher bodies store more potential energy, so mass and height decide it.", "suggestImage": true, "imageNote": "Hammer held at a height above a nail, showing stored potential energy (Fig. 3.9).", "image": {"type": "svg", "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0MDAgMzAwIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgcng9IjI0IiBmaWxsPSIjZmRmNmUzIi8+PGcgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj4KICA8cmVjdCB4PSI2MCIgeT0iMjQwIiB3aWR0aD0iMjgwIiBoZWlnaHQ9IjI2IiByeD0iMTAiIGZpbGw9IiNhMTg4N2YiLz4KICA8cGF0aCBkPSJNMjA2IDI0MCBsMCA0MCBsMjYgMCBsMCAtNDAgWiIgZmlsbD0iI2IwYmVjNSIgc3Ryb2tlPSIjNzg5MDljIiBzdHJva2Utd2lkdGg9IjQiLz4KICA8dGV4dCB4PSIyMDQiIHk9IjI1MiIgZm9udC1mYW1pbHk9IkNvbWljIFNhbnMgTVMsQXJpYWwiIGZvbnQtc2l6ZT0iMTMiIGZvbnQtd2VpZ2h0PSJib2xkIiBmaWxsPSIjNDU1YTY0Ij5uYWlsPC90ZXh0PgogIDxyZWN0IHg9IjE1MCIgeT0iNTIiIHdpZHRoPSI5NiIgaGVpZ2h0PSI0NCIgcng9IjEyIiBmaWxsPSIjOWU5ZTllIiBzdHJva2U9IiM3NTc1NzUiIHN0cm9rZS13aWR0aD0iNCIvPgogIDxsaW5lIHgxPSIxOTgiIHkxPSI5NiIgeDI9IjE5OCIgeTI9IjE5NiIgc3Ryb2tlPSIjYTE4ODdmIiBzdHJva2Utd2lkdGg9IjEyIi8+CiAgPHJlY3QgeD0iMTkyIiB5PSIxOTYiIHdpZHRoPSIxMiIgaGVpZ2h0PSIyNCIgcng9IjYiIGZpbGw9IiM4ZDZlNjMiLz4KICA8ZyBzdHJva2U9IiM0ZjlkZTgiIHN0cm9rZS13aWR0aD0iNSIgZmlsbD0ibm9uZSIgc3Ryb2tlLWRhc2hhcnJheT0iOCA4Ij4KICAgIDxwYXRoIGQ9Ik0yOTYgMTIwIHEyNiAzMCAwIDYwIHEtMjYgLTMwIDAgLTYwIi8+CiAgICA8cGF0aCBkPSJNMzMwIDEyMCBxMjYgMzAgMCA2MCBxLTI2IC0zMCAwIC02MCIvPgogIDwvZz4KICA8dGV4dCB4PSIzMDAiIHk9IjkyIiBmb250LWZhbWlseT0iQ29taWMgU2FucyBNUyxBcmlhbCIgZm9udC1zaXplPSIxNyIgZm9udC13ZWlnaHQ9ImJvbGQiIGZpbGw9IiMyZDM0MzYiPnN0b3JlZDwvdGV4dD4KICA8dGV4dCB4PSIyOTgiIHk9IjExMiIgZm9udC1mYW1pbHk9IkNvbWljIFNhbnMgTVMsQXJpYWwiIGZvbnQtc2l6ZT0iMTciIGZvbnQtd2VpZ2h0PSJib2xkIiBmaWxsPSIjMmQzNDM2Ij5lbmVyZ3k8L3RleHQ+CiAgPHRleHQgeD0iNjQiIHk9IjI4NiIgZm9udC1mYW1pbHk9IkNvbWljIFNhbnMgTVMsQXJpYWwiIGZvbnQtc2l6ZT0iMTciIGZvbnQtd2VpZ2h0PSJib2xkIiBmaWxsPSIjMmQzNDM2Ij5IYW1tZXIgaGlnaCBhYm92ZSB0aGUgbmFpbCBob2xkcyBwb3RlbnRpYWwgZW5lcmd5PC90ZXh0Pgo8L2c+PC9zdmc+", "alt": "Hammer held at a height above a nail, showing stored potential energy (Fig. 3.9)", "caption": ""}}]}, {"id": "kinetic-energy", "title": "Kinetic Energy", "emoji": "🚗", "questions": [{"id": "energy-ocr-pdf-q17", "section": "Kinetic Energy", "question": "What do we call the energy of a body in motion?", "options": ["Kinetic energy", "Potential energy", "Chemical energy", "Magnetic energy"], "correctIndex": 0, "explanation": "A moving body has kinetic energy because of its state of motion.", "suggestImage": false}, {"id": "energy-ocr-pdf-q18", "section": "Kinetic Energy", "question": "The kinetic energy of a moving body depends on which two things?", "options": ["Its mass and its height", "Its mass and its speed", "Its height and its position", "Its colour and its shape"], "correctIndex": 1, "explanation": "Greater mass and greater speed both give a moving body more kinetic energy.", "suggestImage": false}]}, {"id": "energy-conversion", "title": "Energy Conversion", "emoji": "🔄", "questions": [{"id": "energy-ocr-pdf-q19", "section": "Energy Conversion", "question": "When a stretched bow is released, its potential energy changes into what?", "options": ["Kinetic energy", "Heat energy", "Chemical energy", "Sound energy"], "correctIndex": 0, "explanation": "Releasing the bow sets the arrow moving, so stored energy becomes kinetic energy.", "suggestImage": false}]}, {"id": "transformation-of-energy", "title": "Transformation of Energy", "emoji": "🔁", "questions": [{"id": "energy-ocr-pdf-q20", "section": "Transformation of Energy", "question": "In a steam engine, what does the chemical energy of coal first change into?", "options": ["Magnetic energy", "Light energy", "Heat energy of the steam", "Sound energy"], "correctIndex": 2, "explanation": "Coal's chemical energy first becomes steam's heat, which then moves the train.", "suggestImage": true, "imageNote": "Energy chain: coal chemical energy to steam heat energy to train mechanical energy.", "image": {"type": "svg", "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0MDAgMzAwIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgcng9IjI0IiBmaWxsPSIjZmRmNmUzIi8+PGcgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj4KICA8cG9seWdvbiBwb2ludHM9IjQyLDIzMiA2MiwyMDYgNzgsMjMyIDkyLDIwNiAxMDgsMjMyIDEyOCwyMDYgMTQ0LDIzMiA3MiwyNTIiIGZpbGw9IiM0NTVhNjQiIHN0cm9rZT0iIzM3NDc0ZiIgc3Ryb2tlLXdpZHRoPSI0Ii8+CiAgPHRleHQgeD0iNTgiIHk9IjI3NiIgZm9udC1mYW1pbHk9IkNvbWljIFNhbnMgTVMsQXJpYWwiIGZvbnQtc2l6ZT0iMTUiIGZvbnQtd2VpZ2h0PSJib2xkIiBmaWxsPSIjMzc0NzRmIj5jb2FsPC90ZXh0PgogIDxwYXRoIGQ9Ik0xODYgMTk2IHExNCAtMjQgMzAgLTEyIHE0IC0yMCAyNiAtMjAgcTYgLTE2IDI0IC04IHExMCAtMTggMjggLTYiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzRmYzNmNyIgc3Ryb2tlLXdpZHRoPSI3Ii8+CiAgPGNpcmNsZSBjeD0iMjU0IiBjeT0iMTc4IiByPSIzOCIgZmlsbD0iIzkwYTRhZSIgc3Ryb2tlPSIjNjA3ZDhiIiBzdHJva2Utd2lkdGg9IjUiLz4KICA8cmVjdCB4PSIyMjgiIHk9IjE5NiIgd2lkdGg9IjUyIiBoZWlnaHQ9IjEwIiByeD0iNSIgZmlsbD0iI2ZmNzA0MyIvPgogIDxyZWN0IHg9IjI0MiIgeT0iMjA2IiB3aWR0aD0iMjQiIGhlaWdodD0iOCIgcng9IjQiIGZpbGw9IiNmZjcwNDMiLz4KICA8dGV4dCB4PSIyNDQiIHk9IjI1NiIgZm9udC1mYW1pbHk9IkNvbWljIFNhbnMgTVMsQXJpYWwiIGZvbnQtc2l6ZT0iMTUiIGZvbnQtd2VpZ2h0PSJib2xkIiBmaWxsPSIjMmQzNDM2Ij5zdGVhbTwvdGV4dD4KICA8cGF0aCBkPSJNMzE4IDEyMCBsMjYgOCAtMjYgOCBxMTQgLTggMCAtMTYgWiIgZmlsbD0iI2ZmZDkzZCIgc3Ryb2tlPSIjZjViMzAxIiBzdHJva2Utd2lkdGg9IjQiLz4KICA8cGF0aCBkPSJNMzA2IDE1MiBsMzAgOCBxLTEyIDkgLTMwIDggcTE0IC04IDAgLTE2IE0zMDYgMTU2IGwwIDYiIGZpbGw9IiNmZmQ5M2QiIHN0cm9rZT0iI2Y1YjMwMSIgc3Ryb2tlLXdpZHRoPSI0Ii8+CiAgPHJlY3QgeD0iMjk2IiB5PSIxNjgiIHdpZHRoPSI0NiIgaGVpZ2h0PSIzNCIgcng9IjEwIiBmaWxsPSIjZTUzOTM1IiBzdHJva2U9IiNiNzFjMWMiIHN0cm9rZS13aWR0aD0iNCIvPgogIDxyZWN0IHg9IjMwNCIgeT0iMTc2IiB3aWR0aD0iMTYiIGhlaWdodD0iMTAiIHJ4PSI0IiBmaWxsPSIjZmZmNTlkIi8+CiAgPGNpcmNsZSBjeD0iMzEwIiBjeT0iMjEyIiByPSIxMCIgZmlsbD0iIzM3NDc0ZiIvPgogIDxjaXJjbGUgY3g9IjMzMCIgY3k9IjIxMiIgcj0iMTAiIGZpbGw9IiMzNzQ3NGYiLz4KICA8dGV4dCB4PSIyOTYiIHk9IjI1MCIgZm9udC1mYW1pbHk9IkNvbWljIFNhbnMgTVMsQXJpYWwiIGZvbnQtc2l6ZT0iMTUiIGZvbnQtd2VpZ2h0PSJib2xkIiBmaWxsPSIjMmQzNDM2Ij50cmFpbjwvdGV4dD4KICA8bGluZSB4MT0iMTcyIiB5MT0iMjEwIiB4Mj0iMjE0IiB5Mj0iMjEwIiBzdHJva2U9IiM0NTVhNjQiIHN0cm9rZS13aWR0aD0iNSIvPgogIDxsaW5lIHgxPSIyODYiIHkxPSIyMTAiIHgyPSIyNTgiIHkyPSIxNzgiIHN0cm9rZT0iIzQ1NWE2NCIgc3Ryb2tlLXdpZHRoPSI1Ii8+CiAgPHRleHQgeD0iMTkyIiB5PSIyODYiIGZvbnQtZmFtaWx5PSJDb21pYyBTYW5zIE1TLEFyaWFsIiBmb250LXNpemU9IjE2IiBmb250LXdlaWdodD0iYm9sZCIgZmlsbD0iIzJkMzQzNiI+Y2hlbWljYWwgJiM4NTk0OyBoZWF0ICYjODU5NDsgbWVjaGFuaWNhbCAobW90aW9uKTwvdGV4dD4KPC9nPjwvc3ZnPg==", "alt": "Energy chain: coal chemical energy to steam heat energy to train mechanical ener", "caption": ""}}]}, {"id": "energy-transformations", "title": "Energy Transformations", "emoji": "⚙️", "questions": [{"id": "energy-ocr-pdf-q21", "section": "Energy Transformations", "question": "When you rub your hands together, which energy change happens?", "options": ["Kinetic energy changes into potential energy", "Mechanical energy changes into heat energy", "Potential energy changes into kinetic energy", "Heat energy changes into mechanical energy"], "correctIndex": 1, "explanation": "Rubbing makes your hands move, and the friction between them turns motion into heat.", "suggestImage": false}, {"id": "energy-ocr-pdf-q23", "section": "Energy Transformations", "question": "Which kind of energy is stored inside an electric cell (battery)?", "options": ["Chemical energy", "Electrical energy", "Heat energy", "Mechanical energy"], "correctIndex": 0, "explanation": "A battery stores chemical energy that changes into electrical energy when it is used.", "suggestImage": false}, {"id": "energy-ocr-pdf-q24", "section": "Energy Transformations", "question": "When a bulb lights up as electric current passes through it, what change of energy happens?", "options": ["From electrical energy to heat energy", "From electrical energy to light energy", "From electrical energy to heat and light energy", "From electrical energy to mechanical energy"], "correctIndex": 2, "explanation": "A glowing bulb changes electrical energy into both light and heat energy.", "suggestImage": false}, {"id": "energy-ocr-pdf-q29", "section": "Energy Transformations", "question": "An electric fan converts electrical energy into which energy?", "options": ["Chemical energy", "Mechanical energy", "Light energy", "Sound energy"], "correctIndex": 1, "explanation": "The fan's motor turns electrical energy into the motion of its blades, which is mechanical energy.", "suggestImage": false}, {"id": "energy-ocr-pdf-q30", "section": "Energy Transformations", "question": "Cooking gas converts which energy into heat energy?", "options": ["Electrical energy", "Kinetic energy", "Chemical energy", "Light energy"], "correctIndex": 2, "explanation": "Cooking gas converts chemical energy into heat energy when it burns.", "suggestImage": false}]}, {"id": "potential-kinetic-energy", "title": "Potential & Kinetic Energy", "emoji": "🎢", "questions": [{"id": "energy-ocr-pdf-q22", "section": "Potential & Kinetic Energy", "question": "A ball rolling on the ground mainly has which kind of energy?", "options": ["Kinetic energy", "Potential energy", "No energy", "Heat energy"], "correctIndex": 0, "explanation": "Kinetic energy is the energy of motion, so a rolling ball has it.", "suggestImage": false}, {"id": "energy-ocr-pdf-q26", "section": "Potential & Kinetic Energy", "question": "Water is lifted from the ground floor into an overhead tank. The work done is stored in the form of which energy?", "options": ["Kinetic energy", "Chemical energy", "Potential energy", "Both kinetic and chemical energy"], "correctIndex": 2, "explanation": "Lifting water stores energy because of its height, which is potential energy.", "suggestImage": false}, {"id": "energy-ocr-pdf-q28", "section": "Potential & Kinetic Energy", "question": "Assertion (first statement): A stretched bow has kinetic energy. Reason (second statement): Stretching the bow stores energy in it. Which is correct?", "options": ["Both statements are true, and the reason correctly explains the assertion", "Both statements are true, but the reason does not explain the assertion", "The first statement is true, but the reason is false", "The first statement is false, but the reason is true"], "correctIndex": 3, "explanation": "The bow is not moving, so stretching stores potential energy in it.", "suggestImage": false}]}, {"id": "conservation-of-energy", "title": "Conservation of Energy", "emoji": "♻️", "questions": [{"id": "energy-ocr-pdf-q25", "section": "Conservation of Energy", "question": "According to the law of conservation of energy, what happens to the total energy of a system when energy changes form?", "options": ["It increases", "It decreases", "It alternates", "It remains the same"], "correctIndex": 3, "explanation": "Energy only changes form, so the total amount in the system stays the same.", "suggestImage": false}, {"id": "energy-ocr-pdf-q27", "section": "Conservation of Energy", "question": "Assertion (first statement): The mechanical energy of a freely falling body increases as it falls. Reason (second statement): During free fall, potential energy changes into kinetic energy. Which is correct?", "options": ["Both statements are true, and the reason correctly explains the assertion", "Both statements are true, but the reason does not explain the assertion", "The first statement is true, but the reason is false", "The first statement is false, but the reason is true"], "correctIndex": 3, "explanation": "Total mechanical energy stays constant during free fall, so it never increases.", "suggestImage": false}]}], "truncated": {"shown": 30, "total": 40}}</script>
+
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <linearGradient id="gradA" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4ecdc4"/><stop offset="100%" stop-color="#4f9de8"/>
+    </linearGradient>
+  </defs>
+</svg>
+
+<script>
+(() => {
+"use strict";
+/* ══════════════════════════════════════════════════════════════
+   html-quiz runtime — self-contained, no libraries, no network.
+   Question data is parsed from the #quiz-data script tag.
+   ══════════════════════════════════════════════════════════════ */
+
+// ── Data & config ─────────────────────────────────────────────
+const QUIZ = JSON.parse(document.getElementById('quiz-data').textContent.trim());
+const params = new URLSearchParams(location.search);
+const cfg = {
+  secs: clampInt(params.get('secs'), 30, 2, 60),   // seconds per question
+  max:  clampInt(params.get('max'), 25, 1, 100),   // (informational only; cap applied at build)
+  tts:  params.get('tts') !== 'off' && params.get('tts') !== '0'
+};
+function clampInt(v, d, lo, hi){ const n = parseInt(v,10); return Number.isFinite(n) ? Math.min(hi, Math.max(lo, n)) : d; }
+
+// Build a flat ordered question list across all sections.
+const FLAT = [];
+QUIZ.sections.forEach(s => {
+  s.questions.forEach(q => {
+    FLAT.push({ q, sectionId: s.id, sectionTitle: s.title });
+  });
+});
+const TOTAL = FLAT.length;
+
+// ── State machine ─────────────────────────────────────────────
+let state = {
+  mode: 'intro',        // intro | question | revealed | results
+  scope: null,          // null = all sections, else sectionId
+  list: [],             // ordered [{q, sectionId, sectionTitle}] for current scope
+  iq: 0,
+  answers: [],          // {qid, chosen(-1=timeout), status, pts}
+  score: 0,
+  runToken: 0,
+  transitioning: false
+};
+
+const elStage  = document.getElementById('stage');
+const elScore  = document.getElementById('score-chip');
+const elProg   = document.getElementById('progress-fill');
+const elTree   = document.getElementById('tree');
+const elSide   = document.getElementById('sidebar');
+const overlay  = document.getElementById('overlay');
+const elMute   = document.getElementById('mute-btn');
+let muted = false;
+
+// ── DOM helpers (NO innerHTML anywhere) ───────────────────────
+const h = (tag, cls, text) => {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (text !== undefined) e.textContent = text;   // untrusted text → textContent only
+  return e;
+};
+function clear(node){ while(node.firstChild) node.removeChild(node.firstChild); }
+
+// ── Sound (WebAudio, synthesised; lazy context for autoplay) ─
+let AC = null;
+function ensureAudio(){
+  if (!AC){ try{ AC = new (window.AudioContext || window.webkitAudioContext)(); }catch(e){ return null; } }
+  if (AC.state === 'suspended') AC.resume();
+  return AC;
+}
+function blip(freq, dur, type, delay, vol){
+  const ac = AC || ensureAudio();
+  if (!ac) return;
+  const t0 = ac.currentTime + (delay || 0);
+  const o = ac.createOscillator(), g = ac.createGain();
+  o.type = type || 'sine'; o.frequency.value = freq;
+  g.gain.setValueAtTime(vol || 0.14, t0);
+  g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+  o.connect(g); g.connect(ac.destination);
+  o.start(t0); o.stop(t0 + dur + 0.03);
+}
+const sTick   = () => blip(880, 0.06, 'square');
+const sCorrect= () => { blip(523,0.12,'sine',0); blip(659,0.12,'sine',0.11); blip(784,0.2,'sine',0.22); };
+const sWrong  = () => { blip(220,0.22,'triangle',0); blip(170,0.28,'triangle',0.14); };
+const sTimesUp= () => { blip(440,0.18,'triangle',0); blip(330,0.3,'triangle',0.16); };
+const sPop    = () => { blip(660,0.09,'sine',0,0.1); blip(880,0.1,'sine',0.07,0.08); };
+
+// ── TTS (Web Speech API) ──────────────────────────────────────
+function ttsAvailable(){ return 'speechSynthesis' in window; }
+function pickVoice(){
+  if (!ttsAvailable()) return null;
+  const vs = speechSynthesis.getVoices();
+  return vs.find(v => /^en/i.test(v.lang)) || vs[0] || null;
+}
+function speak(text, onEnd){
+  if (!cfg.tts || muted || !ttsAvailable() || !text) { if (onEnd) onEnd(); return; }
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.rate = 1; u.pitch = 1.05;
+  const v = pickVoice(); if (v) u.voice = v;
+  if (onEnd) u.onend = onEnd;
+  speechSynthesis.speak(u);
+}
+if ('speechSynthesis' in window){
+  speechSynthesis.onvoiceschanged = () => {};   // warm the voice list
+}
+
+// ── Timer ring ────────────────────────────────────────────────
+let rafId = 0;
+function stopTimer(){ if (rafId){ cancelAnimationFrame(rafId); rafId = 0; } }
+function startTimer(secs, token){
+  stopTimer();
+  const C = 2 * Math.PI * 30;                    // r=30 ring
+  const ring = document.getElementById('ring-fg');
+  const count = document.getElementById('t-count');
+  const wrap = document.getElementById('timer-wrap');
+  ring.setAttribute('stroke-dasharray', C);
+  ring.setAttribute('stroke-dashoffset', 0);
+  const deadline = performance.now() + secs * 1000;
+  let lastSec = Math.ceil(secs);
+  const loop = (now) => {
+    if (state.runToken !== token) return;        // stale — question changed
+    const remMs = deadline - now;
+    const remSec = Math.max(0, Math.ceil(remMs / 1000));
+    const frac = Math.max(0, Math.min(1, remMs / (secs * 1000)));
+    ring.setAttribute('stroke-dashoffset', String(C * (1 - frac)));   // SVG attr, not CSS
+    count.textContent = String(remSec);
+    wrap.classList.toggle('low', remSec <= 3);
+    if (remSec < lastSec){ lastSec = remSec; if (remSec > 0 && remSec <= 3 && state.mode === 'question') sTick(); }
+    if (remMs <= 0){ onTimeout(token); return; }
+    rafId = requestAnimationFrame(loop);
+  };
+  rafId = requestAnimationFrame(loop);
+}
+
+// ── Timer markup builder (returned to slot in question card) ──
+function timerMarkup(){
+  const wrap = h('div', 'timer-wrap'); wrap.id = 'timer-wrap';
+  const ns = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(ns, 'svg');
+  svg.setAttribute('viewBox', '0 0 74 74');
+  const bg = document.createElementNS(ns, 'circle');
+  bg.setAttribute('cx','37'); bg.setAttribute('cy','37'); bg.setAttribute('r','30'); bg.setAttribute('class','circle-bg');
+  const fg = document.createElementNS(ns, 'circle');
+  fg.setAttribute('cx','37'); fg.setAttribute('cy','37'); fg.setAttribute('r','30'); fg.setAttribute('class','circle-fg');
+  fg.id = 'ring-fg';
+  svg.appendChild(bg); svg.appendChild(fg);
+  const c = h('div', 't-count', String(cfg.secs)); c.id = 't-count';
+  wrap.appendChild(svg); wrap.appendChild(c);
+  return wrap;
+}
+
+// ── Confetti ──────────────────────────────────────────────────
+const CONF_COLORS = ['#ff6b6b','#ffd93d','#2ecc71','#4f9de8','#9b59b6','#ff9d2e'];
+function burstConfetti(n){
+  const layer = document.getElementById('confetti');
+  for (let i = 0; i < n; i++){
+    const c = h('div', 'confetti');
+    c.style.left = (Math.random() * 100) + 'vw';
+    c.style.background = CONF_COLORS[i % CONF_COLORS.length];
+    c.style.setProperty('--rx', (Math.random() * 540 - 270) + 'deg');
+    c.style.animationDuration = (1.6 + Math.random() * 1.6) + 's';
+    c.style.animationDelay = (Math.random() * 0.5) + 's';
+    c.style.width = (7 + Math.random() * 8) + 'px';
+    c.style.height = (7 + Math.random() * 8) + 'px';
+    c.addEventListener('animationend', () => c.remove());
+    layer.appendChild(c);
+  }
+}
+
+// ── Tree building ─────────────────────────────────────────────
+function renderTree(){
+  clear(elTree);
+  QUIZ.sections.forEach(sec => {
+    const node = h('div', 'tree-node');
+    node.setAttribute('data-sec', sec.id);
+    const arrow = h('span', 'arrow', '▶');
+    const dot = h('span', 'dot');
+    dot.style.background = sectionColor(sec.id);
+    const label = h('span', null, sec.emoji + ' ' + sec.title);
+    const badge = h('span', 'badge', String(sec.questions.length));
+    node.appendChild(arrow); node.appendChild(dot); node.appendChild(label); node.appendChild(badge);
+    node.addEventListener('click', () => {
+      arrow.classList.toggle('open');
+      const kids = document.getElementById('children-' + sec.id);
+      if (kids) kids.classList.toggle('open');
+    });
+    elTree.appendChild(node);
+
+    const kids = h('div', 'tree-children');
+    kids.id = 'children-' + sec.id;
+    sec.questions.forEach(q => {
+      const leaf = h('div', 'tree-node tree-leaf');
+      leaf.setAttribute('data-qid', q.id);
+      const qn = h('span', null, 'Q' + (FLAT.length ? '' : '') + q.id.split('-q')[1]);
+      const st = h('span', 'st');
+      leaf.appendChild(h('span', 'arrow', '•'));
+      leaf.appendChild(qn); leaf.appendChild(st);
+      leaf.addEventListener('click', () => startAtSection(sec.id, q.id));
+      kids.appendChild(leaf);
+    });
+    elTree.appendChild(kids);
+  });
+}
+function sectionColor(id){
+  const pal = ['#4ecdc4','#ffb300','#9b59b6','#4f9de8','#ff6b6b','#2ecc71','#e67e22','#e84393'];
+  let x = 0; for (const ch of id) x = (x + ch.charCodeAt(0)) % pal.length;
+  return pal[x];
+}
+function updateTreeStatus(){
+  const answered = new Map(state.answers.map(a => [a.qid, a.status]));
+  document.querySelectorAll('#tree .tree-leaf').forEach(leaf => {
+    const st = leaf.querySelector('.st');
+    const qid = leaf.getAttribute('data-qid');
+    const s = answered.get(qid);
+    st.textContent = '';
+    st.className = 'st';
+    if (s === 'correct'){ st.textContent = '✓'; st.classList.add('good'); }
+    else if (s === 'wrong'){ st.textContent = '✗'; st.classList.add('bad'); }
+    else if (s === 'timeout'){ st.textContent = '⏰'; st.classList.add('slow'); }
+  });
+  // highlight active section node
+  document.querySelectorAll('#tree .tree-node[data-sec]').forEach(n => {
+    n.classList.toggle('active', state.scope === null || n.getAttribute('data-sec') === state.scope);
+  });
+}
+
+// ── Scope / nav ───────────────────────────────────────────────
+function shuffle(arr){
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--){ const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+  return a;
+}
+function startScope(scopeId){
+  state.scope = scopeId || null;
+  if (state.scope) {
+    state.list = FLAT.filter(f => f.sectionId === state.scope);
+  } else {
+    // group by section, shuffle sections, keep questions in source order within each
+    const bySec = [];
+    const secOrder = [];
+    FLAT.forEach(f => { if (!secOrder.includes(f.sectionId)) secOrder.push(f.sectionId); });
+    secOrder.forEach(sid => bySec.push(FLAT.filter(f => f.sectionId === sid)));
+    state.list = shuffle(bySec).flat();
+  }
+  state.iq = 0; state.answers = []; state.score = 0; state.runToken++;
+  updateScore();
+  if (state.list.length === 0){ renderIntro(); return; }
+  renderQuestion();
+}
+function startAtSection(secId, qid){
+  state.scope = secId;
+  state.list = FLAT.filter(f => f.sectionId === secId);
+  const idx = state.list.findIndex(f => f.q.id === qid);
+  state.iq = idx >= 0 ? idx : 0;
+  state.answers = []; state.score = 0; state.runToken++;
+  updateScore();
+  closeDrawer();
+  renderQuestion();
+}
+function currentQ(){
+  const f = state.list[state.iq];
+  return f ? f.q : null;
+}
+
+// ── Views ─────────────────────────────────────────────────────
+function renderIntro(){
+  state.mode = 'intro';
+  clear(elStage);
+  const card = h('div', 'card intro card-in');
+  const big = h('div', 'big-emoji', QUIZ.emoji || '🧠');
+  const title = h('h1', null, QUIZ.title || 'Energy');
+  const sub = h('div', 'sub', QUIZ.subtitle || 'Test yourself & learn with fun quiz!');
+  const meta = h('div', 'meta-chip', '🎯 ' + TOTAL + ' questions · ⭐ up to ' + (TOTAL * 10) + ' points · ⏱️ ' + cfg.secs + 's each');
+  const start = h('button', 'big-btn', '▶ Start Quiz');
+  start.addEventListener('click', () => { ensureAudio(); state.runToken++; startScope(null); });
+  card.appendChild(big); card.appendChild(title); card.appendChild(sub);
+  const row = h('div', 'ghost-row');
+  const samp = h('button', 'big-btn ghost', '🔊 Hear me');
+  samp.addEventListener('click', () => { ensureAudio(); speak('Hello friend! Let’s play and learn together!'); });
+  const imgAll = h('div', 'hint-line', 'Open a section in the left menu to play a single topic.');
+  row.appendChild(samp);
+  card.appendChild(meta); card.appendChild(start); card.appendChild(row); card.appendChild(imgAll);
+  elStage.appendChild(card);
+  updateProgress(0);
+}
+function speakQuestion(q, onEnd){
+  const all = 'Question ' + q.question + '. Options: ' +
+    q.options.map((o, i) => String.fromCharCode(65 + i) + '. ' + o).join('. ') + '.';
+  speak(all, onEnd);
+}
+function renderQuestion(){
+  state.mode = 'question';
+  const q = currentQ();
+  if (!q){ renderResults(); return; }
+  const token = ++state.runToken;
+  stopTimer();
+  clear(elStage);
+  const card = h('div', 'card card-in');
+  const head = h('div', 'q-head');
+  head.appendChild(h('div', 'q-progress', 'Question ' + (state.iq + 1) + ' of ' + state.list.length));
+  head.appendChild(timerMarkup());
+  card.appendChild(head);
+
+  // question text
+  card.appendChild(h('div', 'q-text', q.question));
+
+  // optional image
+  if (q.image){
+    const iw = h('div', 'qimg-wrap');
+    if (q.image.type === 'emoji'){
+      iw.appendChild(h('div', 'emoji-big', q.image.src));
+    } else {
+      const img = h('img', 'qimg');
+      img.setAttribute('src', q.image.src);
+      img.setAttribute('alt', q.image.alt || '');
+      iw.appendChild(img);
+    }
+    if (q.image.caption) iw.appendChild(h('div', 'caption', q.image.caption));
+    card.appendChild(iw);
+  }
+
+  // options
+  const opts = h('div', 'options');
+  q.options.forEach((text, i) => {
+    const b = h('button', 'opt');
+    b.setAttribute('data-idx', String(i));
+    b.appendChild(h('span', 'key', String.fromCharCode(65 + i)));
+    b.appendChild(h('span', null, text));
+    b.appendChild(h('span', 'mark'));
+    b.addEventListener('click', () => { ensureAudio(); if (state.mode === 'question') answer(i); });
+    opts.appendChild(b);
+  });
+  card.appendChild(opts);
+
+  // speak button
+  const foot = h('div', 'q-foot');
+  const spk = h('button', 'speak-btn', '🔊 Read aloud');
+  spk.addEventListener('click', () => { ensureAudio(); speakQuestion(q); });
+  foot.appendChild(spk);
+  card.appendChild(foot);
+  elStage.appendChild(card);
+
+  updateProgress(state.iq / state.list.length);
+  speakQuestion(q, () => { if (state.runToken === token && state.mode === 'question') startTimer(cfg.secs, token); });
+}
+function reveal(q, status, chosen){
+  state.mode = 'revealed';
+  stopTimer();
+  state.answers.push({ qid: q.id, chosen, status, pts: status === 'correct' ? 10 : 0 });
+  if (status === 'correct') state.score += 10;
+  updateScore();
+  updateTreeStatus();
+  burstConfetti(status === 'correct' ? 60 : 0);
+
+  const card = document.querySelector('#stage .card');
+  // banner
+  const banner = h('div', 'reveal-banner ' + (status === 'correct' ? 'good' : status === 'wrong' ? 'bad' : 'slow'));
+  const icon = status === 'correct' ? '✅' : status === 'wrong' ? '❌' : '⏰';
+  const msg = status === 'correct' ? 'Correct! Great job!' : status === 'wrong' ? 'Oops! Not quite.' : "Time's up!";
+  banner.appendChild(h('span', null, icon + ' ' + msg));
+  card.appendChild(banner);
+  // explanation
+  const exp = h('div', 'reveal-exp');
+  const b = h('b', null, '💡 '); b.textContent = '💡 ' + q.options[q.correctIndex];
+  exp.appendChild(b);
+  exp.appendChild(h('div', null, q.explanation));
+  card.appendChild(exp);
+  // highlight options
+  const buttons = card.querySelectorAll('.opt');
+  buttons.forEach((btn, i) => {
+    btn.disabled = true;
+    const mark = btn.querySelector('.mark');
+    if (i === q.correctIndex){ btn.classList.add('correct'); mark.textContent = '✓'; }
+    else if (i === chosen){ btn.classList.add('wrong-chosen'); mark.textContent = '✗'; }
+    else btn.classList.add('dim');
+  });
+  // next row
+  const row = h('div', 'next-row');
+  const pts = h('div', 'pts-gain ' + (status === 'correct' ? 'gain' : 'none'),
+                status === 'correct' ? '+10 points' : '+0 points');
+  const nb = h('button', 'next-btn', state.iq + 1 >= state.list.length ? 'See results 🏆' : 'Next ➡️');
+  nb.addEventListener('click', () => { state.iq++; if (state.iq >= state.list.length) renderResults(); else renderQuestion(); });
+  row.appendChild(pts); row.appendChild(nb);
+  const head = card.querySelector('.q-head');
+  if (head) head.appendChild(row); else card.appendChild(row);
+  // duplicate next-row at bottom for easy access
+  const row2 = h('div', 'next-row');
+  row2.appendChild(h('div', 'pts-gain ' + (status === 'correct' ? 'gain' : 'none'),
+                status === 'correct' ? '+10 points' : '+0 points'));
+  const nb2 = h('button', 'next-btn', state.iq + 1 >= state.list.length ? 'See results 🏆' : 'Next ➡️');
+  nb2.addEventListener('click', () => { state.iq++; if (state.iq >= state.list.length) renderResults(); else renderQuestion(); });
+  row2.appendChild(nb2);
+  card.appendChild(row2);
+}
+function answer(i){
+  const q = currentQ();
+  ensureAudio();
+  if (i === q.correctIndex) sCorrect(); else sWrong();
+  reveal(q, i === q.correctIndex ? 'correct' : 'wrong', i);
+}
+function onTimeout(token){
+  if (state.runToken !== token) return;   // stale
+  const q = currentQ();
+  ensureAudio(); sTimesUp();
+  reveal(q, 'timeout', -1);
+  speak(q.explanation);
+}
+function renderResults(){
+  state.mode = 'results';
+  stopTimer();
+  clear(elStage);
+  const card = h('div', 'card results card-in');
+  const count = state.list.length;
+  const maxPts = count * 10;
+  const words = pctWord(state.score / maxPts);
+  card.appendChild(h('div', 'big-emoji', words.emoji));
+  card.appendChild(h('h2', null, words.title));
+  card.appendChild(h('div', 'sub', 'You scored ' + state.score + ' of ' + maxPts + ' points'));
+
+  // score ring
+  const rw = h('div', 'ring-wrap');
+  const ns = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(ns, 'svg');
+  svg.setAttribute('viewBox', '0 0 120 120');
+  const bg = document.createElementNS(ns, 'circle');
+  bg.setAttribute('cx','60'); bg.setAttribute('cy','60'); bg.setAttribute('r','45'); bg.setAttribute('class','rbg');
+  const fg = document.createElementNS(ns, 'circle');
+  fg.setAttribute('cx','60'); fg.setAttribute('cy','60'); fg.setAttribute('r','45'); fg.setAttribute('class','rfg');
+  fg.id = 'ring-fg-r';
+  svg.appendChild(bg); svg.appendChild(fg);
+  rw.appendChild(svg);
+  const rs = h('div', 'rscore');
+  const n = h('div', 'n', String(state.score)); n.id = 'rscore-n'; n.className = 'n rscore-n';
+  rs.appendChild(n); rs.appendChild(h('div', 'pts', 'points'));
+  rw.appendChild(rs);
+  card.appendChild(rw);
+
+  const stars = h('div', 'stars', '⭐'.repeat(words.stars) + '☆'.repeat(5 - words.stars));
+  card.appendChild(stars);
+
+  // review
+  const review = h('div', 'review');
+  state.answers.forEach((a, i) => {
+    const f = state.list[i];
+    const row = h('div', 'review-row');
+    row.appendChild(h('div', 'qi', 'Q' + (i + 1)));
+    const body = h('div', 'qbody');
+    body.appendChild(h('div', 'qq', f.q.question));
+    const your = a.chosen >= 0 ? f.q.options[a.chosen] : 'No answer';
+    body.appendChild(h('div', 'aa', 'Your answer: ' + your));
+    body.appendChild(h('div', 'aa', '✅ ' + f.q.options[f.q.correctIndex]));
+    row.appendChild(body);
+    row.appendChild(h('div', 'pts ' + (a.pts ? 'gain' : 'none'), (a.pts ? '+' : '') + a.pts));
+    review.appendChild(row);
+  });
+  card.appendChild(review);
+
+  if (QUIZ.truncated){
+    card.appendChild(h('div', 'hint-line', 'Showing ' + QUIZ.truncated.shown + ' of ' + QUIZ.truncated.total + ' questions.'));
+  }
+
+  const row2 = h('div', 'ghost-row');
+  const again = h('button', 'big-btn ghost', '🔄 Play again');
+  again.addEventListener('click', () => { burstConfetti(0); startScope(state.scope); });
+  const menu = h('button', 'big-btn ghost', '🏠 Menu');
+  menu.addEventListener('click', () => renderIntro());
+  row2.appendChild(again); row2.appendChild(menu);
+  card.appendChild(row2);
+  elStage.appendChild(card);
+
+  // deferred: animate ring + settle score number + confetti
+  setTimeout(() => {
+    const C = 283;
+    const fgR = document.getElementById('ring-fg-r');
+    fgR.setAttribute('stroke-dashoffset', String(C * (1 - (state.score / maxPts))));
+    const num = document.getElementById('rscore-n');
+    if (num) num.textContent = String(state.score);   // settle immediately so chip & ring always agree
+    burstConfetti(140);
+    sPop();
+  }, 60);
+}
+function pctWord(p){
+  if (p >= 0.9)  return { emoji:'🏆', title:'Amazing!', stars:5 };
+  if (p >= 0.7)  return { emoji:'🌟', title:'Great job!', stars:4 };
+  if (p >= 0.5)  return { emoji:'😄', title:'Good try!', stars:3 };
+  if (p >= 0.3)  return { emoji:'🙂', title:'Keep going!', stars:2 };
+  return { emoji:'💪', title:'Practice makes better!', stars:1 };
+}
+function updateScore(){ elScore.textContent = '⭐ Score: ' + state.score; }
+function updateProgress(p){
+  if (elProg) elProg.style.width = Math.round(Math.max(0, Math.min(1, p)) * 100) + '%';
+  // track is shared for all-scope run; on intro show 0
+}
+
+// ── Mobile drawer ─────────────────────────────────────────────
+function closeDrawer(){
+  elSide.classList.remove('open'); overlay.classList.remove('open');
+}
+document.getElementById('hamburger').addEventListener('click', () => {
+  elSide.classList.toggle('open'); overlay.classList.toggle('open');
+});
+overlay.addEventListener('click', closeDrawer);
+document.getElementById('sidebar-home').addEventListener('click', () => { closeDrawer(); renderIntro(); });
+elMute.addEventListener('click', () => {
+  muted = !muted;
+  elMute.textContent = muted ? '🔇' : '🔊';
+  if (muted && 'speechSynthesis' in window) speechSynthesis.cancel();
+});
+
+// ── Boot ──────────────────────────────────────────────────────
+renderTree();
+renderIntro();
+})();
+</script>
+</body>
+</html>

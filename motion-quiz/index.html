@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Motion — Concise Physics 7 — Quiz</title>
+<style>
+  /* ══════════════ KID-FRIENDLY PALETTE (bright daylight) ══════════════ */
+  :root {
+    --bg: linear-gradient(160deg, #fff8e1 0%, #e0f7fa 60%, #dff4ff 100%);
+    --panel: #ffffff;
+    --ink: #2d3436;
+    --ink-soft: #6b7a85;
+    --coral: #ff6b6b;
+    --sunny: #ffd93d;
+    --teal: #4ecdc4;
+    --sky: #4f9de8;
+    --violet: #9b59b6;
+    --green: #2ecc71;
+    --amber: #ffb300;
+    --red: #ff6b6b;
+    --sidebar-w: 264px;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { height:100%; }
+  body {
+    background: var(--bg); color: var(--ink); overflow:hidden;
+    font-family: 'Comic Sans MS','Chalkboard SE','Marker Felt','Segoe UI','Trebuchet MS',sans-serif;
+    display:flex;
+  }
+
+  /* ── Sidebar tree ── */
+  .sidebar {
+    width: var(--sidebar-w); min-width: var(--sidebar-w); height:100vh;
+    background: rgba(255,255,255,0.82); border-right:1px solid rgba(0,0,0,0.08);
+    display:flex; flex-direction:column; z-index:20; overflow-y:auto;
+    backdrop-filter: blur(4px);
+    transition: transform .3s ease;
+  }
+  .sidebar-header {
+    padding:1.1rem 1rem .8rem; border-bottom:1px solid rgba(0,0,0,0.08);
+    font-size:1.05rem; font-weight:bold; cursor:pointer; display:flex; gap:.4rem; align-items:center;
+    flex-shrink:0;
+  }
+  .sidebar-header .ticker { color:var(--sky); }
+  .tree { flex:1; padding:.5rem 0; overflow-y:auto; }
+  .tree-node {
+    padding:.5rem .8rem .5rem 1rem; cursor:pointer; display:flex; align-items:center; gap:.45rem;
+    font-size:.86rem; transition: background .15s; border-left:3px solid transparent;
+    user-select:none; color:var(--ink);
+  }
+  .tree-node:hover { background:rgba(79,157,232,0.1); }
+  .tree-node.active { border-left-color: var(--amber); background:rgba(255,217,61,0.14); }
+  .tree-node .arrow { font-size:.65rem; width:12px; text-align:center; flex-shrink:0; transition:transform .2s; color:var(--ink-soft); }
+  .tree-node .arrow.open { transform:rotate(90deg); }
+  .tree-node .dot { width:11px; height:11px; border-radius:50%; flex-shrink:0; }
+  .tree-node .badge {
+    margin-left:auto; font-size:.68rem; background:rgba(78,205,196,0.2); color:var(--teal);
+    border-radius:999px; padding:.05rem .5rem; flex-shrink:0;
+  }
+  .tree-children { overflow:hidden; max-height:0; transition:max-height .3s ease; }
+  .tree-children.open { max-height:600px; }
+  .tree-children .tree-node { padding-left:2.2rem; font-size:.8rem; }
+  .tree-leaf .st {
+    margin-left:auto; font-size:.72rem; width:1.1rem; text-align:center; flex-shrink:0;
+  }
+  .st.good { color:var(--green); }
+  .st.bad { color:var(--red); }
+  .st.slow { color:var(--amber); }
+
+  /* ── Main column ── */
+  .main { flex:1; display:flex; flex-direction:column; position:relative; z-index:5; min-width:0; }
+  .topbar {
+    padding:.6rem 1.1rem; display:flex; align-items:center; gap:.8rem; flex-shrink:0;
+    background:rgba(255,255,255,0.6); border-bottom:1px solid rgba(0,0,0,0.08);
+  }
+  .topbar .app-title { font-size:1.05rem; font-weight:bold; display:flex; gap:.4rem; align-items:center; }
+  .topbar .spacer { flex:1; }
+  .score-chip {
+    background:#fff; border:2px solid var(--sunny); color:var(--ink); border-radius:999px;
+    padding:.3rem .9rem; font-size:.9rem; font-weight:bold; box-shadow:0 2px 8px rgba(0,0,0,0.08);
+  }
+  .mute-btn {
+    background:#fff; border:2px solid rgba(0,0,0,0.12); border-radius:999px; cursor:pointer;
+    font-size:1rem; padding:.25rem .6rem; font-family:inherit;
+  }
+  .mute-btn:hover { border-color:var(--sky); }
+  .progress-track {
+    height:8px; border-radius:99px; background:rgba(0,0,0,0.08); overflow:hidden; flex:1; max-width:260px;
+  }
+  .progress-fill { height:100%; width:0%; background:linear-gradient(90deg,var(--teal),var(--sky)); border-radius:99px; transition:width .4s ease; }
+
+  /* ── Stage / views ── */
+  .stage { flex:1; display:flex; justify-content:center; align-content:center; padding:1.4rem; overflow:auto; min-height:0; }
+  .card {
+    background:var(--panel); border-radius:22px; box-shadow:0 14px 44px rgba(45,52,54,0.16);
+    width:100%; max-width:720px; padding:1.8rem 2rem 2rem; position:relative;
+    border:1px solid rgba(0,0,0,0.05); margin:auto;
+  }
+
+  /* Intro */
+  .intro { text-align:center; }
+  .intro .big-emoji { font-size:4rem; animation: bob 3s ease-in-out infinite; display:inline-block; }
+  .intro h1 { font-size:2rem; margin:.4rem 0 .3rem; background:linear-gradient(135deg,var(--sky),var(--violet)); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
+  .intro .sub { color:var(--ink-soft); margin-bottom:1.2rem; }
+  .intro .meta-chip { color:var(--ink-soft); font-size:.9rem; margin-bottom:1.4rem; }
+  .big-btn {
+    font-family:inherit; font-size:1.15rem; font-weight:bold; color:#fff; cursor:pointer;
+    background:linear-gradient(135deg,var(--green),#27ae60); border:none; border-radius:999px;
+    padding:.85rem 2.2rem; box-shadow:0 6px 18px rgba(46,204,113,0.4); transition:transform .15s, box-shadow .15s;
+  }
+  .big-btn:hover { transform:translateY(-2px); }
+  .big-btn.ghost { background:#fff; color:var(--ink); box-shadow:0 2px 8px rgba(0,0,0,0.1); border:2px solid rgba(0,0,0,0.1); margin-left:.7rem; }
+  .ghost-row { margin-top:1.1rem; display:flex; justify-content:center; gap:.4rem; flex-wrap:wrap; }
+  .hint-line { font-size:.82rem; color:var(--ink-soft); margin-top:1rem; }
+
+  /* Question */
+  .q-head { display:flex; justify-content:space-between; align-items:center; gap:.6rem; flex-wrap:wrap; }
+  .q-progress { font-size:.82rem; color:var(--ink-soft); font-weight:bold; padding:.2rem 0; }
+  .timer-wrap { position:relative; width:74px; height:74px; flex-shrink:0; }
+  .timer-wrap svg { width:74px; height:74px; transform:rotate(-90deg); }
+  .timer-wrap .circle-bg { fill:none; stroke:rgba(0,0,0,0.08); stroke-width:7; }
+  .timer-wrap .circle-fg { fill:none; stroke:var(--sky); stroke-width:7; stroke-linecap:round; }
+  .timer-wrap .t-count {
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    font-size:1.5rem; font-weight:bold; color:var(--ink);
+  }
+  .timer-wrap.low .circle-fg { stroke:var(--red); }
+  .timer-wrap.low .t-count { color:var(--red); }
+  .q-text { font-size:1.35rem; line-height:1.45; margin:.7rem 0 1rem; font-weight:bold; }
+  .qimg-wrap { text-align:center; margin:.2rem 0 1rem; }
+  .qimg-wrap img.qimg {
+    max-width:100%; max-height:240px; border-radius:14px; object-fit:contain;
+    border:1px solid rgba(0,0,0,0.08);
+  }
+  .qimg-wrap .emoji-big { font-size:4.2rem; animation: pop 0.5s ease; }
+  .qimg-wrap .caption { font-size:.78rem; color:var(--ink-soft); margin-top:.35rem; }
+
+  .options { display:flex; flex-direction:column; gap:.7rem; }
+  .opt {
+    display:flex; align-items:center; gap:.8rem; width:100%; text-align:left;
+    font-family:inherit; font-size:1.02rem; color:var(--ink); cursor:pointer;
+    background:#f7fbfc; border:2px solid rgba(0,0,0,0.08); border-radius:14px;
+    padding:.72rem 1rem; min-height:48px; transition:border-color .15s, background .15s, transform .1s;
+    position:relative; overflow:hidden;
+  }
+  .opt:hover { border-color:var(--sky); background:#eef6ff; transform:translateY(-1px); }
+  .opt .key {
+    width:30px; height:30px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center;
+    background:#fff; border:2px solid rgba(0,0,0,0.14); font-size:.9rem; font-weight:bold; color:var(--ink-soft);
+  }
+  .opt.correct { border-color:var(--green); background:#eafaf1; }
+  .opt.correct .key { border-color:var(--green); color:var(--green); background:#d5f5e3; }
+  .opt.wrong-chosen { border-color:var(--red); background:#fdecea; }
+  .opt.wrong-chosen .key { border-color:var(--red); color:var(--red); background:#fadbd8; }
+  .opt.dim { opacity:.55; }
+  .opt .mark { margin-left:auto; font-size:1.1rem; }
+
+  /* Reveal banner */
+  .reveal-banner {
+    margin-top:1rem; border-radius:14px; padding:.8rem 1rem; font-size:1.02rem; font-weight:bold;
+    display:flex; gap:.6rem; align-items:center; animation: slideUp .35s ease both;
+  }
+  .reveal-banner.good { background:#eafaf1; color:#1e8449; }
+  .reveal-banner.bad { background:#fdecea; color:#c0392b; }
+  .reveal-banner.slow { background:#fef5e7; color:#b9770e; }
+  .reveal-exp { margin-top:.6rem; background:#f4f8fa; border-radius:12px; padding:.8rem 1rem; font-size:.95rem; color:var(--ink-soft); line-height:1.5; }
+  .reveal-exp b { color:var(--ink); }
+  .next-row { display:flex; align-items:center; justify-content:space-between; gap:.6rem; }
+  .pts-gain { font-weight:bold; font-size:1rem; }
+  .pts-gain.gain { color:var(--green); }
+  .pts-gain.none { color:var(--ink-soft); }
+  .next-btn {
+    font-family:inherit; font-size:1.02rem; font-weight:bold; cursor:pointer; color:#fff;
+    background:linear-gradient(135deg,var(--sky),#2e86de); border:none; border-radius:999px;
+    padding:.7rem 1.7rem; box-shadow:0 4px 14px rgba(79,157,232,0.4); transition:transform .15s;
+  }
+  .next-btn:hover { transform:translateY(-2px); }
+
+  .q-foot { display:flex; justify-content:center; margin-top:1rem; }
+  .speak-btn {
+    font-family:inherit; font-size:.9rem; color:var(--ink-soft); cursor:pointer; background:none;
+    border:1px solid rgba(0,0,0,0.1); border-radius:999px; padding:.35rem 1rem;
+  }
+  .speak-btn:hover { border-color:var(--sky); color:var(--sky); }
+
+  /* Results */
+  .results { text-align:center; }
+  .results h2 { font-size:1.7rem; margin-bottom:.3rem; }
+  .results .sub { color:var(--ink-soft); margin-bottom:1rem; }
+  .ring-wrap { width:150px; height:150px; margin:0 auto .6rem; position:relative; }
+  .ring-wrap svg { width:150px; height:150px; transform:rotate(-90deg); }
+  .ring-wrap .rbg { fill:none; stroke:rgba(0,0,0,0.08); stroke-width:12; }
+  .ring-wrap .rfg { fill:none; stroke:url(#gradA); stroke-width:12; stroke-linecap:round;
+    stroke-dasharray:283; stroke-dashoffset:283; transition:stroke-dashoffset 1s ease; }
+  .ring-wrap .rscore {
+    position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
+  }
+  .ring-wrap .rscore .n { font-size:2rem; font-weight:bold; }
+  .ring-wrap .rscore .pts { font-size:.8rem; color:var(--ink-soft); }
+  .stars { font-size:1.9rem; letter-spacing:.15rem; margin:.2rem 0 .9rem; }
+  .review { text-align:left; margin:1rem 0; }
+  .review-row { display:flex; gap:.7rem; padding:.6rem .4rem; border-bottom:1px solid rgba(0,0,0,0.06); font-size:.86rem; align-items:flex-start; }
+  .review-row .qi { font-weight:bold; color:var(--ink-soft); min-width:1.6rem; }
+  .review-row .qbody { flex:1; }
+  .review-row .qbody .qq { font-weight:bold; margin-bottom:.15rem; }
+  .review-row .qbody .aa { color:var(--ink-soft); }
+  .review-row .pts { font-weight:bold; flex-shrink:0; }
+  .review-row .pts.gain { color:var(--green); }
+  .review-row .pts.none { color:var(--ink-soft); }
+
+  /* Confetti */
+  #confetti { position:fixed; inset:0; pointer-events:none; z-index:200; overflow:hidden; }
+  .confetti {
+    position:absolute; top:-3vh; width:12px; height:12px; border-radius:2px;
+    animation: confetti-fall linear forwards;
+  }
+
+  /* Hamburger / overlay (mobile) */
+  .hamburger { display:none; position:fixed; top:.7rem; left:.7rem; z-index:40;
+    background:#fff; border:1px solid rgba(0,0,0,0.15); border-radius:10px;
+    padding:.35rem .65rem; font-size:1.25rem; cursor:pointer; font-family:inherit; }
+  .overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:19; }
+  .overlay.open { display:block; }
+
+  /* Keyframes */
+  @keyframes bob { 0%,100%{ transform:translateY(0);} 50%{ transform:translateY(-8px);} }
+  @keyframes pop { 0%{ transform:scale(0.4); opacity:0;} 100%{ transform:scale(1); opacity:1;} }
+  @keyframes slideUp { from{ opacity:0; transform:translateY(14px);} to{ opacity:1; transform:translateY(0);} }
+  @keyframes cardIn { from{ opacity:0; transform:translateY(20px) scale(0.97);} to{ opacity:1; transform:none;} }
+  @keyframes confetti-fall { to { transform:translateY(108vh) rotate(var(--rx,180deg)); opacity:.9; } }
+  .card-in { animation:cardIn .35s ease both; }
+
+  @media (max-width:768px) {
+    .sidebar { position:fixed; left:0; top:0; bottom:0; transform:translateX(-100%); z-index:100; box-shadow:0 0 40px rgba(0,0,0,0.2); }
+    .sidebar.open { transform:translateX(0); }
+    .hamburger { display:block; }
+    .card { padding:1.4rem 1.2rem 1.6rem; }
+    .q-text { font-size:1.15rem; }
+  }
+</style>
+</head>
+<body>
+
+<div id="confetti"></div>
+
+<button class="hamburger" id="hamburger">☰</button>
+<div class="overlay" id="overlay"></div>
+
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header" id="sidebar-home"><span class="ticker">🧠</span> <span id="side-title">Motion — Concise Physics 7</span></div>
+  <div class="tree" id="tree"></div>
+</aside>
+
+<main class="main">
+  <div class="topbar">
+    <span class="app-title"><span>🧠</span><span id="top-title" title="Motion — Concise Physics 7">Motion — Concise Physics 7</span></span>
+    <span class="spacer"></span>
+    <div class="progress-track" title="Progress"><div class="progress-fill" id="progress-fill"></div></div>
+    <span class="score-chip" id="score-chip">⭐ Score: 0</span>
+    <button class="mute-btn" id="mute-btn" title="Toggle read-aloud (TTS)">🔊</button>
+  </div>
+  <div class="stage" id="stage"></div>
+</main>
+
+<script type="application/json" id="quiz-data">{"title":"Motion — Concise Physics 7","subtitle":"Test yourself on rest, motion, speed and more!","emoji":"🚀","sections":[{"id":"rest-and-motion","title":"Rest and Motion","emoji":"📖","questions":[{"id":"motion-ocr-pdf-q1","section":"Rest and Motion","question":"A book lying on a table is an example of:","options":["a body at rest","a body in motion","a body neither at rest nor in motion","none of these"],"correctIndex":0,"explanation":"A book that is not disturbed keeps its position, so it stays at rest.","suggestImage":false},{"id":"motion-ocr-pdf-q9","section":"Rest and Motion","question":"A body is said to be at rest when it:","options":["does not change its position with respect to its surroundings","changes its position with time","moves in a circle","falls towards the ground"],"correctIndex":0,"explanation":"A body that keeps its position compared with its surroundings is at rest.","suggestImage":false},{"id":"motion-ocr-pdf-q10","section":"Rest and Motion","question":"A body is said to be in motion when it:","options":["changes its position with respect to its surroundings with time","stays in the same position all the time","has no speed at all","is always pulled downwards"],"correctIndex":0,"explanation":"A moving body keeps changing its position compared with its surroundings.","suggestImage":false}]},{"id":"types-of-motion","title":"Types of Motion","emoji":"🌀","questions":[{"id":"motion-ocr-pdf-q2","section":"Types of Motion","question":"The motion of the pendulum of a wall clock is an example of:","options":["circular motion","oscillatory motion","curvilinear motion","rectilinear motion"],"correctIndex":1,"explanation":"A pendulum swings to and fro, which is oscillatory motion.","suggestImage":true,"imageNote":"A wall clock with a pendulum swinging to and fro around its rest position.","image":{"type":"svg","src":"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0MDAgMzAwIj48cmVjdCB4PSI2IiB5PSI2IiB3aWR0aD0iMzg4IiBoZWlnaHQ9IjI4OCIgcng9IjI2IiBmaWxsPSIjZmZmOGUxIi8+PHJlY3QgeD0iMTUwIiB5PSIxOCIgd2lkdGg9IjEwMCIgaGVpZ2h0PSIzNCIgcng9IjEwIiBmaWxsPSIjNGVjZGM0IiBzdHJva2U9IiMyZDM0MzYiIHN0cm9rZS13aWR0aD0iNCIvPjxyZWN0IHg9IjE3MiIgeT0iMzQiIHdpZHRoPSI1NiIgaGVpZ2h0PSIxNiIgcng9IjgiIGZpbGw9IiNmZmU5YTgiIHN0cm9rZT0iIzJkMzQzNiIgc3Ryb2tlLXdpZHRoPSIzIi8+PGNpcmNsZSBjeD0iMjAwIiBjeT0iMTA1IiByPSI2MyIgZmlsbD0iI2ZmZmZmZiIgc3Ryb2tlPSIjMmQzNDM2IiBzdHJva2Utd2lkdGg9IjUiLz48Y2lyY2xlIGN4PSIyMDAiIGN5PSIxMDUiIHI9IjU0IiBmaWxsPSJub25lIiBzdHJva2U9IiNmZmU5YTgiIHN0cm9rZS13aWR0aD0iMyIvPjx0ZXh0IHg9IjIwMCIgeT0iNTYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtZmFtaWx5PSJDb21pYyBTYW5zIE1TLCBjdXJzaXZlIiBmb250LXNpemU9IjIyIiBmb250LXdlaWdodD0iYm9sZCIgZmlsbD0iIzJkMzQzNiI+MTI8L3RleHQ+PHRleHQgeD0iMjQ0IiB5PSIxMTIiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtZmFtaWx5PSJDb21pYyBTYW5zIE1TLCBjdXJzaXZlIiBmb250LXNpemU9IjIyIiBmb250LXdlaWdodD0iYm9sZCIgZmlsbD0iIzJkMzQzNiI+MzwvdGV4dD48dGV4dCB4PSIyMDAiIHk9IjE3MiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9IkNvbWljIFNhbnMgTVMsIGN1cnNpdmUiIGZvbnQtc2l6ZT0iMjIiIGZvbnQtd2VpZ2h0PSJib2xkIiBmaWxsPSIjMmQzNDM2Ij42PC90ZXh0Pjx0ZXh0IHg9IjE1NiIgeT0iMTEyIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0iQ29taWMgU2FucyBNUywgY3Vyc2l2ZSIgZm9udC1zaXplPSIyMiIgZm9udC13ZWlnaHQ9ImJvbGQiIGZpbGw9IiMyZDM0MzYiPjk8L3RleHQ+PGxpbmUgeDE9IjIwMCIgeTE9IjEwNSIgeDI9IjE3NiIgeTI9IjEzNiIgc3Ryb2tlPSIjMmQzNDM2IiBzdHJva2Utd2lkdGg9IjYiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPjxsaW5lIHgxPSIyMDAiIHkxPSIxMDUiIHgyPSIyMTMiIHkyPSI3MyIgc3Ryb2tlPSIjMmQzNDM2IiBzdHJva2Utd2lkdGg9IjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPjxjaXJjbGUgY3g9IjIwMCIgY3k9IjEwNSIgcj0iNSIgZmlsbD0iI2ZmNmI2YiIvPjxsaW5lIHgxPSIyMDAiIHkxPSIxNjgiIHgyPSIxNjMiIHkyPSIyMjQiIHN0cm9rZT0iIzJkMzQzNiIgc3Ryb2tlLXdpZHRoPSI1IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48cGF0aCBkPSJNMjAwIDI0MCBBIDQ1IDQ1IDAgMCAxIDE1MyAyNDAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzRmOWRlOCIgc3Ryb2tlLXdpZHRoPSI0IiBzdHJva2UtZGFzaGFycmF5PSI4IDgiLz48Y2lyY2xlIGN4PSIxNTMiIGN5PSIyNDAiIHI9IjE3IiBmaWxsPSIjZmY2YjZiIiBzdHJva2U9IiMyZDM0MzYiIHN0cm9rZS13aWR0aD0iNCIvPjwvc3ZnPg==","alt":"A wall clock with a pendulum swinging to and fro around its rest position."}},{"id":"motion-ocr-pdf-q3","section":"Types of Motion","question":"A car moving on a straight road is an example of:","options":["rotatory motion","rectilinear motion","oscillatory motion","periodic motion"],"correctIndex":1,"explanation":"A car on a straight road moves in a straight line, called rectilinear motion.","suggestImage":true,"imageNote":"A car moving along a straight road with an arrow showing its straight path.","image":{"type":"svg","src":"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0MDAgMzAwIj48cmVjdCB4PSI2IiB5PSI2IiB3aWR0aD0iMzg4IiBoZWlnaHQ9IjI4OCIgcng9IjI2IiBmaWxsPSIjZTBmN2ZhIi8+PGNpcmNsZSBjeD0iNzAiIGN5PSI1OCIgcj0iMjQiIGZpbGw9IiNmZmQ5M2QiIHN0cm9rZT0iI2Y1YjMwMSIgc3Ryb2tlLXdpZHRoPSIzIi8+PHBhdGggZD0iTTE1MCA2NiBMIDMwMCA2NiIgc3Ryb2tlPSIjZmZiMzAwIiBzdHJva2Utd2lkdGg9IjkiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPjxwb2x5Z29uIHBvaW50cz0iMzAwLDUzIDMyMiw2NiAzMDAsNzkiIGZpbGw9IiNmZmIzMDAiLz48cG9seWdvbiBwb2ludHM9IjE1MCw1MyAxMjgsNjYgMTUwLDc5IiBmaWxsPSIjZmZiMzAwIi8+PHJlY3QgeD0iMTAiIHk9IjIwNSIgd2lkdGg9IjM4MCIgaGVpZ2h0PSI1MCIgcng9IjEyIiBmaWxsPSIjOTVhNWE2IiBzdHJva2U9IiM3ZjhjOGQiIHN0cm9rZS13aWR0aD0iNCIvPjxsaW5lIHgxPSIyMCIgeTE9IjIzMCIgeDI9IjM4MCIgeTI9IjIzMCIgc3Ryb2tlPSIjZmZmZmZmIiBzdHJva2Utd2lkdGg9IjQiIHN0cm9rZS1kYXNoYXJyYXk9IjE4IDEyIi8+PHJlY3QgeD0iOTAiIHk9IjE1MCIgd2lkdGg9IjE1MCIgaGVpZ2h0PSI1MiIgcng9IjE4IiBmaWxsPSIjNGY5ZGU4IiBzdHJva2U9IiMyZDM0MzYiIHN0cm9rZS13aWR0aD0iNSIvPjxyZWN0IHg9IjEyMiIgeT0iMTIwIiB3aWR0aD0iNzYiIGhlaWdodD0iNDQiIHJ4PSIxNCIgZmlsbD0iI2UwZjdmYSIgc3Ryb2tlPSIjMmQzNDM2IiBzdHJva2Utd2lkdGg9IjUiLz48bGluZSB4MT0iMTYwIiB5MT0iMTIwIiB4Mj0iMTYwIiB5Mj0iMTY0IiBzdHJva2U9IiMyZDM0MzYiIHN0cm9rZS13aWR0aD0iNSIvPjxjaXJjbGUgY3g9IjEyOCIgY3k9IjIxMiIgcj0iMTkiIGZpbGw9IiMyZDM0MzYiLz48Y2lyY2xlIGN4PSIxMjgiIGN5PSIyMTIiIHI9IjgiIGZpbGw9IiNlY2YwZjEiLz48Y2lyY2xlIGN4PSIyMDUiIGN5PSIyMTIiIHI9IjE5IiBmaWxsPSIjMmQzNDM2Ii8+PGNpcmNsZSBjeD0iMjA1IiBjeT0iMjEyIiByPSI4IiBmaWxsPSIjZWNmMGYxIi8+PGNpcmNsZSBjeD0iMzYwIiBjeT0iMTE4IiByPSI4IiBmaWxsPSIjZmY5ZDJlIi8+PGNpcmNsZSBjeD0iMzM4IiBjeT0iODgiIHI9IjUiIGZpbGw9IiNmZjlkMmUiLz48L3N2Zz4=","alt":"A car moving along a straight road with an arrow showing its straight path."}},{"id":"motion-ocr-pdf-q4","section":"Types of Motion","question":"A ball falling down vertically is in:","options":["periodic motion","translatory motion","circular motion","vibratory motion"],"correctIndex":1,"explanation":"A falling ball moves straight down, so its motion is translatory.","suggestImage":false},{"id":"motion-ocr-pdf-q7","section":"Types of Motion","question":"A cyclist taking a turn on a road is an example of:","options":["rectilinear motion","translatory motion","curvilinear motion","circular motion"],"correctIndex":2,"explanation":"Turning on a curved road is motion along a curved path, called curvilinear motion.","suggestImage":true,"imageNote":"A cyclist leaning while taking a turn on a curved road.","image":{"type":"svg","src":"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0MDAgMzAwIj48cmVjdCB4PSI2IiB5PSI2IiB3aWR0aD0iMzg4IiBoZWlnaHQ9IjI4OCIgcng9IjI2IiBmaWxsPSIjZThmN2VlIi8+PHBhdGggZD0iTTIwIDI1MCBRIDE3MCAyNjIgMjQwIDE5MCBUIDM4NSAxNjAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzk1YTVhNiIgc3Ryb2tlLXdpZHRoPSI1OCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+PHBhdGggZD0iTTIwIDI1MCBRIDE3MCAyNjIgMjQwIDE5MCBUIDM4NSAxNjAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2ZmZmZmZiIgc3Ryb2tlLXdpZHRoPSI0IiBzdHJva2UtZGFzaGFycmF5PSIxNCAxMiIvPjxwYXRoIGQ9Ik01NSAyNTggUSAxODAgMjQ1IDI1MCAxODgiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2ZmYjMwMCIgc3Ryb2tlLXdpZHRoPSI5IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48cG9seWdvbiBwb2ludHM9IjI1MCwxNzIgMjcwLDE5MCAyNDQsMTk5IiBmaWxsPSIjZmZiMzAwIi8+PGNpcmNsZSBjeD0iMjA1IiBjeT0iMTc2IiByPSIxNiIgZmlsbD0iI2Y4YzI5MSIgc3Ryb2tlPSIjMmQzNDM2IiBzdHJva2Utd2lkdGg9IjQiLz48cGF0aCBkPSJNMjA1IDE5MiBMIDIwMCAyMTQiIHN0cm9rZT0iIzJkMzQzNiIgc3Ryb2tlLXdpZHRoPSI2IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48cGF0aCBkPSJNMjA1IDE5MiBMIDIxOSAyMDAiIHN0cm9rZT0iIzJkMzQzNiIgc3Ryb2tlLXdpZHRoPSI2IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48bGluZSB4MT0iMTgzIiB5MT0iMjMzIiB4Mj0iMjI2IiB5Mj0iMjE2IiBzdHJva2U9IiM0ZWNkYzQiIHN0cm9rZS13aWR0aD0iNyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+PGxpbmUgeDE9IjE4MyIgeTE9IjIzMyIgeDI9IjE4MyIgeTI9IjIyMCIgc3Ryb2tlPSIjNGVjZGM0IiBzdHJva2Utd2lkdGg9IjciLz48bGluZSB4MT0iMjI2IiB5MT0iMjE2IiB4Mj0iMjI2IiB5Mj0iMjI4IiBzdHJva2U9IiM0ZWNkYzQiIHN0cm9rZS13aWR0aD0iNyIvPjxjaXJjbGUgY3g9IjE4MyIgY3k9IjIzMyIgcj0iMTciIGZpbGw9IiMyZDM0MzYiLz48Y2lyY2xlIGN4PSIxODMiIGN5PSIyMzMiIHI9IjciIGZpbGw9IiNlY2YwZjEiLz48Y2lyY2xlIGN4PSIyMjYiIGN5PSIyMjYiIHI9IjE3IiBmaWxsPSIjMmQzNDM2Ii8+PGNpcmNsZSBjeD0iMjI2IiBjeT0iMjI2IiByPSI3IiBmaWxsPSIjZWNmMGYxIi8+PC9zdmc+","alt":"A cyclist leaning while taking a turn on a curved road."}},{"id":"motion-ocr-pdf-q8","section":"Types of Motion","question":"In which motion does the distance of a point of the body stay the same from a fixed point?","options":["vibratory motion","rectilinear motion","curvilinear motion","circular motion"],"correctIndex":3,"explanation":"In circular motion, a body keeps the same distance from the centre.","suggestImage":true,"imageNote":"A stone whirled on a string showing it travels in a circle around a fixed centre.","image":{"type":"svg","src":"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0MDAgMzAwIj48cmVjdCB4PSI2IiB5PSI2IiB3aWR0aD0iMzg4IiBoZWlnaHQ9IjI4OCIgcng9IjI2IiBmaWxsPSIjZmZmM2UwIi8+PGNpcmNsZSBjeD0iMjAwIiBjeT0iMTUwIiByPSI5OCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjNGY5ZGU4IiBzdHJva2Utd2lkdGg9IjUiIHN0cm9rZS1kYXNoYXJyYXk9IjEwIDEwIi8+PHBvbHlnb24gcG9pbnRzPSIyODUsOTIgMjc0LDExMiAyOTYsMTEyIiBmaWxsPSIjZmY2YjZiIi8+PHJlY3QgeD0iMTkwIiB5PSIxNDAiIHdpZHRoPSIyMCIgaGVpZ2h0PSIyNiIgcng9IjciIGZpbGw9IiM5YjU5YjYiIHN0cm9rZT0iIzJkMzQzNiIgc3Ryb2tlLXdpZHRoPSI0Ii8+PGNpcmNsZSBjeD0iMjAwIiBjeT0iMTMyIiByPSIxMSIgZmlsbD0iI2Y4YzI5MSIgc3Ryb2tlPSIjMmQzNDM2IiBzdHJva2Utd2lkdGg9IjQiLz48bGluZSB4MT0iMjAwIiB5MT0iMTUwIiB4Mj0iMjQxIiB5Mj0iMjM4IiBzdHJva2U9IiM5YjU5YjYiIHN0cm9rZS13aWR0aD0iNSIvPjxjaXJjbGUgY3g9IjI0MSIgY3k9IjIzOSIgcj0iMTUiIGZpbGw9IiNmZjZiNmIiIHN0cm9rZT0iIzJkMzQzNiIgc3Ryb2tlLXdpZHRoPSI0Ii8+PHBhdGggZD0iTTIzMyAyMzAgcSA2IC02IDE0IC0yIiBzdHJva2U9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iNCIgZmlsbD0ibm9uZSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+PHBhdGggZD0iTTIwMCAyNDggQSA5OCA5OCAwIDAgMCAyOTggMTUwIiBmaWxsPSJub25lIiBzdHJva2U9IiNmZmQ5M2QiIHN0cm9rZS13aWR0aD0iNiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBvcGFjaXR5PSIwLjc1Ii8+PC9zdmc+","alt":"A stone whirled on a string showing it travels in a circle around a fixed centre."}},{"id":"motion-ocr-pdf-q12","section":"Types of Motion","question":"The motion of a spinning top and a ceiling fan about a fixed axis is called:","options":["rotatory motion","rectilinear motion","random motion","translatory motion"],"correctIndex":0,"explanation":"Bodies spinning about a fixed axis show rotatory motion.","suggestImage":true,"imageNote":"A spinning top and a ceiling fan rotating about a fixed axis.","image":{"type":"svg","src":"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0MDAgMzAwIj48cmVjdCB4PSI2IiB5PSI2IiB3aWR0aD0iMzg4IiBoZWlnaHQ9IjI4OCIgcng9IjI2IiBmaWxsPSIjZjNlOGZmIi8+PHJlY3QgeD0iMTg2IiB5PSIxOCIgd2lkdGg9IjI4IiBoZWlnaHQ9IjIyIiByeD0iNiIgZmlsbD0iIzliNTliNiIgc3Ryb2tlPSIjMmQzNDM2IiBzdHJva2Utd2lkdGg9IjQiLz48bGluZSB4MT0iMjAwIiB5MT0iNDAiIHgyPSIyMDAiIHkyPSI1OCIgc3Ryb2tlPSIjMmQzNDM2IiBzdHJva2Utd2lkdGg9IjUiLz48Y2lyY2xlIGN4PSIyMDAiIGN5PSI3MiIgcj0iMTUiIGZpbGw9IiNmZmQ5M2QiIHN0cm9rZT0iIzJkMzQzNiIgc3Ryb2tlLXdpZHRoPSI0Ii8+PGcgc3Ryb2tlPSIjMmQzNDM2IiBzdHJva2Utd2lkdGg9IjE4IiBzdHJva2UtbGluZWNhcD0icm91bmQiIGZpbGw9Im5vbmUiPjxsaW5lIHgxPSIyMjIiIHkxPSI2MiIgeDI9IjI4NiIgeTI9IjM4Ii8+PGxpbmUgeDE9IjIxOCIgeTE9Ijg0IiB4Mj0iMjc2IiB5Mj0iMTEyIi8+PGxpbmUgeDE9IjE5NiIgeTE9IjU4IiB4Mj0iMTc2IiB5Mj0iMTEwIi8+PC9nPjxnIHN0cm9rZT0iIzRlY2RjNCIgc3Ryb2tlLXdpZHRoPSIxMSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBmaWxsPSJub25lIj48bGluZSB4MT0iMjIyIiB5MT0iNjIiIHgyPSIyODYiIHkyPSIzOCIvPjxsaW5lIHgxPSIyMTgiIHkxPSI4NCIgeDI9IjI3NiIgeTI9IjExMiIvPjxsaW5lIHgxPSIxOTYiIHkxPSI1OCIgeDI9IjE3NiIgeTI9IjExMCIvPjwvZz48cGF0aCBkPSJNMjkyIDMyIHEgMTAgLTggMTggMSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZmY5ZDJlIiBzdHJva2Utd2lkdGg9IjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPjxyZWN0IHg9IjExMCIgeT0iMjQyIiB3aWR0aD0iMTgwIiBoZWlnaHQ9IjEyIiByeD0iNiIgZmlsbD0iI2JkYzNjNyIgc3Ryb2tlPSIjMmQzNDM2IiBzdHJva2Utd2lkdGg9IjMiLz48cGF0aCBkPSJNMjAwIDE0NSBMIDI0NiAyMzIgTCAxNTQgMjMyIFoiIGZpbGw9IiNmZjZiNmIiIHN0cm9rZT0iIzJkMzQzNiIgc3Ryb2tlLXdpZHRoPSI1IiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PHBhdGggZD0iTTE2OSAyMDIgTCAyMzEgMjAyIiBzdHJva2U9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iNSIgb3BhY2l0eT0iMC43Ii8+PHBhdGggZD0iTTE4MiAyMTcgTCAyMTggMjE3IiBzdHJva2U9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iNSIgb3BhY2l0eT0iMC43Ii8+PGNpcmNsZSBjeD0iMjAwIiBjeT0iMjM4IiByPSI2IiBmaWxsPSIjMmQzNDM2Ii8+PGxpbmUgeDE9IjIwMCIgeTE9IjE1MCIgeDI9IjIwMCIgeTI9IjE2NCIgc3Ryb2tlPSIjMmQzNDM2IiBzdHJva2Utd2lkdGg9IjQiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPjxwYXRoIGQ9Ik0xMjggMTk2IHEgMTIgLTE4IDMwIC0xNiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZmY5ZDJlIiBzdHJva2Utd2lkdGg9IjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPjxwYXRoIGQ9Ik0yNzIgMTk2IHEgLTEyIC0xOCAtMzAgLTE2IiBmaWxsPSJub25lIiBzdHJva2U9IiNmZjlkMmUiIHN0cm9rZS13aWR0aD0iNSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+PC9zdmc+","alt":"A spinning top and a ceiling fan rotating about a fixed axis."}},{"id":"motion-ocr-pdf-q13","section":"Types of Motion","question":"When a sitar string is plucked, it moves to and fro while its ends stay fixed. This is:","options":["vibratory motion","circular motion","rotatory motion","uniform motion"],"correctIndex":0,"explanation":"A part of the body moves to and fro while the ends stay fixed — vibratory motion.","suggestImage":false},{"id":"motion-ocr-pdf-q15","section":"Types of Motion","question":"Which of these is an example of non-periodic motion?","options":["a footballer running on a field","the motion of the hands of a clock","the pendulum of a wall clock","the needle of a sewing machine"],"correctIndex":0,"explanation":"A footballer's running does not repeat at a regular interval of time.","suggestImage":false},{"id":"motion-ocr-pdf-q16","section":"Types of Motion","question":"The molecules of a gas or liquid move in a zig-zag, irregular path. This motion is called:","options":["random or zig-zag motion","periodic motion","uniform motion","circular motion"],"correctIndex":0,"explanation":"Irregular zig-zag movement with no fixed path is called random motion.","suggestImage":true,"imageNote":"A zig-zag path showing the random, irregular motion of gas molecules.","image":{"type":"svg","src":"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0MDAgMzAwIj48cmVjdCB4PSI2IiB5PSI2IiB3aWR0aD0iMzg4IiBoZWlnaHQ9IjI4OCIgcng9IjI2IiBmaWxsPSIjZTBmN2ZhIi8+PHBhdGggZD0iTTYwIDgwIEwgOTUgNTUgTCAxMjggODggTCAxNjMgNjIgTCAxOTggOTYgTCAyMzMgNzAgTCAyNjggOTgiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2ZmNmI2YiIgc3Ryb2tlLXdpZHRoPSI1IiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48Y2lyY2xlIGN4PSIyODYiIGN5PSIxMDgiIHI9IjE4IiBmaWxsPSIjZmY2YjZiIiBzdHJva2U9IiMyZDM0MzYiIHN0cm9rZS13aWR0aD0iNCIvPjxjaXJjbGUgY3g9IjI4MCIgY3k9IjEwMiIgcj0iNSIgZmlsbD0iI2ZmZmZmZiIvPjxwYXRoIGQ9Ik0zMzAgNjAgTCAzMDAgOTUgTCAzMjAgMTMwIEwgMjg1IDE2MCBMIDMwMCAxOTUiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzRmOWRlOCIgc3Ryb2tlLXdpZHRoPSI1IiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48Y2lyY2xlIGN4PSIyOTYiIGN5PSIyMTQiIHI9IjE4IiBmaWxsPSIjNGY5ZGU4IiBzdHJva2U9IiMyZDM0MzYiIHN0cm9rZS13aWR0aD0iNCIvPjxjaXJjbGUgY3g9IjI5MCIgY3k9IjIwOCIgcj0iNSIgZmlsbD0iI2ZmZmZmZiIvPjxwYXRoIGQ9Ik04MCAyMjAgTCAxMjAgMjUwIEwgMTYwIDIzNSBMIDIwMCAyNjUgTCAyNDAgMjQ4IiBmaWxsPSJub25lIiBzdHJva2U9IiMyZWNjNzEiIHN0cm9rZS13aWR0aD0iNSIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+PGNpcmNsZSBjeD0iMjU4IiBjeT0iMjQwIiByPSIxOCIgZmlsbD0iIzJlY2M3MSIgc3Ryb2tlPSIjMmQzNDM2IiBzdHJva2Utd2lkdGg9IjQiLz48Y2lyY2xlIGN4PSIyNTIiIGN5PSIyMzQiIHI9IjUiIGZpbGw9IiNmZmZmZmYiLz48cGF0aCBkPSJNMTIwIDExOCBsIDE0IC02IGwgLTMgMTIgeiIgZmlsbD0iI2ZmOWQyZSIvPjxwYXRoIGQ9Ik0xODUgMTcyIGwgMTQgLTYgbCAtMyAxMiB6IiBmaWxsPSIjZmY5ZDJlIi8+PC9zdmc+","alt":"A zig-zag path showing the random, irregular motion of gas molecules."}},{"id":"motion-ocr-pdf-q26","section":"Types of Motion","question":"Translatory motion is of two types. They are:","options":["rectilinear and curvilinear","circular and rotatory","oscillatory and vibratory","periodic and non-periodic"],"correctIndex":0,"explanation":"Translatory motion is either along a straight line (rectilinear) or a curved path (curvilinear).","suggestImage":false},{"id":"motion-ocr-pdf-q27","section":"Types of Motion","question":"Which of these is an example of rectilinear motion?","options":["a bullet fired from a gun (up to some distance)","a ball thrown by an athlete","a cycle taking a turn on the road","a spinning wheel"],"correctIndex":0,"explanation":"A bullet fired from a gun travels in a straight line, so its motion is rectilinear.","suggestImage":false}]},{"id":"uniform-motion","title":"Uniform Motion","emoji":"➡️","questions":[{"id":"motion-ocr-pdf-q5","section":"Uniform Motion","question":"If a body covers equal distances in equal intervals of time, its motion is said to be:","options":["uniform","non-uniform","oscillatory","rotatory"],"correctIndex":0,"explanation":"Equal distances in equal time mean the body moves with uniform motion.","suggestImage":false}]},{"id":"average-speed","title":"Average Speed","emoji":"🚌","questions":[{"id":"motion-ocr-pdf-q6","section":"Average Speed","question":"A boy goes to school by bus at 20 km/h and returns through the same route at 30 km/h. His average speed is:","options":["24 km/h","25 km/h","30 km/h","20 km/h"],"correctIndex":0,"explanation":"The average speed of the whole trip comes out to 24 km/h.","suggestImage":false},{"id":"motion-ocr-pdf-q22","section":"Average Speed","question":"A car travels 4 km in the first hour, 8 km in the second hour and 3 km in the third hour. What is its average speed?","options":["5 km/h","15 km/h","3 km/h","8 km/h"],"correctIndex":0,"explanation":"Total distance is 15 km and total time is 3 hours, so 15 divided by 3 is 5 km/h.","suggestImage":false}]},{"id":"rest-and-motion-are-relative","title":"Rest and Motion are Relative","emoji":"🚴","questions":[{"id":"motion-ocr-pdf-q11","section":"Rest and Motion are Relative","question":"Two boys cycling on the road with the same speed are ______ relative to each other.","options":["at rest","in motion","in uniform motion","in non-uniform motion"],"correctIndex":0,"explanation":"Both cycle at the same speed, so each appears still to the other.","suggestImage":false},{"id":"motion-ocr-pdf-q30","section":"Rest and Motion are Relative","question":"Two trains are moving in opposite directions with the same speed. What can you say about them relative to each other?","options":["each appears to be in motion to the other","each appears to be at rest to the other","they never change their position","each moves in a circle around the other"],"correctIndex":0,"explanation":"Moving in opposite directions keeps changing their positions, so each seems in motion to the other.","suggestImage":false}]},{"id":"periodic-motion","title":"Periodic Motion","emoji":"🔁","questions":[{"id":"motion-ocr-pdf-q14","section":"Periodic Motion","question":"The earth completes one revolution around the sun every 365 and a quarter days. This motion is:","options":["periodic motion","non-periodic motion","random motion","vibratory motion"],"correctIndex":0,"explanation":"Earth's revolution repeats every year, so it is periodic motion.","suggestImage":false},{"id":"motion-ocr-pdf-q28","section":"Periodic Motion","question":"Which of these shows periodic motion?","options":["the moon revolving around the earth","a footballer running on a field","smoke particles from a chimney","a ball rolling down and stopping"],"correctIndex":0,"explanation":"The moon completes one revolution in 27.3 days and then repeats the same motion.","suggestImage":false}]},{"id":"mixed-motion","title":"Mixed Motion","emoji":"⚽","questions":[{"id":"motion-ocr-pdf-q17","section":"Mixed Motion","question":"A ball rolling on the ground shows rotatory motion as well as:","options":["translatory motion","oscillatory motion","periodic motion","vibratory motion"],"correctIndex":0,"explanation":"A rolling ball spins (rotatory) while moving forward (translatory).","suggestImage":false}]},{"id":"speed","title":"Speed","emoji":"🏃","questions":[{"id":"motion-ocr-pdf-q18","section":"Speed","question":"The distance covered by a body in unit time is called its:","options":["speed","mass","weight","motion"],"correctIndex":0,"explanation":"Speed tells how fast a body moves — the distance it covers in unit time.","suggestImage":false},{"id":"motion-ocr-pdf-q19","section":"Speed","question":"How many metres per second is 36 km/h equal to?","options":["10 m/s","36 m/s","3.6 m/s","100 m/s"],"correctIndex":0,"explanation":"1 m/s equals 3.6 km/h, so 36 km/h means 10 m/s.","suggestImage":false},{"id":"motion-ocr-pdf-q23","section":"Speed","question":"What is the S.I. unit of speed?","options":["metre per second","kilometre per hour","centimetre per second","newton"],"correctIndex":0,"explanation":"The S.I. unit of speed is metre per second, written as m/s.","suggestImage":false},{"id":"motion-ocr-pdf-q24","section":"Speed","question":"A speed of 18 km/h is equal to:","options":["5 m/s","10 m/s","18 m/s","3.6 m/s"],"correctIndex":0,"explanation":"18 km/h divided by 3.6 is exactly 5 m/s.","suggestImage":false},{"id":"motion-ocr-pdf-q25","section":"Speed","question":"The instrument in a car or bus that shows the speed of the vehicle at any instant is called the:","options":["speedometer","spring balance","beam balance","barometer"],"correctIndex":0,"explanation":"A speedometer is fitted in vehicles to show speed at any moment.","suggestImage":true,"imageNote":"A car dashboard with a speedometer dial showing the speed needle.","image":{"type":"svg","src":"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0MDAgMzAwIj48cmVjdCB4PSI2IiB5PSI2IiB3aWR0aD0iMzg4IiBoZWlnaHQ9IjI4OCIgcng9IjI2IiBmaWxsPSIjZThmNGZkIi8+PGNpcmNsZSBjeD0iMjAwIiBjeT0iMTYwIiByPSIxMDgiIGZpbGw9IiMyZDM0MzYiLz48Y2lyY2xlIGN4PSIyMDAiIGN5PSIxNjAiIHI9Ijg4IiBmaWxsPSIjZmZmZmZmIi8+PHBhdGggZD0iTTEyMCAxNjUgQSA4MCA4MCAwIDAgMSAxNjkuNCA5MS4xIiBmaWxsPSJub25lIiBzdHJva2U9IiMyZWNjNzEiIHN0cm9rZS13aWR0aD0iMTYiLz48cGF0aCBkPSJNMTY5LjQgOTEuMSBBIDgwIDgwIDAgMCAxIDI0NC41IDk4LjUiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2ZmYjMwMCIgc3Ryb2tlLXdpZHRoPSIxNiIvPjxwYXRoIGQ9Ik0yNDQuNSA5OC41IEEgODAgODAgMCAwIDEgMjgwIDE2NSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZmY2YjZiIiBzdHJva2Utd2lkdGg9IjE2Ii8+PGcgc3Ryb2tlPSIjMmQzNDM2IiBzdHJva2Utd2lkdGg9IjQiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCI+PGxpbmUgeDE9IjEyMCIgeTE9IjE2NSIgeDI9IjEzNCIgeTI9IjE2NSIvPjxsaW5lIHgxPSIxNTEuMiIgeTE9IjExMi4yIiB4Mj0iMTYxLjkiIHkyPSIxMjEuMiIvPjxsaW5lIHgxPSIyMDAiIHkxPSI4NSIgeDI9IjIwMCIgeTI9Ijk5Ii8+PGxpbmUgeDE9IjI0OC44IiB5MT0iMTEyLjIiIHgyPSIyMzguMSIgeTI9IjEyMS4yIi8+PGxpbmUgeDE9IjI4MCIgeTE9IjE2NSIgeDI9IjI2NiIgeTI9IjE2NSIvPjwvZz48ZyBmb250LWZhbWlseT0iQ29taWMgU2FucyBNUywgY3Vyc2l2ZSIgZm9udC1zaXplPSIxNyIgZm9udC13ZWlnaHQ9ImJvbGQiIGZpbGw9IiMyZDM0MzYiIHRleHQtYW5jaG9yPSJtaWRkbGUiPjx0ZXh0IHg9IjE0OCIgeT0iMTY1Ij4wPC90ZXh0Pjx0ZXh0IHg9IjE1My43IiB5PSIxNDIuMiI+MjA8L3RleHQ+PHRleHQgeD0iMTY1LjIiIHk9IjEyMyI+NDA8L3RleHQ+PHRleHQgeD0iMTg3LjgiIHk9IjExMy4zIj42MDwvdGV4dD48dGV4dCB4PSIyMDAiIHk9IjEwOCI+ODA8L3RleHQ+PHRleHQgeD0iMjEyLjIiIHk9IjExMC42Ij4xMDA8L3RleHQ+PHRleHQgeD0iMjM0LjUiIHk9IjExOC43Ij4xMjA8L3RleHQ+PHRleHQgeD0iMjUxIiB5PSIxMzYuOCI+MTQwPC90ZXh0Pjx0ZXh0IHg9IjI1MiIgeT0iMTY1Ij4xNjA8L3RleHQ+PC9nPjxsaW5lIHgxPSIyMDAiIHkxPSIxNjUiIHgyPSIxOTIiIHkyPSI4NSIgc3Ryb2tlPSIjZmY2YjZiIiBzdHJva2Utd2lkdGg9IjciIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPjxjaXJjbGUgY3g9IjIwMCIgY3k9IjE2NSIgcj0iOSIgZmlsbD0iI2ZmNmI2YiIgc3Ryb2tlPSIjMmQzNDM2IiBzdHJva2Utd2lkdGg9IjMiLz48dGV4dCB4PSIyMDAiIHk9IjI1MCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9IkNvbWljIFNhbnMgTVMsIGN1cnNpdmUiIGZvbnQtc2l6ZT0iMjIiIGZvbnQtd2VpZ2h0PSJib2xkIiBmaWxsPSIjMmQzNDM2Ij5rbS9oPC90ZXh0Pjwvc3ZnPg==","alt":"A car dashboard with a speedometer dial showing the speed needle."}}]},{"id":"mass-and-weight","title":"Mass and Weight","emoji":"⚖️","questions":[{"id":"motion-ocr-pdf-q20","section":"Mass and Weight","question":"The mass of a body stays the same everywhere. On the moon, the weight of the body is:","options":["one-sixth of its weight on earth","six times its weight on earth","the same as on earth","zero"],"correctIndex":0,"explanation":"The moon pulls bodies six times weaker, so weight becomes one-sixth.","suggestImage":false},{"id":"motion-ocr-pdf-q29","section":"Mass and Weight","question":"The weight of a body is measured using a:","options":["spring balance","beam balance","speedometer","measuring tape"],"correctIndex":0,"explanation":"A spring balance measures the force of gravity, which is the body's weight.","suggestImage":true,"imageNote":"A spring balance with a small object hanging from it measuring its weight.","image":{"type":"svg","src":"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0MDAgMzAwIj48cmVjdCB4PSI2IiB5PSI2IiB3aWR0aD0iMzg4IiBoZWlnaHQ9IjI4OCIgcng9IjI2IiBmaWxsPSIjZmZmM2UwIi8+PGNpcmNsZSBjeD0iMjAwIiBjeT0iMzAiIHI9IjEwIiBmaWxsPSJub25lIiBzdHJva2U9IiMyZDM0MzYiIHN0cm9rZS13aWR0aD0iNSIvPjxsaW5lIHgxPSIyMDAiIHkxPSI0MCIgeDI9IjIwMCIgeTI9IjQ4IiBzdHJva2U9IiMyZDM0MzYiIHN0cm9rZS13aWR0aD0iNSIvPjxyZWN0IHg9IjE2MiIgeT0iNDgiIHdpZHRoPSI3NiIgaGVpZ2h0PSIxNTAiIHJ4PSIxNCIgZmlsbD0iI2Y4ZjlmYSIgc3Ryb2tlPSIjMmQzNDM2IiBzdHJva2Utd2lkdGg9IjUiLz48bGluZSB4MT0iMjAwIiB5MT0iNzAiIHgyPSIyMTIiIHkyPSI4NiIgc3Ryb2tlPSIjOWI1OWI2IiBzdHJva2Utd2lkdGg9IjYiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPjxsaW5lIHgxPSIyMTIiIHkxPSI4NiIgeDI9IjE4OCIgeTI9IjEwMiIgc3Ryb2tlPSIjOWI1OWI2IiBzdHJva2Utd2lkdGg9IjYiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPjxsaW5lIHgxPSIxODgiIHkxPSIxMDIiIHgyPSIyMTIiIHkyPSIxMTgiIHN0cm9rZT0iIzliNTliNiIgc3Ryb2tlLXdpZHRoPSI2IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48bGluZSB4MT0iMjEyIiB5MT0iMTE4IiB4Mj0iMTg4IiB5Mj0iMTM0IiBzdHJva2U9IiM5YjU5YjYiIHN0cm9rZS13aWR0aD0iNiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+PGxpbmUgeDE9IjE4OCIgeTE9IjEzNCIgeDI9IjIwMCIgeTI9IjE1MCIgc3Ryb2tlPSIjOWI1OWI2IiBzdHJva2Utd2lkdGg9IjYiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPjxsaW5lIHgxPSIxNjgiIHkxPSI2MiIgeDI9IjIzMiIgeTI9IjYyIiBzdHJva2U9IiMyZDM0MzYiIHN0cm9rZS13aWR0aD0iNCIvPjxsaW5lIHgxPSIxNzIiIHkxPSI3NyIgeDI9IjIyOCIgeTI9Ijc3IiBzdHJva2U9IiMyZDM0MzYiIHN0cm9rZS13aWR0aD0iMiIvPjxsaW5lIHgxPSIxNjgiIHkxPSI5MiIgeDI9IjIzMiIgeTI9IjkyIiBzdHJva2U9IiMyZDM0MzYiIHN0cm9rZS13aWR0aD0iNCIvPjxsaW5lIHgxPSIxNzIiIHkxPSIxMDciIHgyPSIyMjgiIHkyPSIxMDciIHN0cm9rZT0iIzJkMzQzNiIgc3Ryb2tlLXdpZHRoPSIyIi8+PGxpbmUgeDE9IjE2OCIgeTE9IjEyMiIgeDI9IjIzMiIgeTI9IjEyMiIgc3Ryb2tlPSIjMmQzNDM2IiBzdHJva2Utd2lkdGg9IjQiLz48bGluZSB4MT0iMTcyIiB5MT0iMTM3IiB4Mj0iMjI4IiB5Mj0iMTM3IiBzdHJva2U9IiMyZDM0MzYiIHN0cm9rZS13aWR0aD0iMiIvPjxsaW5lIHgxPSIxNjgiIHkxPSIxNTIiIHgyPSIyMzIiIHkyPSIxNTIiIHN0cm9rZT0iIzJkMzQzNiIgc3Ryb2tlLXdpZHRoPSI0Ii8+PGxpbmUgeDE9IjIwMCIgeTE9IjkyIiB4Mj0iMjMyIiB5Mj0iOTIiIHN0cm9rZT0iI2ZmNmI2YiIgc3Ryb2tlLXdpZHRoPSI2IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48cG9seWdvbiBwb2ludHM9IjIyMiw4MiAyMzQsOTIgMjIyLDEwMiIgZmlsbD0iI2ZmNmI2YiIvPjxwYXRoIGQ9Ik0yMDAgMTUwIHEgMCAxNCAtOSAxNiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMmQzNDM2IiBzdHJva2Utd2lkdGg9IjQiLz48Y2lyY2xlIGN4PSIxODgiIGN5PSIxNzYiIHI9IjE1IiBmaWxsPSIjZmY2YjZiIiBzdHJva2U9IiMyZDM0MzYiIHN0cm9rZS13aWR0aD0iNCIvPjxsaW5lIHgxPSIxODgiIHkxPSIxOTEiIHgyPSIxODgiIHkyPSIyMDgiIHN0cm9rZT0iIzJkMzQzNiIgc3Ryb2tlLXdpZHRoPSI0Ii8+PHJlY3QgeD0iMTY4IiB5PSIyMDgiIHdpZHRoPSI0MCIgaGVpZ2h0PSIxNCIgcng9IjciIGZpbGw9IiM0ZWNkYzQiIHN0cm9rZT0iIzJkMzQzNiIgc3Ryb2tlLXdpZHRoPSI0Ii8+PC9zdmc+","alt":"A spring balance with a small object hanging from it measuring its weight."}}]},{"id":"non-uniform-motion","title":"Non-uniform Motion","emoji":"🐢","questions":[{"id":"motion-ocr-pdf-q21","section":"Non-uniform Motion","question":"If a body travels unequal distances in equal intervals of time, its motion is said to be:","options":["non-uniform","uniform","circular","periodic"],"correctIndex":0,"explanation":"Unequal distances in equal time mean the body moves with non-uniform motion.","suggestImage":false}]}]}</script>
+
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <linearGradient id="gradA" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4ecdc4"/><stop offset="100%" stop-color="#4f9de8"/>
+    </linearGradient>
+  </defs>
+</svg>
+
+<script>
+(() => {
+"use strict";
+/* ══════════════════════════════════════════════════════════════
+   html-quiz runtime — self-contained, no libraries, no network.
+   Question data is parsed from the #quiz-data script tag.
+   ══════════════════════════════════════════════════════════════ */
+
+// ── Data & config ─────────────────────────────────────────────
+const QUIZ = JSON.parse(document.getElementById('quiz-data').textContent.trim());
+const params = new URLSearchParams(location.search);
+const cfg = {
+  secs: clampInt(params.get('secs'), 30, 2, 60),   // seconds per question
+  max:  clampInt(params.get('max'), 25, 1, 100),   // (informational only; cap applied at build)
+  tts:  params.get('tts') !== 'off' && params.get('tts') !== '0'
+};
+function clampInt(v, d, lo, hi){ const n = parseInt(v,10); return Number.isFinite(n) ? Math.min(hi, Math.max(lo, n)) : d; }
+
+// Build a flat ordered question list across all sections.
+const FLAT = [];
+QUIZ.sections.forEach(s => {
+  s.questions.forEach(q => {
+    FLAT.push({ q, sectionId: s.id, sectionTitle: s.title });
+  });
+});
+const TOTAL = FLAT.length;
+
+// ── State machine ─────────────────────────────────────────────
+let state = {
+  mode: 'intro',        // intro | question | revealed | results
+  scope: null,          // null = all sections, else sectionId
+  list: [],             // ordered [{q, sectionId, sectionTitle}] for current scope
+  iq: 0,
+  answers: [],          // {qid, chosen(-1=timeout), status, pts}
+  score: 0,
+  runToken: 0,
+  transitioning: false
+};
+
+const elStage  = document.getElementById('stage');
+const elScore  = document.getElementById('score-chip');
+const elProg   = document.getElementById('progress-fill');
+const elTree   = document.getElementById('tree');
+const elSide   = document.getElementById('sidebar');
+const overlay  = document.getElementById('overlay');
+const elMute   = document.getElementById('mute-btn');
+let muted = false;
+
+// ── DOM helpers (NO innerHTML anywhere) ───────────────────────
+const h = (tag, cls, text) => {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (text !== undefined) e.textContent = text;   // untrusted text → textContent only
+  return e;
+};
+function clear(node){ while(node.firstChild) node.removeChild(node.firstChild); }
+
+// ── Sound (WebAudio, synthesised; lazy context for autoplay) ─
+let AC = null;
+function ensureAudio(){
+  if (!AC){ try{ AC = new (window.AudioContext || window.webkitAudioContext)(); }catch(e){ return null; } }
+  if (AC.state === 'suspended') AC.resume();
+  return AC;
+}
+function blip(freq, dur, type, delay, vol){
+  const ac = AC || ensureAudio();
+  if (!ac) return;
+  const t0 = ac.currentTime + (delay || 0);
+  const o = ac.createOscillator(), g = ac.createGain();
+  o.type = type || 'sine'; o.frequency.value = freq;
+  g.gain.setValueAtTime(vol || 0.14, t0);
+  g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+  o.connect(g); g.connect(ac.destination);
+  o.start(t0); o.stop(t0 + dur + 0.03);
+}
+const sTick   = () => blip(880, 0.06, 'square');
+const sCorrect= () => { blip(523,0.12,'sine',0); blip(659,0.12,'sine',0.11); blip(784,0.2,'sine',0.22); };
+const sWrong  = () => { blip(220,0.22,'triangle',0); blip(170,0.28,'triangle',0.14); };
+const sTimesUp= () => { blip(440,0.18,'triangle',0); blip(330,0.3,'triangle',0.16); };
+const sPop    = () => { blip(660,0.09,'sine',0,0.1); blip(880,0.1,'sine',0.07,0.08); };
+
+// ── TTS (Web Speech API) ──────────────────────────────────────
+function ttsAvailable(){ return 'speechSynthesis' in window; }
+function pickVoice(){
+  if (!ttsAvailable()) return null;
+  const vs = speechSynthesis.getVoices();
+  return vs.find(v => /^en/i.test(v.lang)) || vs[0] || null;
+}
+function speak(text, onEnd){
+  if (!cfg.tts || muted || !ttsAvailable() || !text) { if (onEnd) onEnd(); return; }
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.rate = 1; u.pitch = 1.05;
+  const v = pickVoice(); if (v) u.voice = v;
+  if (onEnd) u.onend = onEnd;
+  speechSynthesis.speak(u);
+}
+if ('speechSynthesis' in window){
+  speechSynthesis.onvoiceschanged = () => {};   // warm the voice list
+}
+
+// ── Timer ring ────────────────────────────────────────────────
+let rafId = 0;
+function stopTimer(){ if (rafId){ cancelAnimationFrame(rafId); rafId = 0; } }
+function startTimer(secs, token){
+  stopTimer();
+  const C = 2 * Math.PI * 30;                    // r=30 ring
+  const ring = document.getElementById('ring-fg');
+  const count = document.getElementById('t-count');
+  const wrap = document.getElementById('timer-wrap');
+  ring.setAttribute('stroke-dasharray', C);
+  ring.setAttribute('stroke-dashoffset', 0);
+  const deadline = performance.now() + secs * 1000;
+  let lastSec = Math.ceil(secs);
+  const loop = (now) => {
+    if (state.runToken !== token) return;        // stale — question changed
+    const remMs = deadline - now;
+    const remSec = Math.max(0, Math.ceil(remMs / 1000));
+    const frac = Math.max(0, Math.min(1, remMs / (secs * 1000)));
+    ring.setAttribute('stroke-dashoffset', String(C * (1 - frac)));   // SVG attr, not CSS
+    count.textContent = String(remSec);
+    wrap.classList.toggle('low', remSec <= 3);
+    if (remSec < lastSec){ lastSec = remSec; if (remSec > 0 && remSec <= 3 && state.mode === 'question') sTick(); }
+    if (remMs <= 0){ onTimeout(token); return; }
+    rafId = requestAnimationFrame(loop);
+  };
+  rafId = requestAnimationFrame(loop);
+}
+
+// ── Timer markup builder (returned to slot in question card) ──
+function timerMarkup(){
+  const wrap = h('div', 'timer-wrap'); wrap.id = 'timer-wrap';
+  const ns = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(ns, 'svg');
+  svg.setAttribute('viewBox', '0 0 74 74');
+  const bg = document.createElementNS(ns, 'circle');
+  bg.setAttribute('cx','37'); bg.setAttribute('cy','37'); bg.setAttribute('r','30'); bg.setAttribute('class','circle-bg');
+  const fg = document.createElementNS(ns, 'circle');
+  fg.setAttribute('cx','37'); fg.setAttribute('cy','37'); fg.setAttribute('r','30'); fg.setAttribute('class','circle-fg');
+  fg.id = 'ring-fg';
+  svg.appendChild(bg); svg.appendChild(fg);
+  const c = h('div', 't-count', String(cfg.secs)); c.id = 't-count';
+  wrap.appendChild(svg); wrap.appendChild(c);
+  return wrap;
+}
+
+// ── Confetti ──────────────────────────────────────────────────
+const CONF_COLORS = ['#ff6b6b','#ffd93d','#2ecc71','#4f9de8','#9b59b6','#ff9d2e'];
+function burstConfetti(n){
+  const layer = document.getElementById('confetti');
+  for (let i = 0; i < n; i++){
+    const c = h('div', 'confetti');
+    c.style.left = (Math.random() * 100) + 'vw';
+    c.style.background = CONF_COLORS[i % CONF_COLORS.length];
+    c.style.setProperty('--rx', (Math.random() * 540 - 270) + 'deg');
+    c.style.animationDuration = (1.6 + Math.random() * 1.6) + 's';
+    c.style.animationDelay = (Math.random() * 0.5) + 's';
+    c.style.width = (7 + Math.random() * 8) + 'px';
+    c.style.height = (7 + Math.random() * 8) + 'px';
+    c.addEventListener('animationend', () => c.remove());
+    layer.appendChild(c);
+  }
+}
+
+// ── Tree building ─────────────────────────────────────────────
+function renderTree(){
+  clear(elTree);
+  QUIZ.sections.forEach(sec => {
+    const node = h('div', 'tree-node');
+    node.setAttribute('data-sec', sec.id);
+    const arrow = h('span', 'arrow', '▶');
+    const dot = h('span', 'dot');
+    dot.style.background = sectionColor(sec.id);
+    const label = h('span', null, sec.emoji + ' ' + sec.title);
+    const badge = h('span', 'badge', String(sec.questions.length));
+    node.appendChild(arrow); node.appendChild(dot); node.appendChild(label); node.appendChild(badge);
+    node.addEventListener('click', () => {
+      arrow.classList.toggle('open');
+      const kids = document.getElementById('children-' + sec.id);
+      if (kids) kids.classList.toggle('open');
+    });
+    elTree.appendChild(node);
+
+    const kids = h('div', 'tree-children');
+    kids.id = 'children-' + sec.id;
+    sec.questions.forEach(q => {
+      const leaf = h('div', 'tree-node tree-leaf');
+      leaf.setAttribute('data-qid', q.id);
+      const qn = h('span', null, 'Q' + (FLAT.length ? '' : '') + q.id.split('-q')[1]);
+      const st = h('span', 'st');
+      leaf.appendChild(h('span', 'arrow', '•'));
+      leaf.appendChild(qn); leaf.appendChild(st);
+      leaf.addEventListener('click', () => startAtSection(sec.id, q.id));
+      kids.appendChild(leaf);
+    });
+    elTree.appendChild(kids);
+  });
+}
+function sectionColor(id){
+  const pal = ['#4ecdc4','#ffb300','#9b59b6','#4f9de8','#ff6b6b','#2ecc71','#e67e22','#e84393'];
+  let x = 0; for (const ch of id) x = (x + ch.charCodeAt(0)) % pal.length;
+  return pal[x];
+}
+function updateTreeStatus(){
+  const answered = new Map(state.answers.map(a => [a.qid, a.status]));
+  document.querySelectorAll('#tree .tree-leaf').forEach(leaf => {
+    const st = leaf.querySelector('.st');
+    const qid = leaf.getAttribute('data-qid');
+    const s = answered.get(qid);
+    st.textContent = '';
+    st.className = 'st';
+    if (s === 'correct'){ st.textContent = '✓'; st.classList.add('good'); }
+    else if (s === 'wrong'){ st.textContent = '✗'; st.classList.add('bad'); }
+    else if (s === 'timeout'){ st.textContent = '⏰'; st.classList.add('slow'); }
+  });
+  // highlight active section node
+  document.querySelectorAll('#tree .tree-node[data-sec]').forEach(n => {
+    n.classList.toggle('active', state.scope === null || n.getAttribute('data-sec') === state.scope);
+  });
+}
+
+// ── Scope / nav ───────────────────────────────────────────────
+function shuffle(arr){
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--){ const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+  return a;
+}
+function startScope(scopeId){
+  state.scope = scopeId || null;
+  if (state.scope) {
+    state.list = FLAT.filter(f => f.sectionId === state.scope);
+  } else {
+    // group by section, shuffle sections, keep questions in source order within each
+    const bySec = [];
+    const secOrder = [];
+    FLAT.forEach(f => { if (!secOrder.includes(f.sectionId)) secOrder.push(f.sectionId); });
+    secOrder.forEach(sid => bySec.push(FLAT.filter(f => f.sectionId === sid)));
+    state.list = shuffle(bySec).flat();
+  }
+  state.iq = 0; state.answers = []; state.score = 0; state.runToken++;
+  updateScore();
+  if (state.list.length === 0){ renderIntro(); return; }
+  renderQuestion();
+}
+function startAtSection(secId, qid){
+  state.scope = secId;
+  state.list = FLAT.filter(f => f.sectionId === secId);
+  const idx = state.list.findIndex(f => f.q.id === qid);
+  state.iq = idx >= 0 ? idx : 0;
+  state.answers = []; state.score = 0; state.runToken++;
+  updateScore();
+  closeDrawer();
+  renderQuestion();
+}
+function currentQ(){
+  const f = state.list[state.iq];
+  return f ? f.q : null;
+}
+
+// ── Views ─────────────────────────────────────────────────────
+function renderIntro(){
+  state.mode = 'intro';
+  clear(elStage);
+  const card = h('div', 'card intro card-in');
+  const big = h('div', 'big-emoji', QUIZ.emoji || '🧠');
+  const title = h('h1', null, QUIZ.title || 'Motion — Concise Physics 7');
+  const sub = h('div', 'sub', QUIZ.subtitle || 'Test yourself & learn with fun quiz!');
+  const meta = h('div', 'meta-chip', '🎯 ' + TOTAL + ' questions · ⭐ up to ' + (TOTAL * 10) + ' points · ⏱️ ' + cfg.secs + 's each');
+  const start = h('button', 'big-btn', '▶ Start Quiz');
+  start.addEventListener('click', () => { ensureAudio(); state.runToken++; startScope(null); });
+  card.appendChild(big); card.appendChild(title); card.appendChild(sub);
+  const row = h('div', 'ghost-row');
+  const samp = h('button', 'big-btn ghost', '🔊 Hear me');
+  samp.addEventListener('click', () => { ensureAudio(); speak('Hello friend! Let’s play and learn together!'); });
+  const imgAll = h('div', 'hint-line', 'Open a section in the left menu to play a single topic.');
+  row.appendChild(samp);
+  card.appendChild(meta); card.appendChild(start); card.appendChild(row); card.appendChild(imgAll);
+  elStage.appendChild(card);
+  updateProgress(0);
+}
+function speakQuestion(q, onEnd){
+  const all = 'Question ' + q.question + '. Options: ' +
+    q.options.map((o, i) => String.fromCharCode(65 + i) + '. ' + o).join('. ') + '.';
+  speak(all, onEnd);
+}
+function renderQuestion(){
+  state.mode = 'question';
+  const q = currentQ();
+  if (!q){ renderResults(); return; }
+  const token = ++state.runToken;
+  stopTimer();
+  clear(elStage);
+  const card = h('div', 'card card-in');
+  const head = h('div', 'q-head');
+  head.appendChild(h('div', 'q-progress', 'Question ' + (state.iq + 1) + ' of ' + state.list.length));
+  head.appendChild(timerMarkup());
+  card.appendChild(head);
+
+  // question text
+  card.appendChild(h('div', 'q-text', q.question));
+
+  // optional image
+  if (q.image){
+    const iw = h('div', 'qimg-wrap');
+    if (q.image.type === 'emoji'){
+      iw.appendChild(h('div', 'emoji-big', q.image.src));
+    } else {
+      const img = h('img', 'qimg');
+      img.setAttribute('src', q.image.src);
+      img.setAttribute('alt', q.image.alt || '');
+      iw.appendChild(img);
+    }
+    if (q.image.caption) iw.appendChild(h('div', 'caption', q.image.caption));
+    card.appendChild(iw);
+  }
+
+  // options
+  const opts = h('div', 'options');
+  q.options.forEach((text, i) => {
+    const b = h('button', 'opt');
+    b.setAttribute('data-idx', String(i));
+    b.appendChild(h('span', 'key', String.fromCharCode(65 + i)));
+    b.appendChild(h('span', null, text));
+    b.appendChild(h('span', 'mark'));
+    b.addEventListener('click', () => { ensureAudio(); if (state.mode === 'question') answer(i); });
+    opts.appendChild(b);
+  });
+  card.appendChild(opts);
+
+  // speak button
+  const foot = h('div', 'q-foot');
+  const spk = h('button', 'speak-btn', '🔊 Read aloud');
+  spk.addEventListener('click', () => { ensureAudio(); speakQuestion(q); });
+  foot.appendChild(spk);
+  card.appendChild(foot);
+  elStage.appendChild(card);
+
+  updateProgress(state.iq / state.list.length);
+  speakQuestion(q, () => { if (state.runToken === token && state.mode === 'question') startTimer(cfg.secs, token); });
+}
+function reveal(q, status, chosen){
+  state.mode = 'revealed';
+  stopTimer();
+  state.answers.push({ qid: q.id, chosen, status, pts: status === 'correct' ? 10 : 0 });
+  if (status === 'correct') state.score += 10;
+  updateScore();
+  updateTreeStatus();
+  burstConfetti(status === 'correct' ? 60 : 0);
+
+  const card = document.querySelector('#stage .card');
+  // banner
+  const banner = h('div', 'reveal-banner ' + (status === 'correct' ? 'good' : status === 'wrong' ? 'bad' : 'slow'));
+  const icon = status === 'correct' ? '✅' : status === 'wrong' ? '❌' : '⏰';
+  const msg = status === 'correct' ? 'Correct! Great job!' : status === 'wrong' ? 'Oops! Not quite.' : "Time's up!";
+  banner.appendChild(h('span', null, icon + ' ' + msg));
+  card.appendChild(banner);
+  // explanation
+  const exp = h('div', 'reveal-exp');
+  const b = h('b', null, '💡 '); b.textContent = '💡 ' + q.options[q.correctIndex];
+  exp.appendChild(b);
+  exp.appendChild(h('div', null, q.explanation));
+  card.appendChild(exp);
+  // highlight options
+  const buttons = card.querySelectorAll('.opt');
+  buttons.forEach((btn, i) => {
+    btn.disabled = true;
+    const mark = btn.querySelector('.mark');
+    if (i === q.correctIndex){ btn.classList.add('correct'); mark.textContent = '✓'; }
+    else if (i === chosen){ btn.classList.add('wrong-chosen'); mark.textContent = '✗'; }
+    else btn.classList.add('dim');
+  });
+  // next row
+  const row = h('div', 'next-row');
+  const pts = h('div', 'pts-gain ' + (status === 'correct' ? 'gain' : 'none'),
+                status === 'correct' ? '+10 points' : '+0 points');
+  const nb = h('button', 'next-btn', state.iq + 1 >= state.list.length ? 'See results 🏆' : 'Next ➡️');
+  nb.addEventListener('click', () => { state.iq++; if (state.iq >= state.list.length) renderResults(); else renderQuestion(); });
+  row.appendChild(pts); row.appendChild(nb);
+  const head = card.querySelector('.q-head');
+  if (head) head.appendChild(row); else card.appendChild(row);
+  // duplicate next-row at bottom for easy access
+  const row2 = h('div', 'next-row');
+  row2.appendChild(h('div', 'pts-gain ' + (status === 'correct' ? 'gain' : 'none'),
+                status === 'correct' ? '+10 points' : '+0 points'));
+  const nb2 = h('button', 'next-btn', state.iq + 1 >= state.list.length ? 'See results 🏆' : 'Next ➡️');
+  nb2.addEventListener('click', () => { state.iq++; if (state.iq >= state.list.length) renderResults(); else renderQuestion(); });
+  row2.appendChild(nb2);
+  card.appendChild(row2);
+}
+function answer(i){
+  const q = currentQ();
+  ensureAudio();
+  if (i === q.correctIndex) sCorrect(); else sWrong();
+  reveal(q, i === q.correctIndex ? 'correct' : 'wrong', i);
+}
+function onTimeout(token){
+  if (state.runToken !== token) return;   // stale
+  const q = currentQ();
+  ensureAudio(); sTimesUp();
+  reveal(q, 'timeout', -1);
+  speak(q.explanation);
+}
+function renderResults(){
+  state.mode = 'results';
+  stopTimer();
+  clear(elStage);
+  const card = h('div', 'card results card-in');
+  const count = state.list.length;
+  const maxPts = count * 10;
+  const words = pctWord(state.score / maxPts);
+  card.appendChild(h('div', 'big-emoji', words.emoji));
+  card.appendChild(h('h2', null, words.title));
+  card.appendChild(h('div', 'sub', 'You scored ' + state.score + ' of ' + maxPts + ' points'));
+
+  // score ring
+  const rw = h('div', 'ring-wrap');
+  const ns = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(ns, 'svg');
+  svg.setAttribute('viewBox', '0 0 120 120');
+  const bg = document.createElementNS(ns, 'circle');
+  bg.setAttribute('cx','60'); bg.setAttribute('cy','60'); bg.setAttribute('r','45'); bg.setAttribute('class','rbg');
+  const fg = document.createElementNS(ns, 'circle');
+  fg.setAttribute('cx','60'); fg.setAttribute('cy','60'); fg.setAttribute('r','45'); fg.setAttribute('class','rfg');
+  fg.id = 'ring-fg-r';
+  svg.appendChild(bg); svg.appendChild(fg);
+  rw.appendChild(svg);
+  const rs = h('div', 'rscore');
+  const n = h('div', 'n', String(state.score)); n.id = 'rscore-n'; n.className = 'n rscore-n';
+  rs.appendChild(n); rs.appendChild(h('div', 'pts', 'points'));
+  rw.appendChild(rs);
+  card.appendChild(rw);
+
+  const stars = h('div', 'stars', '⭐'.repeat(words.stars) + '☆'.repeat(5 - words.stars));
+  card.appendChild(stars);
+
+  // review
+  const review = h('div', 'review');
+  state.answers.forEach((a, i) => {
+    const f = state.list[i];
+    const row = h('div', 'review-row');
+    row.appendChild(h('div', 'qi', 'Q' + (i + 1)));
+    const body = h('div', 'qbody');
+    body.appendChild(h('div', 'qq', f.q.question));
+    const your = a.chosen >= 0 ? f.q.options[a.chosen] : 'No answer';
+    body.appendChild(h('div', 'aa', 'Your answer: ' + your));
+    body.appendChild(h('div', 'aa', '✅ ' + f.q.options[f.q.correctIndex]));
+    row.appendChild(body);
+    row.appendChild(h('div', 'pts ' + (a.pts ? 'gain' : 'none'), (a.pts ? '+' : '') + a.pts));
+    review.appendChild(row);
+  });
+  card.appendChild(review);
+
+  if (QUIZ.truncated){
+    card.appendChild(h('div', 'hint-line', 'Showing ' + QUIZ.truncated.shown + ' of ' + QUIZ.truncated.total + ' questions.'));
+  }
+
+  const row2 = h('div', 'ghost-row');
+  const again = h('button', 'big-btn ghost', '🔄 Play again');
+  again.addEventListener('click', () => { burstConfetti(0); startScope(state.scope); });
+  const menu = h('button', 'big-btn ghost', '🏠 Menu');
+  menu.addEventListener('click', () => renderIntro());
+  row2.appendChild(again); row2.appendChild(menu);
+  card.appendChild(row2);
+  elStage.appendChild(card);
+
+  // deferred: animate ring + settle score number + confetti
+  setTimeout(() => {
+    const C = 283;
+    const fgR = document.getElementById('ring-fg-r');
+    fgR.setAttribute('stroke-dashoffset', String(C * (1 - (state.score / maxPts))));
+    const num = document.getElementById('rscore-n');
+    if (num) num.textContent = String(state.score);   // settle immediately so chip & ring always agree
+    burstConfetti(140);
+    sPop();
+  }, 60);
+}
+function pctWord(p){
+  if (p >= 0.9)  return { emoji:'🏆', title:'Amazing!', stars:5 };
+  if (p >= 0.7)  return { emoji:'🌟', title:'Great job!', stars:4 };
+  if (p >= 0.5)  return { emoji:'😄', title:'Good try!', stars:3 };
+  if (p >= 0.3)  return { emoji:'🙂', title:'Keep going!', stars:2 };
+  return { emoji:'💪', title:'Practice makes better!', stars:1 };
+}
+function updateScore(){ elScore.textContent = '⭐ Score: ' + state.score; }
+function updateProgress(p){
+  if (elProg) elProg.style.width = Math.round(Math.max(0, Math.min(1, p)) * 100) + '%';
+  // track is shared for all-scope run; on intro show 0
+}
+
+// ── Mobile drawer ─────────────────────────────────────────────
+function closeDrawer(){
+  elSide.classList.remove('open'); overlay.classList.remove('open');
+}
+document.getElementById('hamburger').addEventListener('click', () => {
+  elSide.classList.toggle('open'); overlay.classList.toggle('open');
+});
+overlay.addEventListener('click', closeDrawer);
+document.getElementById('sidebar-home').addEventListener('click', () => { closeDrawer(); renderIntro(); });
+elMute.addEventListener('click', () => {
+  muted = !muted;
+  elMute.textContent = muted ? '🔇' : '🔊';
+  if (muted && 'speechSynthesis' in window) speechSynthesis.cancel();
+});
+
+// ── Boot ──────────────────────────────────────────────────────
+renderTree();
+renderIntro();
+})();
+</script>
+</body>
+</html>

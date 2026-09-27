@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Classification of the Living World — Quiz</title>
+<style>
+  /* ══════════════ KID-FRIENDLY PALETTE (bright daylight) ══════════════ */
+  :root {
+    --bg: linear-gradient(160deg, #fff8e1 0%, #e0f7fa 60%, #dff4ff 100%);
+    --panel: #ffffff;
+    --ink: #2d3436;
+    --ink-soft: #6b7a85;
+    --coral: #ff6b6b;
+    --sunny: #ffd93d;
+    --teal: #4ecdc4;
+    --sky: #4f9de8;
+    --violet: #9b59b6;
+    --green: #2ecc71;
+    --amber: #ffb300;
+    --red: #ff6b6b;
+    --sidebar-w: 264px;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { height:100%; }
+  body {
+    background: var(--bg); color: var(--ink); overflow:hidden;
+    font-family: 'Comic Sans MS','Chalkboard SE','Marker Felt','Segoe UI','Trebuchet MS',sans-serif;
+    display:flex;
+  }
+
+  /* ── Sidebar tree ── */
+  .sidebar {
+    width: var(--sidebar-w); min-width: var(--sidebar-w); height:100vh;
+    background: rgba(255,255,255,0.82); border-right:1px solid rgba(0,0,0,0.08);
+    display:flex; flex-direction:column; z-index:20; overflow-y:auto;
+    backdrop-filter: blur(4px);
+    transition: transform .3s ease;
+  }
+  .sidebar-header {
+    padding:1.1rem 1rem .8rem; border-bottom:1px solid rgba(0,0,0,0.08);
+    font-size:1.05rem; font-weight:bold; cursor:pointer; display:flex; gap:.4rem; align-items:center;
+    flex-shrink:0;
+  }
+  .sidebar-header .ticker { color:var(--sky); }
+  .tree { flex:1; padding:.5rem 0; overflow-y:auto; }
+  .tree-node {
+    padding:.5rem .8rem .5rem 1rem; cursor:pointer; display:flex; align-items:center; gap:.45rem;
+    font-size:.86rem; transition: background .15s; border-left:3px solid transparent;
+    user-select:none; color:var(--ink);
+  }
+  .tree-node:hover { background:rgba(79,157,232,0.1); }
+  .tree-node.active { border-left-color: var(--amber); background:rgba(255,217,61,0.14); }
+  .tree-node .arrow { font-size:.65rem; width:12px; text-align:center; flex-shrink:0; transition:transform .2s; color:var(--ink-soft); }
+  .tree-node .arrow.open { transform:rotate(90deg); }
+  .tree-node .dot { width:11px; height:11px; border-radius:50%; flex-shrink:0; }
+  .tree-node .badge {
+    margin-left:auto; font-size:.68rem; background:rgba(78,205,196,0.2); color:var(--teal);
+    border-radius:999px; padding:.05rem .5rem; flex-shrink:0;
+  }
+  .tree-children { overflow:hidden; max-height:0; transition:max-height .3s ease; }
+  .tree-children.open { max-height:600px; }
+  .tree-children .tree-node { padding-left:2.2rem; font-size:.8rem; }
+  .tree-leaf .st {
+    margin-left:auto; font-size:.72rem; width:1.1rem; text-align:center; flex-shrink:0;
+  }
+  .st.good { color:var(--green); }
+  .st.bad { color:var(--red); }
+  .st.slow { color:var(--amber); }
+
+  /* ── Main column ── */
+  .main { flex:1; display:flex; flex-direction:column; position:relative; z-index:5; min-width:0; }
+  .topbar {
+    padding:.6rem 1.1rem; display:flex; align-items:center; gap:.8rem; flex-shrink:0;
+    background:rgba(255,255,255,0.6); border-bottom:1px solid rgba(0,0,0,0.08);
+  }
+  .topbar .app-title { font-size:1.05rem; font-weight:bold; display:flex; gap:.4rem; align-items:center; }
+  .topbar .spacer { flex:1; }
+  .score-chip {
+    background:#fff; border:2px solid var(--sunny); color:var(--ink); border-radius:999px;
+    padding:.3rem .9rem; font-size:.9rem; font-weight:bold; box-shadow:0 2px 8px rgba(0,0,0,0.08);
+  }
+  .mute-btn {
+    background:#fff; border:2px solid rgba(0,0,0,0.12); border-radius:999px; cursor:pointer;
+    font-size:1rem; padding:.25rem .6rem; font-family:inherit;
+  }
+  .mute-btn:hover { border-color:var(--sky); }
+  .progress-track {
+    height:8px; border-radius:99px; background:rgba(0,0,0,0.08); overflow:hidden; flex:1; max-width:260px;
+  }
+  .progress-fill { height:100%; width:0%; background:linear-gradient(90deg,var(--teal),var(--sky)); border-radius:99px; transition:width .4s ease; }
+
+  /* ── Stage / views ── */
+  .stage { flex:1; display:flex; justify-content:center; align-content:center; padding:1.4rem; overflow:auto; min-height:0; }
+  .card {
+    background:var(--panel); border-radius:22px; box-shadow:0 14px 44px rgba(45,52,54,0.16);
+    width:100%; max-width:720px; padding:1.8rem 2rem 2rem; position:relative;
+    border:1px solid rgba(0,0,0,0.05); margin:auto;
+  }
+
+  /* Intro */
+  .intro { text-align:center; }
+  .intro .big-emoji { font-size:4rem; animation: bob 3s ease-in-out infinite; display:inline-block; }
+  .intro h1 { font-size:2rem; margin:.4rem 0 .3rem; background:linear-gradient(135deg,var(--sky),var(--violet)); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
+  .intro .sub { color:var(--ink-soft); margin-bottom:1.2rem; }
+  .intro .meta-chip { color:var(--ink-soft); font-size:.9rem; margin-bottom:1.4rem; }
+  .big-btn {
+    font-family:inherit; font-size:1.15rem; font-weight:bold; color:#fff; cursor:pointer;
+    background:linear-gradient(135deg,var(--green),#27ae60); border:none; border-radius:999px;
+    padding:.85rem 2.2rem; box-shadow:0 6px 18px rgba(46,204,113,0.4); transition:transform .15s, box-shadow .15s;
+  }
+  .big-btn:hover { transform:translateY(-2px); }
+  .big-btn.ghost { background:#fff; color:var(--ink); box-shadow:0 2px 8px rgba(0,0,0,0.1); border:2px solid rgba(0,0,0,0.1); margin-left:.7rem; }
+  .ghost-row { margin-top:1.1rem; display:flex; justify-content:center; gap:.4rem; flex-wrap:wrap; }
+  .hint-line { font-size:.82rem; color:var(--ink-soft); margin-top:1rem; }
+
+  /* Question */
+  .q-head { display:flex; justify-content:space-between; align-items:center; gap:.6rem; flex-wrap:wrap; }
+  .q-progress { font-size:.82rem; color:var(--ink-soft); font-weight:bold; padding:.2rem 0; }
+  .timer-wrap { position:relative; width:74px; height:74px; flex-shrink:0; }
+  .timer-wrap svg { width:74px; height:74px; transform:rotate(-90deg); }
+  .timer-wrap .circle-bg { fill:none; stroke:rgba(0,0,0,0.08); stroke-width:7; }
+  .timer-wrap .circle-fg { fill:none; stroke:var(--sky); stroke-width:7; stroke-linecap:round; }
+  .timer-wrap .t-count {
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    font-size:1.5rem; font-weight:bold; color:var(--ink);
+  }
+  .timer-wrap.low .circle-fg { stroke:var(--red); }
+  .timer-wrap.low .t-count { color:var(--red); }
+  .q-text { font-size:1.35rem; line-height:1.45; margin:.7rem 0 1rem; font-weight:bold; }
+  .qimg-wrap { text-align:center; margin:.2rem 0 1rem; }
+  .qimg-wrap img.qimg {
+    max-width:100%; max-height:240px; border-radius:14px; object-fit:contain;
+    border:1px solid rgba(0,0,0,0.08);
+  }
+  .qimg-wrap .emoji-big { font-size:4.2rem; animation: pop 0.5s ease; }
+  .qimg-wrap .caption { font-size:.78rem; color:var(--ink-soft); margin-top:.35rem; }
+
+  .options { display:flex; flex-direction:column; gap:.7rem; }
+  .opt {
+    display:flex; align-items:center; gap:.8rem; width:100%; text-align:left;
+    font-family:inherit; font-size:1.02rem; color:var(--ink); cursor:pointer;
+    background:#f7fbfc; border:2px solid rgba(0,0,0,0.08); border-radius:14px;
+    padding:.72rem 1rem; min-height:48px; transition:border-color .15s, background .15s, transform .1s;
+    position:relative; overflow:hidden;
+  }
+  .opt:hover { border-color:var(--sky); background:#eef6ff; transform:translateY(-1px); }
+  .opt .key {
+    width:30px; height:30px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center;
+    background:#fff; border:2px solid rgba(0,0,0,0.14); font-size:.9rem; font-weight:bold; color:var(--ink-soft);
+  }
+  .opt.correct { border-color:var(--green); background:#eafaf1; }
+  .opt.correct .key { border-color:var(--green); color:var(--green); background:#d5f5e3; }
+  .opt.wrong-chosen { border-color:var(--red); background:#fdecea; }
+  .opt.wrong-chosen .key { border-color:var(--red); color:var(--red); background:#fadbd8; }
+  .opt.dim { opacity:.55; }
+  .opt .mark { margin-left:auto; font-size:1.1rem; }
+
+  /* Reveal banner */
+  .reveal-banner {
+    margin-top:1rem; border-radius:14px; padding:.8rem 1rem; font-size:1.02rem; font-weight:bold;
+    display:flex; gap:.6rem; align-items:center; animation: slideUp .35s ease both;
+  }
+  .reveal-banner.good { background:#eafaf1; color:#1e8449; }
+  .reveal-banner.bad { background:#fdecea; color:#c0392b; }
+  .reveal-banner.slow { background:#fef5e7; color:#b9770e; }
+  .reveal-exp { margin-top:.6rem; background:#f4f8fa; border-radius:12px; padding:.8rem 1rem; font-size:.95rem; color:var(--ink-soft); line-height:1.5; }
+  .reveal-exp b { color:var(--ink); }
+  .next-row { display:flex; align-items:center; justify-content:space-between; gap:.6rem; }
+  .pts-gain { font-weight:bold; font-size:1rem; }
+  .pts-gain.gain { color:var(--green); }
+  .pts-gain.none { color:var(--ink-soft); }
+  .next-btn {
+    font-family:inherit; font-size:1.02rem; font-weight:bold; cursor:pointer; color:#fff;
+    background:linear-gradient(135deg,var(--sky),#2e86de); border:none; border-radius:999px;
+    padding:.7rem 1.7rem; box-shadow:0 4px 14px rgba(79,157,232,0.4); transition:transform .15s;
+  }
+  .next-btn:hover { transform:translateY(-2px); }
+
+  .q-foot { display:flex; justify-content:center; margin-top:1rem; }
+  .speak-btn {
+    font-family:inherit; font-size:.9rem; color:var(--ink-soft); cursor:pointer; background:none;
+    border:1px solid rgba(0,0,0,0.1); border-radius:999px; padding:.35rem 1rem;
+  }
+  .speak-btn:hover { border-color:var(--sky); color:var(--sky); }
+
+  /* Results */
+  .results { text-align:center; }
+  .results h2 { font-size:1.7rem; margin-bottom:.3rem; }
+  .results .sub { color:var(--ink-soft); margin-bottom:1rem; }
+  .ring-wrap { width:150px; height:150px; margin:0 auto .6rem; position:relative; }
+  .ring-wrap svg { width:150px; height:150px; transform:rotate(-90deg); }
+  .ring-wrap .rbg { fill:none; stroke:rgba(0,0,0,0.08); stroke-width:12; }
+  .ring-wrap .rfg { fill:none; stroke:url(#gradA); stroke-width:12; stroke-linecap:round;
+    stroke-dasharray:283; stroke-dashoffset:283; transition:stroke-dashoffset 1s ease; }
+  .ring-wrap .rscore {
+    position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
+  }
+  .ring-wrap .rscore .n { font-size:2rem; font-weight:bold; }
+  .ring-wrap .rscore .pts { font-size:.8rem; color:var(--ink-soft); }
+  .stars { font-size:1.9rem; letter-spacing:.15rem; margin:.2rem 0 .9rem; }
+  .review { text-align:left; margin:1rem 0; }
+  .review-row { display:flex; gap:.7rem; padding:.6rem .4rem; border-bottom:1px solid rgba(0,0,0,0.06); font-size:.86rem; align-items:flex-start; }
+  .review-row .qi { font-weight:bold; color:var(--ink-soft); min-width:1.6rem; }
+  .review-row .qbody { flex:1; }
+  .review-row .qbody .qq { font-weight:bold; margin-bottom:.15rem; }
+  .review-row .qbody .aa { color:var(--ink-soft); }
+  .review-row .pts { font-weight:bold; flex-shrink:0; }
+  .review-row .pts.gain { color:var(--green); }
+  .review-row .pts.none { color:var(--ink-soft); }
+
+  /* Confetti */
+  #confetti { position:fixed; inset:0; pointer-events:none; z-index:200; overflow:hidden; }
+  .confetti {
+    position:absolute; top:-3vh; width:12px; height:12px; border-radius:2px;
+    animation: confetti-fall linear forwards;
+  }
+
+  /* Hamburger / overlay (mobile) */
+  .hamburger { display:none; position:fixed; top:.7rem; left:.7rem; z-index:40;
+    background:#fff; border:1px solid rgba(0,0,0,0.15); border-radius:10px;
+    padding:.35rem .65rem; font-size:1.25rem; cursor:pointer; font-family:inherit; }
+  .overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:19; }
+  .overlay.open { display:block; }
+
+  /* Keyframes */
+  @keyframes bob { 0%,100%{ transform:translateY(0);} 50%{ transform:translateY(-8px);} }
+  @keyframes pop { 0%{ transform:scale(0.4); opacity:0;} 100%{ transform:scale(1); opacity:1;} }
+  @keyframes slideUp { from{ opacity:0; transform:translateY(14px);} to{ opacity:1; transform:translateY(0);} }
+  @keyframes cardIn { from{ opacity:0; transform:translateY(20px) scale(0.97);} to{ opacity:1; transform:none;} }
+  @keyframes confetti-fall { to { transform:translateY(108vh) rotate(var(--rx,180deg)); opacity:.9; } }
+  .card-in { animation:cardIn .35s ease both; }
+
+  @media (max-width:768px) {
+    .sidebar { position:fixed; left:0; top:0; bottom:0; transform:translateX(-100%); z-index:100; box-shadow:0 0 40px rgba(0,0,0,0.2); }
+    .sidebar.open { transform:translateX(0); }
+    .hamburger { display:block; }
+    .card { padding:1.4rem 1.2rem 1.6rem; }
+    .q-text { font-size:1.15rem; }
+  }
+</style>
+</head>
+<body>
+
+<div id="confetti"></div>
+
+<button class="hamburger" id="hamburger">☰</button>
+<div class="overlay" id="overlay"></div>
+
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header" id="sidebar-home"><span class="ticker">🧠</span> <span id="side-title">Classification of the Living World</span></div>
+  <div class="tree" id="tree"></div>
+</aside>
+
+<main class="main">
+  <div class="topbar">
+    <span class="app-title"><span>🧠</span><span id="top-title" title="Classification of the Living World">Classification of the Living World</span></span>
+    <span class="spacer"></span>
+    <div class="progress-track" title="Progress"><div class="progress-fill" id="progress-fill"></div></div>
+    <span class="score-chip" id="score-chip">⭐ Score: 0</span>
+    <button class="mute-btn" id="mute-btn" title="Toggle read-aloud (TTS)">🔊</button>
+  </div>
+  <div class="stage" id="stage"></div>
+</main>
+
+<script type="application/json" id="quiz-data">{"title": "Classification of the Living World", "subtitle": "Chapter 3 — Living Science Big Book5", "emoji": "🧬", "sections": [{"id": "exercises", "title": "Exercises", "emoji": "📝", "questions": [{"id": "classification-of-living-world-q1", "section": "Exercises", "question": "The binomial system of naming organisms was given by?", "options": ["Carolus Linnaeus", "Charles Darwin", "Gregor Mendel", "Aristotle"], "correctIndex": 0, "explanation": "Carolus Linnaeus introduced the binomial system of nomenclature for naming organisms."}, {"id": "classification-of-living-world-q2", "section": "Exercises", "question": "The largest unit of classification is?", "options": ["phylum", "kingdom", "species", "genus"], "correctIndex": 1, "explanation": "Kingdom is the largest unit of classification, while species is the smallest."}, {"id": "classification-of-living-world-q3", "section": "Exercises", "question": "The smallest unit of classification is?", "options": ["phylum", "family", "genus", "species"], "correctIndex": 3, "explanation": "Species is the smallest unit of classification where organisms resemble each other very closely."}, {"id": "classification-of-living-world-q4", "section": "Exercises", "question": "According to the five-kingdom classification, which is the correct sequence from simplest to complex?", "options": ["Protista, Fungi, Monera, Plantae, Animalia", "Monera, Protista, Fungi, Plantae, Animalia", "Monera, Fungi, Protista, Plantae, Animalia", "Monera, Protista, Fungi, Animalia, Plantae"], "correctIndex": 1, "explanation": "Monera is simplest, then Protista, Fungi, Plantae, and Animalia is the most complex."}, {"id": "classification-of-living-world-q5", "section": "Exercises", "question": "All organisms belonging to Kingdom Monera have?", "options": ["a single cell without nucleus", "a single cell with nucleus", "many cells without nucleus", "many cells with nucleus"], "correctIndex": 0, "explanation": "Monera organisms are prokaryotic and unicellular, meaning they have no defined nucleus."}, {"id": "classification-of-living-world-q6", "section": "Exercises", "question": "All organisms belonging to Kingdom Protista have?", "options": ["a single cell without nucleus", "a single cell with nucleus", "many cells without nucleus", "many cells with nucleus"], "correctIndex": 1, "explanation": "Protists are unicellular eukaryotic organisms with a well-defined nucleus."}, {"id": "classification-of-living-world-q7", "section": "Exercises", "question": "Which of the following is found in plant cells but not in animal cells?", "options": ["cell wall", "chromosomes", "cell membrane", "none of these"], "correctIndex": 0, "explanation": "Plant cells have a cell wall made of cellulose, but animal cells do not."}]}, {"id": "amoeba", "title": "Amoeba", "emoji": "🦠", "questions": [{"id": "classification-of-living-world-q8", "section": "Amoeba", "question": "Name the Kingdom to which Amoeba belongs to.", "options": ["Monera", "Protista", "Fungi", "Animalia"], "correctIndex": 1, "explanation": "Amoeba is a free-living protozoan that belongs to Kingdom Protista."}, {"id": "classification-of-living-world-q9", "section": "Amoeba", "question": "Amoeba moves with the help of pseudopodia. These are temporary finger-like projections formed by the streaming flow of which part?", "options": ["cytoplasm", "nucleus", "cell wall", "chloroplast"], "correctIndex": 0, "explanation": "Pseudopodia are formed by the streaming flow of cytoplasm in Amoeba.", "image": {"type": "svg", "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMDAgMjIwIj4KICA8ZGVmcz4KICAgIDxyYWRpYWxHcmFkaWVudCBpZD0iYm9keSIgY3g9IjQwJSIgY3k9IjQwJSI+CiAgICAgIDxzdG9wIG9mZnNldD0iMCUiIHN0b3AtY29sb3I9IiNiOGU2YzgiLz4KICAgICAgPHN0b3Agb2Zmc2V0PSIxMDAlIiBzdG9wLWNvbG9yPSIjNmFiODdhIi8+CiAgICA8L3JhZGlhbEdyYWRpZW50PgogIDwvZGVmcz4KICA8cGF0aCBkPSJNODAsMTEwIFE1MCw2MCA5MCw0MCBRMTMwLDIwIDE3MCw1MCBRMjAwLDMwIDIzMCw2MCBRMjYwLDkwIDI0MCwxMjAKICAgICAgICAgICBRMjYwLDE1MCAyMzAsMTcwIFEyMDAsMjAwIDE2MCwxODAgUTEzMCwyMTAgOTAsMTgwIFE1MCwxNjAgODAsMTEwWiIKICAgICAgICBmaWxsPSJ1cmwoI2JvZHkpIiBzdHJva2U9IiM0YTk5NjAiIHN0cm9rZS13aWR0aD0iMiIvPgogIDxlbGxpcHNlIGN4PSIxNTAiIGN5PSIxMTAiIHJ4PSIyMiIgcnk9IjE4IiBmaWxsPSIjMmQ1YTNhIiBvcGFjaXR5PSIwLjgiLz4KICA8Y2lyY2xlIGN4PSIxNTUiIGN5PSIxMDYiIHI9IjQiIGZpbGw9IiMxYTNkMjUiLz4KICA8cGF0aCBkPSJNMjMwLDYwIFEyNjUsNDAgMjg1LDU1IiBmaWxsPSJub25lIiBzdHJva2U9IiM2YWI4N2EiIHN0cm9rZS13aWR0aD0iOCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBvcGFjaXR5PSIwLjgiLz4KICA8cGF0aCBkPSJNODAsMTEwIFE0MCwxMjAgMjUsMTA1IiBmaWxsPSJub25lIiBzdHJva2U9IiM2YWI4N2EiIHN0cm9rZS13aWR0aD0iNyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBvcGFjaXR5PSIwLjgiLz4KICA8cGF0aCBkPSJNOTAsMTgwIFE3MCwyMDAgNTUsMTk1IiBmaWxsPSJub25lIiBzdHJva2U9IiM2YWI4N2EiIHN0cm9rZS13aWR0aD0iNiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBvcGFjaXR5PSIwLjgiLz4KICA8dGV4dCB4PSIyODAiIHk9IjQ4IiBmb250LXNpemU9IjExIiBmaWxsPSIjMzMzIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiI+cHNldWRvcG9kaXVtPC90ZXh0PgogIDx0ZXh0IHg9IjgiIHk9IjEwMCIgZm9udC1zaXplPSIxMSIgZmlsbD0iIzMzMyIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiPmZhbHNlIGZvb3Q8L3RleHQ+CiAgPHRleHQgeD0iMTMwIiB5PSIxMTUiIGZvbnQtc2l6ZT0iMTAiIGZpbGw9IiNmZmYiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXdlaWdodD0iYm9sZCI+bnVjbGV1czwvdGV4dD4KPC9zdmc+", "alt": "Amoeba showing pseudopodia", "caption": "Amoeba moves using pseudopodia (false feet)"}}, {"id": "classification-of-living-world-q10", "section": "Amoeba", "question": "In Amoeba, which function is carried out by the help of contractile vacuoles?", "options": ["respiration", "reproduction", "locomotion", "excretion"], "correctIndex": 3, "explanation": "Contractile vacuoles help Amoeba excrete waste materials like carbon dioxide and ammonia.", "image": {"type": "svg", "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMDAgMjAwIj4KICA8ZGVmcz4KICAgIDxyYWRpYWxHcmFkaWVudCBpZD0iYm9keTIiIGN4PSI0MCUiIGN5PSI0MCUiPgogICAgICA8c3RvcCBvZmZzZXQ9IjAlIiBzdG9wLWNvbG9yPSIjYjhlNmM4Ii8+CiAgICAgIDxzdG9wIG9mZnNldD0iMTAwJSIgc3RvcC1jb2xvcj0iIzZhYjg3YSIvPgogICAgPC9yYWRpYWxHcmFkaWVudD4KICA8L2RlZnM+CiAgPHBhdGggZD0iTTgwLDEwMCBRNTAsNTAgOTAsMzAgUTEzMCwxMCAxNzAsNDAgUTIwMCwyMCAyMzAsNTAgUTI2MCw4MCAyNDAsMTEwCiAgICAgICAgICAgUTI2MCwxNDAgMjMwLDE2MCBRMjAwLDE5MCAxNjAsMTcwIFExMzAsMjAwIDkwLDE3MCBRNTAsMTUwIDgwLDEwMFoiCiAgICAgICAgZmlsbD0idXJsKCNib2R5MikiIHN0cm9rZT0iIzRhOTk2MCIgc3Ryb2tlLXdpZHRoPSIyIi8+CiAgPGVsbGlwc2UgY3g9IjE1MCIgY3k9IjEwMCIgcng9IjIwIiByeT0iMTYiIGZpbGw9IiMyZDVhM2EiIG9wYWNpdHk9IjAuOCIvPgogIDxjaXJjbGUgY3g9IjE5NSIgY3k9IjgwIiByPSIxNCIgZmlsbD0iIzRmYzNmNyIgc3Ryb2tlPSIjMDI4OGQxIiBzdHJva2Utd2lkdGg9IjEuNSIgb3BhY2l0eT0iMC45Ii8+CiAgPHRleHQgeD0iMTg4IiB5PSI4NCIgZm9udC1zaXplPSI4IiBmaWxsPSIjMDE1NzliIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC13ZWlnaHQ9ImJvbGQiPkNWPC90ZXh0PgogIDxwYXRoIGQ9Ik0yMTAsNzUgTDI0MCw2MCIgc3Ryb2tlPSIjMDI4OGQxIiBzdHJva2Utd2lkdGg9IjEiIHN0cm9rZS1kYXNoYXJyYXk9IjMsMiIvPgogIDx0ZXh0IHg9IjI0MiIgeT0iNTgiIGZvbnQtc2l6ZT0iMTAiIGZpbGw9IiMzMzMiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIj53YXN0ZSBvdXQ8L3RleHQ+CiAgPHRleHQgeD0iMTMyIiB5PSIxMDQiIGZvbnQtc2l6ZT0iOSIgZmlsbD0iI2ZmZiIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiIGZvbnQtd2VpZ2h0PSJib2xkIj5udWNsZXVzPC90ZXh0PgogIDx0ZXh0IHg9IjE1NSIgeT0iMTU1IiBmb250LXNpemU9IjEwIiBmaWxsPSIjMzMzIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiI+Y29udHJhY3RpbGUgdmFjdW9sZSAoQ1YpPC90ZXh0PgogIDx0ZXh0IHg9IjEzMCIgeT0iMTc1IiBmb250LXNpemU9IjEwIiBmaWxsPSIjMzMzIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiI+cHVtcHMgb3V0IHdhc3RlIHdhdGVyPC90ZXh0Pgo8L3N2Zz4=", "alt": "Amoeba showing contractile vacuole", "caption": "Contractile vacuole (CV) pumps out waste"}}]}, {"id": "classification-basics", "title": "Classification Basics", "emoji": "📚", "questions": [{"id": "classification-of-living-world-q11", "section": "Classification Basics", "question": "What is biological classification?", "options": ["Scientific way of identifying, naming and grouping organisms based on similarities and differences", "A method of growing plants in a garden", "Cooking different types of food for animals", "Building homes for insects and birds"], "correctIndex": 0, "explanation": "Biological classification groups living organisms based on their similarities and differences."}, {"id": "classification-of-living-world-q12", "section": "Classification Basics", "question": "Who was the first person to classify animals based on simple visible characters?", "options": ["Charles Darwin", "Gregor Mendel", "Aristotle", "Carl Sagan"], "correctIndex": 2, "explanation": "The Greek philosopher Aristotle was the first to classify animals using simple visible characters.", "image": {"type": "svg", "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMDAgMjYwIj4KICA8cmVjdCB4PSIzMCIgeT0iMTgwIiB3aWR0aD0iMTQwIiBoZWlnaHQ9IjcwIiByeD0iNSIgZmlsbD0iI2Q0YTU3NCIgc3Ryb2tlPSIjYTA3ODUwIiBzdHJva2Utd2lkdGg9IjEiLz4KICA8dGV4dCB4PSIxMDAiIHk9IjIxOCIgZm9udC1zaXplPSIxMyIgZmlsbD0iIzVhM2QyMCIgZm9udC1mYW1pbHk9InNlcmlmIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXdlaWdodD0iYm9sZCI+QXJpc3RvdGxlPC90ZXh0PgogIDx0ZXh0IHg9IjEwMCIgeT0iMjM4IiBmb250LXNpemU9IjEwIiBmaWxsPSIjN2E1ZDQwIiBmb250LWZhbWlseT0ic2VyaWYiIHRleHQtYW5jaG9yPSJtaWRkbGUiPjM4NC0zMjIgQkNFPC90ZXh0PgogIDxjaXJjbGUgY3g9IjEwMCIgY3k9IjEwMCIgcj0iNDAiIGZpbGw9IiNmNWRlYjMiIHN0cm9rZT0iI2M0YTA2MCIgc3Ryb2tlLXdpZHRoPSIyIi8+CiAgPHBhdGggZD0iTTYwLDg1IFE2NSw1MCAxMDAsNDUgUTEzNSw1MCAxNDAsODUiIGZpbGw9IiM4YjczNTUiIHN0cm9rZT0iIzZiNTUzNSIgc3Ryb2tlLXdpZHRoPSIxLjUiLz4KICA8ZWxsaXBzZSBjeD0iMTAwIiBjeT0iMTA1IiByeD0iMzAiIHJ5PSIzNSIgZmlsbD0iI2Y1ZGViMyIvPgogIDxjaXJjbGUgY3g9Ijg4IiBjeT0iOTUiIHI9IjMiIGZpbGw9IiM0YTM1MjAiLz4KICA8Y2lyY2xlIGN4PSIxMTIiIGN5PSI5NSIgcj0iMyIgZmlsbD0iIzRhMzUyMCIvPgogIDxwYXRoIGQ9Ik05MCwxMTUgUTEwMCwxMjUgMTEwLDExNSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOGI2MDQwIiBzdHJva2Utd2lkdGg9IjEuNSIvPgogIDxwYXRoIGQ9Ik03MCwxMzUgUTUwLDE2MCA1NSwyMDAiIGZpbGw9IiNjNGEwNjAiIHN0cm9rZT0iI2EwNzg1MCIgc3Ryb2tlLXdpZHRoPSIxIi8+CiAgPHBhdGggZD0iTTEzMCwxMzUgUTE1MCwxNjAgMTQ1LDIwMCIgZmlsbD0iI2M0YTA2MCIgc3Ryb2tlPSIjYTA3ODUwIiBzdHJva2Utd2lkdGg9IjEiLz4KICA8cmVjdCB4PSI1NSIgeT0iMTM1IiB3aWR0aD0iOTAiIGhlaWdodD0iNTAiIHJ4PSIzIiBmaWxsPSIjYzRhMDYwIiBzdHJva2U9IiNhMDc4NTAiIHN0cm9rZS13aWR0aD0iMSIvPgogIDx0ZXh0IHg9IjEwMCIgeT0iMjU4IiBmb250LXNpemU9IjkiIGZpbGw9IiM2NjYiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5HcmVlayBwaGlsb3NvcGhlcjwvdGV4dD4KPC9zdmc+", "alt": "Aristotle, Greek philosopher", "caption": "Aristotle (384-322 BCE) — first to classify animals"}}, {"id": "classification-of-living-world-q13", "section": "Classification Basics", "question": "Who suggested the five-kingdom classification in 1969?", "options": ["Aristotle", "Carolus Linnaeus", "R. H. Whittaker", "Gregor Mendel"], "correctIndex": 2, "explanation": "R. H. Whittaker, an American plant biologist, suggested the five-kingdom classification in 1969."}]}, {"id": "kingdom-monera", "title": "Kingdom Monera", "emoji": "🦠", "questions": [{"id": "classification-of-living-world-q14", "section": "Kingdom Monera", "question": "What is the meaning of the word 'Monera' in Greek?", "options": ["many", "first", "single", "green"], "correctIndex": 2, "explanation": "The Greek word 'monos' means single, referring to the unicellular nature of Monera organisms."}, {"id": "classification-of-living-world-q15", "section": "Kingdom Monera", "question": "Which of these is a shape of bacteria?", "options": ["Triangle-shaped", "Star-shaped", "Rod-shaped", "Heart-shaped"], "correctIndex": 2, "explanation": "Bacteria come in rod, spherical, spiral, and comma shapes, but not triangle, star, or heart shapes.", "image": {"type": "svg", "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzNjAgMjAwIj4KICA8dGV4dCB4PSI1NSIgeT0iMjUiIGZvbnQtc2l6ZT0iMTMiIGZpbGw9IiMzMzMiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXdlaWdodD0iYm9sZCI+YmFjaWxsaTwvdGV4dD4KICA8cmVjdCB4PSIyNSIgeT0iNDAiIHdpZHRoPSI2MCIgaGVpZ2h0PSIyMCIgcng9IjEwIiBmaWxsPSIjZmY4YTY1IiBzdHJva2U9IiNlNjRhMTkiIHN0cm9rZS13aWR0aD0iMS41Ii8+CiAgPHJlY3QgeD0iMjUiIHk9IjcwIiB3aWR0aD0iNjAiIGhlaWdodD0iMjAiIHJ4PSIxMCIgZmlsbD0iI2ZmOGE2NSIgc3Ryb2tlPSIjZTY0YTE5IiBzdHJva2Utd2lkdGg9IjEuNSIvPgogIDx0ZXh0IHg9IjE1NSIgeT0iMjUiIGZvbnQtc2l6ZT0iMTMiIGZpbGw9IiMzMzMiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXdlaWdodD0iYm9sZCI+Y29jY2k8L3RleHQ+CiAgPGNpcmNsZSBjeD0iMTM1IiBjeT0iNTUiIHI9IjEyIiBmaWxsPSIjODFjNzg0IiBzdHJva2U9IiMzODhlM2MiIHN0cm9rZS13aWR0aD0iMS41Ii8+CiAgPGNpcmNsZSBjeD0iMTU1IiBjeT0iNTUiIHI9IjEyIiBmaWxsPSIjODFjNzg0IiBzdHJva2U9IiMzODhlM2MiIHN0cm9rZS13aWR0aD0iMS41Ii8+CiAgPGNpcmNsZSBjeD0iMTc1IiBjeT0iNTUiIHI9IjEyIiBmaWxsPSIjODFjNzg0IiBzdHJva2U9IiMzODhlM2MiIHN0cm9rZS13aWR0aD0iMS41Ii8+CiAgPGNpcmNsZSBjeD0iMTQ1IiBjeT0iNzUiIHI9IjEyIiBmaWxsPSIjODFjNzg0IiBzdHJva2U9IiMzODhlM2MiIHN0cm9rZS13aWR0aD0iMS41Ii8+CiAgPGNpcmNsZSBjeD0iMTY1IiBjeT0iNzUiIHI9IjEyIiBmaWxsPSIjODFjNzg0IiBzdHJva2U9IiMzODhlM2MiIHN0cm9rZS13aWR0aD0iMS41Ii8+CiAgPHRleHQgeD0iMjY1IiB5PSIyNSIgZm9udC1zaXplPSIxMyIgZmlsbD0iIzMzMyIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtd2VpZ2h0PSJib2xkIj5zcGlyaWxsYTwvdGV4dD4KICA8cGF0aCBkPSJNMjMwLDYwIFEyNDUsNDAgMjYwLDYwIFEyNzUsODAgMjkwLDYwIFEzMDUsNDAgMzIwLDYwIiBmaWxsPSJub25lIiBzdHJva2U9IiM2NGI1ZjYiIHN0cm9rZS13aWR0aD0iNCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+CiAgPHRleHQgeD0iMzQwIiB5PSIyNSIgZm9udC1zaXplPSIxMyIgZmlsbD0iIzMzMyIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtd2VpZ2h0PSJib2xkIj52aWJyaW88L3RleHQ+CiAgPHBhdGggZD0iTTMzMCw1NSBRMzQwLDQ1IDM0NSw2MCBRMzQwLDc1IDMzMCw2NSIgZmlsbD0iI2JhNjhjOCIgc3Ryb2tlPSIjN2IxZmEyIiBzdHJva2Utd2lkdGg9IjIiLz4KICA8dGV4dCB4PSIxODAiIHk9IjEyMCIgZm9udC1zaXplPSIxMSIgZmlsbD0iIzY2NiIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiIHRleHQtYW5jaG9yPSJtaWRkbGUiPnJvZC1zaGFwZWQgfCBzcGhlcmljYWwgfCBzcGlyYWwgfCBjb21tYTwvdGV4dD4KICA8dGV4dCB4PSIxODAiIHk9IjE0MCIgZm9udC1zaXplPSIxMCIgZmlsbD0iIzg4OCIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiIHRleHQtYW5jaG9yPSJtaWRkbGUiPkRpZmZlcmVudCBzaGFwZXMgb2YgYmFjdGVyaWE8L3RleHQ+Cjwvc3ZnPg==", "alt": "Different shapes of bacteria", "caption": "Bacilli, cocci, spirilla, and vibrio shapes"}}, {"id": "classification-of-living-world-q16", "section": "Kingdom Monera", "question": "Which bacteria are used to produce curd, butter and cheese?", "options": ["Streptococcus and Lactobacillus", "Escherichia coli and Salmonella", "Vibrio cholerae and Salmonella", "Mycobacterium and Clostridium"], "correctIndex": 0, "explanation": "Streptococcus and Lactobacillus bacteria are used to produce curd, butter and cheese."}, {"id": "classification-of-living-world-q17", "section": "Kingdom Monera", "question": "Nitrogen-fixing bacteria like Azotobacter and Clostridium are found in the root nodules of which plants?", "options": ["Cactus and aloe", "Leguminous plants", "Grass and wheat", "Mango and neem"], "correctIndex": 1, "explanation": "Nitrogen-fixing bacteria live in root nodules of leguminous plants like peas and beans."}, {"id": "classification-of-living-world-q18", "section": "Kingdom Monera", "question": "Which disease in humans is caused by the bacterium Vibrio cholerae?", "options": ["Tuberculosis", "Diphtheria", "Cholera", "Typhoid"], "correctIndex": 2, "explanation": "Vibrio cholerae is the bacterium that causes cholera in humans."}]}, {"id": "kingdom-protista", "title": "Kingdom Protista", "emoji": "🔬", "questions": [{"id": "classification-of-living-world-q19", "section": "Kingdom Protista", "question": "What does the Greek word 'protista' mean?", "options": ["green", "many", "single", "first"], "correctIndex": 3, "explanation": "The Greek word 'protista' means first, indicating these were among the earliest simple organisms."}]}, {"id": "kingdom-fungi", "title": "Kingdom Fungi", "emoji": "🍄", "questions": [{"id": "classification-of-living-world-q20", "section": "Kingdom Fungi", "question": "What is the tough, complex sugar found in the cell wall of fungi called?", "options": ["Cellulose", "Starch", "Chitin", "Glucose"], "correctIndex": 2, "explanation": "Fungi have a cell wall made of chitin, a tough complex sugar different from plant cellulose."}, {"id": "classification-of-living-world-q21", "section": "Kingdom Fungi", "question": "What are fungi that feed on dead decaying organic matter called?", "options": ["Parasites", "Saprophytes", "Autotrophs", "Herbivores"], "correctIndex": 1, "explanation": "Fungi that feed on dead decaying organic matter are called saprophytes."}]}, {"id": "kingdom-plantae", "title": "Kingdom Plantae", "emoji": "🌿", "questions": [{"id": "classification-of-living-world-q22", "section": "Kingdom Plantae", "question": "How do plants prepare their own food?", "options": ["By eating insects", "By absorbing water only", "By photosynthesis using chlorophyll", "By breathing air"], "correctIndex": 2, "explanation": "Plants use chlorophyll to make food through photosynthesis using sunlight, water and carbon dioxide.", "image": {"type": "svg", "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMjAgMjAwIj4KICA8Y2lyY2xlIGN4PSI1MCIgY3k9IjUwIiByPSIzMCIgZmlsbD0iI2ZmZDU0ZiIgc3Ryb2tlPSIjZjlhODI1IiBzdHJva2Utd2lkdGg9IjIiLz4KICA8bGluZSB4MT0iNTAiIHkxPSIxNSIgeDI9IjUwIiB5Mj0iNSIgc3Ryb2tlPSIjZjlhODI1IiBzdHJva2Utd2lkdGg9IjIiLz4KICA8bGluZSB4MT0iODAiIHkxPSIzNSIgeDI9IjkwIiB5Mj0iMjUiIHN0cm9rZT0iI2Y5YTgyNSIgc3Ryb2tlLXdpZHRoPSIyIi8+CiAgPGxpbmUgeDE9IjI1IiB5MT0iMzUiIHgyPSIxNSIgeTI9IjI1IiBzdHJva2U9IiNmOWE4MjUiIHN0cm9rZS13aWR0aD0iMiIvPgogIDxsaW5lIHgxPSI4MCIgeTE9IjU1IiB4Mj0iOTAiIHkyPSI1NSIgc3Ryb2tlPSIjZjlhODI1IiBzdHJva2Utd2lkdGg9IjIiLz4KICA8bGluZSB4MT0iMjAiIHkxPSI1NSIgeDI9IjEwIiB5Mj0iNTUiIHN0cm9rZT0iI2Y5YTgyNSIgc3Ryb2tlLXdpZHRoPSIyIi8+CiAgPGxpbmUgeDE9Ijg1IiB5MT0iNTAiIHgyPSIxMzAiIHkyPSI5NSIgc3Ryb2tlPSIjZmZhNzI2IiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1kYXNoYXJyYXk9IjUsMyIvPgogIDx0ZXh0IHg9IjExMCIgeT0iNzUiIGZvbnQtc2l6ZT0iMTAiIGZpbGw9IiNlNjUxMDAiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIj5zdW5saWdodDwvdGV4dD4KICA8cGF0aCBkPSJNMTAwLDkwIFExMjAsNzAgMTQwLDkwIFExNjAsMTEwIDE4MCw5MCBRMjAwLDcwIDIyMCw5MCBRMjQwLDExMCAyNjAsOTAgUTI4MCw3MCAzMDAsOTAiCiAgICAgICAgZmlsbD0iIzY2YmI2YSIgc3Ryb2tlPSIjMzg4ZTNjIiBzdHJva2Utd2lkdGg9IjIiLz4KICA8cGF0aCBkPSJNMTQwLDkwIEwxNDAsMTcwIiBzdHJva2U9IiM3OTU1NDgiIHN0cm9rZS13aWR0aD0iMyIvPgogIDxwYXRoIGQ9Ik0xNDAsMTMwIFExMjAsMTIwIDExMCwxMzUiIGZpbGw9IiM4MWM3ODQiIHN0cm9rZT0iIzM4OGUzYyIgc3Ryb2tlLXdpZHRoPSIxIi8+CiAgPHBhdGggZD0iTTE0MCwxNTAgUTE2MCwxNDAgMTcwLDE1NSIgZmlsbD0iIzgxYzc4NCIgc3Ryb2tlPSIjMzg4ZTNjIiBzdHJva2Utd2lkdGg9IjEiLz4KICA8cGF0aCBkPSJNNjAsMTcwIFExODAsMTYwIDMwMCwxNzAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzQyYTVmNSIgc3Ryb2tlLXdpZHRoPSIzIi8+CiAgPHRleHQgeD0iMTgwIiB5PSIxOTAiIGZvbnQtc2l6ZT0iMTAiIGZpbGw9IiMxNTY1YzAiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj53YXRlciAoSOKCgk8pPC90ZXh0PgogIDxwYXRoIGQ9Ik0yMDAsMTAwIFEyMzAsODUgMjUwLDk1IiBmaWxsPSJub25lIiBzdHJva2U9IiM5MGE0YWUiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWRhc2hhcnJheT0iNCwzIi8+CiAgPHRleHQgeD0iMjU1IiB5PSI5MCIgZm9udC1zaXplPSI5IiBmaWxsPSIjNTQ2ZTdhIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiI+Q0/igoIgaW48L3RleHQ+CiAgPHBhdGggZD0iTTI2MCwxMTAgUTI4MCwxMDAgMzAwLDExMCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOTBhNGFlIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1kYXNoYXJyYXk9IjQsMyIvPgogIDx0ZXh0IHg9IjMwNSIgeT0iMTEwIiBmb250LXNpemU9IjkiIGZpbGw9IiM1NDZlN2EiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIj5P4oKCIG91dDwvdGV4dD4KPC9zdmc+", "alt": "Photosynthesis diagram", "caption": "Plants use sunlight, water, and CO₂ to make food"}}, {"id": "classification-of-living-world-q23", "section": "Kingdom Plantae", "question": "How many cotyledons (seed leaves) do monocotyledon plants have?", "options": ["None", "One", "Two", "Three"], "correctIndex": 1, "explanation": "Monocotyledon plants have seeds with only one cotyledon, like wheat, maize and rice.", "image": {"type": "svg", "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMjAgMjAwIj4KICA8dGV4dCB4PSI4NSIgeT0iMjUiIGZvbnQtc2l6ZT0iMTMiIGZpbGw9IiMzMzMiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXdlaWdodD0iYm9sZCI+TW9ub2NvdCAoMSBjb3R5bGVkb24pPC90ZXh0PgogIDxlbGxpcHNlIGN4PSI4NSIgY3k9Ijc1IiByeD0iMzUiIHJ5PSIyNSIgZmlsbD0iI2ZmZjljNCIgc3Ryb2tlPSIjZjlhODI1IiBzdHJva2Utd2lkdGg9IjIiLz4KICA8ZWxsaXBzZSBjeD0iODUiIGN5PSI2OCIgcng9IjEwIiByeT0iOCIgZmlsbD0iI2FlZDU4MSIgc3Ryb2tlPSIjNjg5ZjM4IiBzdHJva2Utd2lkdGg9IjEiLz4KICA8dGV4dCB4PSI4NSIgeT0iNzIiIGZvbnQtc2l6ZT0iOCIgZmlsbD0iIzMzNjkxZSIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiIHRleHQtYW5jaG9yPSJtaWRkbGUiPjE8L3RleHQ+CiAgPHRleHQgeD0iODUiIHk9IjExNSIgZm9udC1zaXplPSIxMSIgZmlsbD0iIzU1NSIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiIHRleHQtYW5jaG9yPSJtaWRkbGUiPndoZWF0LCBtYWl6ZSwgcmljZTwvdGV4dD4KICA8dGV4dCB4PSI4NSIgeT0iMTM1IiBmb250LXNpemU9IjEwIiBmaWxsPSIjODg4IiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgdGV4dC1hbmNob3I9Im1pZGRsZSI+ZS5nLiBtYWl6ZSBzZWVkPC90ZXh0PgogIDxsaW5lIHgxPSIxNjUiIHkxPSIyMCIgeDI9IjE2NSIgeTI9IjE4MCIgc3Ryb2tlPSIjY2NjIiBzdHJva2Utd2lkdGg9IjEiIHN0cm9rZS1kYXNoYXJyYXk9IjQsMyIvPgogIDx0ZXh0IHg9IjI0NSIgeT0iMjUiIGZvbnQtc2l6ZT0iMTMiIGZpbGw9IiMzMzMiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXdlaWdodD0iYm9sZCI+RGljb3QgKDIgY290eWxlZG9ucyk8L3RleHQ+CiAgPGVsbGlwc2UgY3g9IjI0NSIgY3k9Ijc1IiByeD0iMzUiIHJ5PSIyNSIgZmlsbD0iI2ZmZjljNCIgc3Ryb2tlPSIjZjlhODI1IiBzdHJva2Utd2lkdGg9IjIiLz4KICA8ZWxsaXBzZSBjeD0iMjM1IiBjeT0iNjgiIHJ4PSI4IiByeT0iNiIgZmlsbD0iI2FlZDU4MSIgc3Ryb2tlPSIjNjg5ZjM4IiBzdHJva2Utd2lkdGg9IjEiLz4KICA8ZWxsaXBzZSBjeD0iMjU1IiBjeT0iNjgiIHJ4PSI4IiByeT0iNiIgZmlsbD0iI2FlZDU4MSIgc3Ryb2tlPSIjNjg5ZjM4IiBzdHJva2Utd2lkdGg9IjEiLz4KICA8dGV4dCB4PSIyMzUiIHk9IjcxIiBmb250LXNpemU9IjciIGZpbGw9IiMzMzY5MWUiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj4yPC90ZXh0PgogIDx0ZXh0IHg9IjI1NSIgeT0iNzEiIGZvbnQtc2l6ZT0iNyIgZmlsbD0iIzMzNjkxZSIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiIHRleHQtYW5jaG9yPSJtaWRkbGUiPjI8L3RleHQ+CiAgPHRleHQgeD0iMjQ1IiB5PSIxMTUiIGZvbnQtc2l6ZT0iMTEiIGZpbGw9IiM1NTUiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5ncmFtLCBwZWEsIGJlYW48L3RleHQ+CiAgPHRleHQgeD0iMjQ1IiB5PSIxMzUiIGZvbnQtc2l6ZT0iMTAiIGZpbGw9IiM4ODgiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5lLmcuIHBlYSBzZWVkPC90ZXh0PgogIDx0ZXh0IHg9IjE2MCIgeT0iMTk1IiBmb250LXNpemU9IjEwIiBmaWxsPSIjNjY2IiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgdGV4dC1hbmNob3I9Im1pZGRsZSI+TW9ub2NvdCB2cyBEaWNvdCBzZWVkczwvdGV4dD4KPC9zdmc+", "alt": "Monocot vs Dicot seed comparison", "caption": "Monocots have 1 cotyledon; dicots have 2"}}, {"id": "classification-of-living-world-q24", "section": "Kingdom Plantae", "question": "What are non-seeded plants that do not produce flowers and seeds called?", "options": ["Phanerogams", "Angiosperms", "Cryptogams", "Gymnosperms"], "correctIndex": 2, "explanation": "Cryptogams are plants that do not produce flowers and seeds, so their reproduction is hidden."}]}, {"id": "kingdom-animalia", "title": "Kingdom Animalia", "emoji": "🐾", "questions": [{"id": "classification-of-living-world-q25", "section": "Kingdom Animalia", "question": "What kind of organisms are found in Kingdom Animalia?", "options": ["Unicellular and autotrophic", "Unicellular and heterotrophic", "Multicellular and autotrophic", "Multicellular and heterotrophic"], "correctIndex": 3, "explanation": "Kingdom Animalia includes all organisms that are multicellular and heterotrophic."}]}]}</script>
+
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <linearGradient id="gradA" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4ecdc4"/><stop offset="100%" stop-color="#4f9de8"/>
+    </linearGradient>
+  </defs>
+</svg>
+
+<script>
+(() => {
+"use strict";
+/* ══════════════════════════════════════════════════════════════
+   html-quiz runtime — self-contained, no libraries, no network.
+   Question data is parsed from the #quiz-data script tag.
+   ══════════════════════════════════════════════════════════════ */
+
+// ── Data & config ─────────────────────────────────────────────
+const QUIZ = JSON.parse(document.getElementById('quiz-data').textContent.trim());
+const params = new URLSearchParams(location.search);
+const cfg = {
+  secs: clampInt(params.get('secs'), 30, 2, 60),   // seconds per question
+  max:  clampInt(params.get('max'), 25, 1, 100),   // (informational only; cap applied at build)
+  tts:  params.get('tts') !== 'off' && params.get('tts') !== '0'
+};
+function clampInt(v, d, lo, hi){ const n = parseInt(v,10); return Number.isFinite(n) ? Math.min(hi, Math.max(lo, n)) : d; }
+
+// Build a flat ordered question list across all sections.
+const FLAT = [];
+QUIZ.sections.forEach(s => {
+  s.questions.forEach(q => {
+    FLAT.push({ q, sectionId: s.id, sectionTitle: s.title });
+  });
+});
+const TOTAL = FLAT.length;
+
+// ── State machine ─────────────────────────────────────────────
+let state = {
+  mode: 'intro',        // intro | question | revealed | results
+  scope: null,          // null = all sections, else sectionId
+  list: [],             // ordered [{q, sectionId, sectionTitle}] for current scope
+  iq: 0,
+  answers: [],          // {qid, chosen(-1=timeout), status, pts}
+  score: 0,
+  runToken: 0,
+  transitioning: false
+};
+
+const elStage  = document.getElementById('stage');
+const elScore  = document.getElementById('score-chip');
+const elProg   = document.getElementById('progress-fill');
+const elTree   = document.getElementById('tree');
+const elSide   = document.getElementById('sidebar');
+const overlay  = document.getElementById('overlay');
+const elMute   = document.getElementById('mute-btn');
+let muted = false;
+
+// ── DOM helpers (NO innerHTML anywhere) ───────────────────────
+const h = (tag, cls, text) => {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (text !== undefined) e.textContent = text;   // untrusted text → textContent only
+  return e;
+};
+function clear(node){ while(node.firstChild) node.removeChild(node.firstChild); }
+
+// ── Sound (WebAudio, synthesised; lazy context for autoplay) ─
+let AC = null;
+function ensureAudio(){
+  if (!AC){ try{ AC = new (window.AudioContext || window.webkitAudioContext)(); }catch(e){ return null; } }
+  if (AC.state === 'suspended') AC.resume();
+  return AC;
+}
+function blip(freq, dur, type, delay, vol){
+  const ac = AC || ensureAudio();
+  if (!ac) return;
+  const t0 = ac.currentTime + (delay || 0);
+  const o = ac.createOscillator(), g = ac.createGain();
+  o.type = type || 'sine'; o.frequency.value = freq;
+  g.gain.setValueAtTime(vol || 0.14, t0);
+  g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+  o.connect(g); g.connect(ac.destination);
+  o.start(t0); o.stop(t0 + dur + 0.03);
+}
+const sTick   = () => blip(880, 0.06, 'square');
+const sCorrect= () => { blip(523,0.12,'sine',0); blip(659,0.12,'sine',0.11); blip(784,0.2,'sine',0.22); };
+const sWrong  = () => { blip(220,0.22,'triangle',0); blip(170,0.28,'triangle',0.14); };
+const sTimesUp= () => { blip(440,0.18,'triangle',0); blip(330,0.3,'triangle',0.16); };
+const sPop    = () => { blip(660,0.09,'sine',0,0.1); blip(880,0.1,'sine',0.07,0.08); };
+
+// ── TTS (Web Speech API) ──────────────────────────────────────
+function ttsAvailable(){ return 'speechSynthesis' in window; }
+function pickVoice(){
+  if (!ttsAvailable()) return null;
+  const vs = speechSynthesis.getVoices();
+  return vs.find(v => /^en/i.test(v.lang)) || vs[0] || null;
+}
+function speak(text, onEnd){
+  if (!cfg.tts || muted || !ttsAvailable() || !text) { if (onEnd) onEnd(); return; }
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.rate = 1; u.pitch = 1.05;
+  const v = pickVoice(); if (v) u.voice = v;
+  if (onEnd) u.onend = onEnd;
+  speechSynthesis.speak(u);
+}
+if ('speechSynthesis' in window){
+  speechSynthesis.onvoiceschanged = () => {};   // warm the voice list
+}
+
+// ── Timer ring ────────────────────────────────────────────────
+let rafId = 0;
+function stopTimer(){ if (rafId){ cancelAnimationFrame(rafId); rafId = 0; } }
+function startTimer(secs, token){
+  stopTimer();
+  const C = 2 * Math.PI * 30;                    // r=30 ring
+  const ring = document.getElementById('ring-fg');
+  const count = document.getElementById('t-count');
+  const wrap = document.getElementById('timer-wrap');
+  ring.setAttribute('stroke-dasharray', C);
+  ring.setAttribute('stroke-dashoffset', 0);
+  const deadline = performance.now() + secs * 1000;
+  let lastSec = Math.ceil(secs);
+  const loop = (now) => {
+    if (state.runToken !== token) return;        // stale — question changed
+    const remMs = deadline - now;
+    const remSec = Math.max(0, Math.ceil(remMs / 1000));
+    const frac = Math.max(0, Math.min(1, remMs / (secs * 1000)));
+    ring.setAttribute('stroke-dashoffset', String(C * (1 - frac)));   // SVG attr, not CSS
+    count.textContent = String(remSec);
+    wrap.classList.toggle('low', remSec <= 3);
+    if (remSec < lastSec){ lastSec = remSec; if (remSec > 0 && remSec <= 3 && state.mode === 'question') sTick(); }
+    if (remMs <= 0){ onTimeout(token); return; }
+    rafId = requestAnimationFrame(loop);
+  };
+  rafId = requestAnimationFrame(loop);
+}
+
+// ── Timer markup builder (returned to slot in question card) ──
+function timerMarkup(){
+  const wrap = h('div', 'timer-wrap'); wrap.id = 'timer-wrap';
+  const ns = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(ns, 'svg');
+  svg.setAttribute('viewBox', '0 0 74 74');
+  const bg = document.createElementNS(ns, 'circle');
+  bg.setAttribute('cx','37'); bg.setAttribute('cy','37'); bg.setAttribute('r','30'); bg.setAttribute('class','circle-bg');
+  const fg = document.createElementNS(ns, 'circle');
+  fg.setAttribute('cx','37'); fg.setAttribute('cy','37'); fg.setAttribute('r','30'); fg.setAttribute('class','circle-fg');
+  fg.id = 'ring-fg';
+  svg.appendChild(bg); svg.appendChild(fg);
+  const c = h('div', 't-count', String(cfg.secs)); c.id = 't-count';
+  wrap.appendChild(svg); wrap.appendChild(c);
+  return wrap;
+}
+
+// ── Confetti ──────────────────────────────────────────────────
+const CONF_COLORS = ['#ff6b6b','#ffd93d','#2ecc71','#4f9de8','#9b59b6','#ff9d2e'];
+function burstConfetti(n){
+  const layer = document.getElementById('confetti');
+  for (let i = 0; i < n; i++){
+    const c = h('div', 'confetti');
+    c.style.left = (Math.random() * 100) + 'vw';
+    c.style.background = CONF_COLORS[i % CONF_COLORS.length];
+    c.style.setProperty('--rx', (Math.random() * 540 - 270) + 'deg');
+    c.style.animationDuration = (1.6 + Math.random() * 1.6) + 's';
+    c.style.animationDelay = (Math.random() * 0.5) + 's';
+    c.style.width = (7 + Math.random() * 8) + 'px';
+    c.style.height = (7 + Math.random() * 8) + 'px';
+    c.addEventListener('animationend', () => c.remove());
+    layer.appendChild(c);
+  }
+}
+
+// ── Tree building ─────────────────────────────────────────────
+function renderTree(){
+  clear(elTree);
+  QUIZ.sections.forEach(sec => {
+    const node = h('div', 'tree-node');
+    node.setAttribute('data-sec', sec.id);
+    const arrow = h('span', 'arrow', '▶');
+    const dot = h('span', 'dot');
+    dot.style.background = sectionColor(sec.id);
+    const label = h('span', null, sec.emoji + ' ' + sec.title);
+    const badge = h('span', 'badge', String(sec.questions.length));
+    node.appendChild(arrow); node.appendChild(dot); node.appendChild(label); node.appendChild(badge);
+    node.addEventListener('click', () => {
+      arrow.classList.toggle('open');
+      const kids = document.getElementById('children-' + sec.id);
+      if (kids) kids.classList.toggle('open');
+    });
+    elTree.appendChild(node);
+
+    const kids = h('div', 'tree-children');
+    kids.id = 'children-' + sec.id;
+    sec.questions.forEach(q => {
+      const leaf = h('div', 'tree-node tree-leaf');
+      leaf.setAttribute('data-qid', q.id);
+      const qn = h('span', null, 'Q' + (FLAT.length ? '' : '') + q.id.split('-q')[1]);
+      const st = h('span', 'st');
+      leaf.appendChild(h('span', 'arrow', '•'));
+      leaf.appendChild(qn); leaf.appendChild(st);
+      leaf.addEventListener('click', () => startAtSection(sec.id, q.id));
+      kids.appendChild(leaf);
+    });
+    elTree.appendChild(kids);
+  });
+}
+function sectionColor(id){
+  const pal = ['#4ecdc4','#ffb300','#9b59b6','#4f9de8','#ff6b6b','#2ecc71','#e67e22','#e84393'];
+  let x = 0; for (const ch of id) x = (x + ch.charCodeAt(0)) % pal.length;
+  return pal[x];
+}
+function updateTreeStatus(){
+  const answered = new Map(state.answers.map(a => [a.qid, a.status]));
+  document.querySelectorAll('#tree .tree-leaf').forEach(leaf => {
+    const st = leaf.querySelector('.st');
+    const qid = leaf.getAttribute('data-qid');
+    const s = answered.get(qid);
+    st.textContent = '';
+    st.className = 'st';
+    if (s === 'correct'){ st.textContent = '✓'; st.classList.add('good'); }
+    else if (s === 'wrong'){ st.textContent = '✗'; st.classList.add('bad'); }
+    else if (s === 'timeout'){ st.textContent = '⏰'; st.classList.add('slow'); }
+  });
+  // highlight active section node
+  document.querySelectorAll('#tree .tree-node[data-sec]').forEach(n => {
+    n.classList.toggle('active', state.scope === null || n.getAttribute('data-sec') === state.scope);
+  });
+}
+
+// ── Scope / nav ───────────────────────────────────────────────
+function shuffle(arr){
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--){ const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+  return a;
+}
+function startScope(scopeId){
+  state.scope = scopeId || null;
+  if (state.scope) {
+    state.list = FLAT.filter(f => f.sectionId === state.scope);
+  } else {
+    // group by section, shuffle sections, keep questions in source order within each
+    const bySec = [];
+    const secOrder = [];
+    FLAT.forEach(f => { if (!secOrder.includes(f.sectionId)) secOrder.push(f.sectionId); });
+    secOrder.forEach(sid => bySec.push(FLAT.filter(f => f.sectionId === sid)));
+    state.list = shuffle(bySec).flat();
+  }
+  state.iq = 0; state.answers = []; state.score = 0; state.runToken++;
+  updateScore();
+  if (state.list.length === 0){ renderIntro(); return; }
+  renderQuestion();
+}
+function startAtSection(secId, qid){
+  state.scope = secId;
+  state.list = FLAT.filter(f => f.sectionId === secId);
+  const idx = state.list.findIndex(f => f.q.id === qid);
+  state.iq = idx >= 0 ? idx : 0;
+  state.answers = []; state.score = 0; state.runToken++;
+  updateScore();
+  closeDrawer();
+  renderQuestion();
+}
+function currentQ(){
+  const f = state.list[state.iq];
+  return f ? f.q : null;
+}
+
+// ── Views ─────────────────────────────────────────────────────
+function renderIntro(){
+  state.mode = 'intro';
+  clear(elStage);
+  const card = h('div', 'card intro card-in');
+  const big = h('div', 'big-emoji', QUIZ.emoji || '🧠');
+  const title = h('h1', null, QUIZ.title || 'Classification of the Living World');
+  const sub = h('div', 'sub', QUIZ.subtitle || 'Test yourself & learn with fun quiz!');
+  const meta = h('div', 'meta-chip', '🎯 ' + TOTAL + ' questions · ⭐ up to ' + (TOTAL * 10) + ' points · ⏱️ ' + cfg.secs + 's each');
+  const start = h('button', 'big-btn', '▶ Start Quiz');
+  start.addEventListener('click', () => { ensureAudio(); state.runToken++; startScope(null); });
+  card.appendChild(big); card.appendChild(title); card.appendChild(sub);
+  const row = h('div', 'ghost-row');
+  const samp = h('button', 'big-btn ghost', '🔊 Hear me');
+  samp.addEventListener('click', () => { ensureAudio(); speak('Hello friend! Let’s play and learn together!'); });
+  const imgAll = h('div', 'hint-line', 'Open a section in the left menu to play a single topic.');
+  row.appendChild(samp);
+  card.appendChild(meta); card.appendChild(start); card.appendChild(row); card.appendChild(imgAll);
+  elStage.appendChild(card);
+  updateProgress(0);
+}
+function speakQuestion(q, onEnd){
+  const all = 'Question ' + q.question + '. Options: ' +
+    q.options.map((o, i) => String.fromCharCode(65 + i) + '. ' + o).join('. ') + '.';
+  speak(all, onEnd);
+}
+function renderQuestion(){
+  state.mode = 'question';
+  const q = currentQ();
+  if (!q){ renderResults(); return; }
+  const token = ++state.runToken;
+  stopTimer();
+  clear(elStage);
+  const card = h('div', 'card card-in');
+  const head = h('div', 'q-head');
+  head.appendChild(h('div', 'q-progress', 'Question ' + (state.iq + 1) + ' of ' + state.list.length));
+  head.appendChild(timerMarkup());
+  card.appendChild(head);
+
+  // question text
+  card.appendChild(h('div', 'q-text', q.question));
+
+  // optional image
+  if (q.image){
+    const iw = h('div', 'qimg-wrap');
+    if (q.image.type === 'emoji'){
+      iw.appendChild(h('div', 'emoji-big', q.image.src));
+    } else {
+      const img = h('img', 'qimg');
+      img.setAttribute('src', q.image.src);
+      img.setAttribute('alt', q.image.alt || '');
+      iw.appendChild(img);
+    }
+    if (q.image.caption) iw.appendChild(h('div', 'caption', q.image.caption));
+    card.appendChild(iw);
+  }
+
+  // options
+  const opts = h('div', 'options');
+  q.options.forEach((text, i) => {
+    const b = h('button', 'opt');
+    b.setAttribute('data-idx', String(i));
+    b.appendChild(h('span', 'key', String.fromCharCode(65 + i)));
+    b.appendChild(h('span', null, text));
+    b.appendChild(h('span', 'mark'));
+    b.addEventListener('click', () => { ensureAudio(); if (state.mode === 'question') answer(i); });
+    opts.appendChild(b);
+  });
+  card.appendChild(opts);
+
+  // speak button
+  const foot = h('div', 'q-foot');
+  const spk = h('button', 'speak-btn', '🔊 Read aloud');
+  spk.addEventListener('click', () => { ensureAudio(); speakQuestion(q); });
+  foot.appendChild(spk);
+  card.appendChild(foot);
+  elStage.appendChild(card);
+
+  updateProgress(state.iq / state.list.length);
+  speakQuestion(q, () => { if (state.runToken === token && state.mode === 'question') startTimer(cfg.secs, token); });
+}
+function reveal(q, status, chosen){
+  state.mode = 'revealed';
+  stopTimer();
+  state.answers.push({ qid: q.id, chosen, status, pts: status === 'correct' ? 10 : 0 });
+  if (status === 'correct') state.score += 10;
+  updateScore();
+  updateTreeStatus();
+  burstConfetti(status === 'correct' ? 60 : 0);
+
+  const card = document.querySelector('#stage .card');
+  // banner
+  const banner = h('div', 'reveal-banner ' + (status === 'correct' ? 'good' : status === 'wrong' ? 'bad' : 'slow'));
+  const icon = status === 'correct' ? '✅' : status === 'wrong' ? '❌' : '⏰';
+  const msg = status === 'correct' ? 'Correct! Great job!' : status === 'wrong' ? 'Oops! Not quite.' : "Time's up!";
+  banner.appendChild(h('span', null, icon + ' ' + msg));
+  card.appendChild(banner);
+  // explanation
+  const exp = h('div', 'reveal-exp');
+  const b = h('b', null, '💡 '); b.textContent = '💡 ' + q.options[q.correctIndex];
+  exp.appendChild(b);
+  exp.appendChild(h('div', null, q.explanation));
+  card.appendChild(exp);
+  // highlight options
+  const buttons = card.querySelectorAll('.opt');
+  buttons.forEach((btn, i) => {
+    btn.disabled = true;
+    const mark = btn.querySelector('.mark');
+    if (i === q.correctIndex){ btn.classList.add('correct'); mark.textContent = '✓'; }
+    else if (i === chosen){ btn.classList.add('wrong-chosen'); mark.textContent = '✗'; }
+    else btn.classList.add('dim');
+  });
+  // next row
+  const row = h('div', 'next-row');
+  const pts = h('div', 'pts-gain ' + (status === 'correct' ? 'gain' : 'none'),
+                status === 'correct' ? '+10 points' : '+0 points');
+  const nb = h('button', 'next-btn', state.iq + 1 >= state.list.length ? 'See results 🏆' : 'Next ➡️');
+  nb.addEventListener('click', () => { state.iq++; if (state.iq >= state.list.length) renderResults(); else renderQuestion(); });
+  row.appendChild(pts); row.appendChild(nb);
+  const head = card.querySelector('.q-head');
+  if (head) head.appendChild(row); else card.appendChild(row);
+  // duplicate next-row at bottom for easy access
+  const row2 = h('div', 'next-row');
+  row2.appendChild(h('div', 'pts-gain ' + (status === 'correct' ? 'gain' : 'none'),
+                status === 'correct' ? '+10 points' : '+0 points'));
+  const nb2 = h('button', 'next-btn', state.iq + 1 >= state.list.length ? 'See results 🏆' : 'Next ➡️');
+  nb2.addEventListener('click', () => { state.iq++; if (state.iq >= state.list.length) renderResults(); else renderQuestion(); });
+  row2.appendChild(nb2);
+  card.appendChild(row2);
+}
+function answer(i){
+  const q = currentQ();
+  ensureAudio();
+  if (i === q.correctIndex) sCorrect(); else sWrong();
+  reveal(q, i === q.correctIndex ? 'correct' : 'wrong', i);
+}
+function onTimeout(token){
+  if (state.runToken !== token) return;   // stale
+  const q = currentQ();
+  ensureAudio(); sTimesUp();
+  reveal(q, 'timeout', -1);
+  speak(q.explanation);
+}
+function renderResults(){
+  state.mode = 'results';
+  stopTimer();
+  clear(elStage);
+  const card = h('div', 'card results card-in');
+  const count = state.list.length;
+  const maxPts = count * 10;
+  const words = pctWord(state.score / maxPts);
+  card.appendChild(h('div', 'big-emoji', words.emoji));
+  card.appendChild(h('h2', null, words.title));
+  card.appendChild(h('div', 'sub', 'You scored ' + state.score + ' of ' + maxPts + ' points'));
+
+  // score ring
+  const rw = h('div', 'ring-wrap');
+  const ns = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(ns, 'svg');
+  svg.setAttribute('viewBox', '0 0 120 120');
+  const bg = document.createElementNS(ns, 'circle');
+  bg.setAttribute('cx','60'); bg.setAttribute('cy','60'); bg.setAttribute('r','45'); bg.setAttribute('class','rbg');
+  const fg = document.createElementNS(ns, 'circle');
+  fg.setAttribute('cx','60'); fg.setAttribute('cy','60'); fg.setAttribute('r','45'); fg.setAttribute('class','rfg');
+  fg.id = 'ring-fg-r';
+  svg.appendChild(bg); svg.appendChild(fg);
+  rw.appendChild(svg);
+  const rs = h('div', 'rscore');
+  const n = h('div', 'n', String(state.score)); n.id = 'rscore-n';
+  rs.appendChild(n); rs.appendChild(h('div', 'pts', 'points'));
+  rw.appendChild(rs);
+  card.appendChild(rw);
+
+  const stars = h('div', 'stars', '⭐'.repeat(words.stars) + '☆'.repeat(5 - words.stars));
+  card.appendChild(stars);
+
+  // review
+  const review = h('div', 'review');
+  state.answers.forEach((a, i) => {
+    const f = state.list[i];
+    const row = h('div', 'review-row');
+    row.appendChild(h('div', 'qi', 'Q' + (i + 1)));
+    const body = h('div', 'qbody');
+    body.appendChild(h('div', 'qq', f.q.question));
+    const your = a.chosen >= 0 ? f.q.options[a.chosen] : 'No answer';
+    body.appendChild(h('div', 'aa', 'Your answer: ' + your));
+    body.appendChild(h('div', 'aa', '✅ ' + f.q.options[f.q.correctIndex]));
+    row.appendChild(body);
+    row.appendChild(h('div', 'pts ' + (a.pts ? 'gain' : 'none'), (a.pts ? '+' : '') + a.pts));
+    review.appendChild(row);
+  });
+  card.appendChild(review);
+
+  if (QUIZ.truncated){
+    card.appendChild(h('div', 'hint-line', 'Showing ' + QUIZ.truncated.shown + ' of ' + QUIZ.truncated.total + ' questions.'));
+  }
+
+  const row2 = h('div', 'ghost-row');
+  const again = h('button', 'big-btn ghost', '🔄 Play again');
+  again.addEventListener('click', () => { burstConfetti(0); startScope(state.scope); });
+  const menu = h('button', 'big-btn ghost', '🏠 Menu');
+  menu.addEventListener('click', () => renderIntro());
+  row2.appendChild(again); row2.appendChild(menu);
+  card.appendChild(row2);
+  elStage.appendChild(card);
+
+  // deferred: animate ring + count-up + confetti
+  setTimeout(() => {
+    const C = 283;
+    const fgR = document.getElementById('ring-fg-r');
+    fgR.setAttribute('stroke-dashoffset', String(C * (1 - (state.score / maxPts))));
+    // count up
+    const t0 = performance.now(), dur = 900;
+    const num = document.getElementById('rscore-n');
+    (function step(now){
+      const p = Math.min(1, (now - t0) / dur);
+      if (num) num.textContent = String(Math.round(state.score * p));
+      if (p < 1) requestAnimationFrame(step);
+    })(t0);
+    burstConfetti(140);
+    sPop();
+  }, 60);
+}
+function pctWord(p){
+  if (p >= 0.9)  return { emoji:'🏆', title:'Amazing!', stars:5 };
+  if (p >= 0.7)  return { emoji:'🌟', title:'Great job!', stars:4 };
+  if (p >= 0.5)  return { emoji:'😄', title:'Good try!', stars:3 };
+  if (p >= 0.3)  return { emoji:'🙂', title:'Keep going!', stars:2 };
+  return { emoji:'💪', title:'Practice makes better!', stars:1 };
+}
+function updateScore(){ elScore.textContent = '⭐ Score: ' + state.score; }
+function updateProgress(p){
+  if (elProg) elProg.style.width = Math.round(Math.max(0, Math.min(1, p)) * 100) + '%';
+  // track is shared for all-scope run; on intro show 0
+}
+
+// ── Mobile drawer ─────────────────────────────────────────────
+function closeDrawer(){
+  elSide.classList.remove('open'); overlay.classList.remove('open');
+}
+document.getElementById('hamburger').addEventListener('click', () => {
+  elSide.classList.toggle('open'); overlay.classList.toggle('open');
+});
+overlay.addEventListener('click', closeDrawer);
+document.getElementById('sidebar-home').addEventListener('click', () => { closeDrawer(); renderIntro(); });
+elMute.addEventListener('click', () => {
+  muted = !muted;
+  elMute.textContent = muted ? '🔇' : '🔊';
+  if (muted && 'speechSynthesis' in window) speechSynthesis.cancel();
+});
+
+// ── Boot ──────────────────────────────────────────────────────
+renderTree();
+renderIntro();
+})();
+</script>
+</body>
+</html>

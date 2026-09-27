@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Quick Quiz — Quiz</title>
+<style>
+  /* ══════════════ KID-FRIENDLY PALETTE (bright daylight) ══════════════ */
+  :root {
+    --bg: linear-gradient(160deg, #fff8e1 0%, #e0f7fa 60%, #dff4ff 100%);
+    --panel: #ffffff;
+    --ink: #2d3436;
+    --ink-soft: #6b7a85;
+    --coral: #ff6b6b;
+    --sunny: #ffd93d;
+    --teal: #4ecdc4;
+    --sky: #4f9de8;
+    --violet: #9b59b6;
+    --green: #2ecc71;
+    --amber: #ffb300;
+    --red: #ff6b6b;
+    --sidebar-w: 264px;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { height:100%; }
+  body {
+    background: var(--bg); color: var(--ink); overflow:hidden;
+    font-family: 'Comic Sans MS','Chalkboard SE','Marker Felt','Segoe UI','Trebuchet MS',sans-serif;
+    display:flex;
+  }
+
+  /* ── Sidebar tree ── */
+  .sidebar {
+    width: var(--sidebar-w); min-width: var(--sidebar-w); height:100vh;
+    background: rgba(255,255,255,0.82); border-right:1px solid rgba(0,0,0,0.08);
+    display:flex; flex-direction:column; z-index:20; overflow-y:auto;
+    backdrop-filter: blur(4px);
+    transition: transform .3s ease;
+  }
+  .sidebar-header {
+    padding:1.1rem 1rem .8rem; border-bottom:1px solid rgba(0,0,0,0.08);
+    font-size:1.05rem; font-weight:bold; cursor:pointer; display:flex; gap:.4rem; align-items:center;
+    flex-shrink:0;
+  }
+  .sidebar-header .ticker { color:var(--sky); }
+  .tree { flex:1; padding:.5rem 0; overflow-y:auto; }
+  .tree-node {
+    padding:.5rem .8rem .5rem 1rem; cursor:pointer; display:flex; align-items:center; gap:.45rem;
+    font-size:.86rem; transition: background .15s; border-left:3px solid transparent;
+    user-select:none; color:var(--ink);
+  }
+  .tree-node:hover { background:rgba(79,157,232,0.1); }
+  .tree-node.active { border-left-color: var(--amber); background:rgba(255,217,61,0.14); }
+  .tree-node .arrow { font-size:.65rem; width:12px; text-align:center; flex-shrink:0; transition:transform .2s; color:var(--ink-soft); }
+  .tree-node .arrow.open { transform:rotate(90deg); }
+  .tree-node .dot { width:11px; height:11px; border-radius:50%; flex-shrink:0; }
+  .tree-node .badge {
+    margin-left:auto; font-size:.68rem; background:rgba(78,205,196,0.2); color:var(--teal);
+    border-radius:999px; padding:.05rem .5rem; flex-shrink:0;
+  }
+  .tree-children { overflow:hidden; max-height:0; transition:max-height .3s ease; }
+  .tree-children.open { max-height:600px; }
+  .tree-children .tree-node { padding-left:2.2rem; font-size:.8rem; }
+  .tree-leaf .st {
+    margin-left:auto; font-size:.72rem; width:1.1rem; text-align:center; flex-shrink:0;
+  }
+  .st.good { color:var(--green); }
+  .st.bad { color:var(--red); }
+  .st.slow { color:var(--amber); }
+
+  /* ── Main column ── */
+  .main { flex:1; display:flex; flex-direction:column; position:relative; z-index:5; min-width:0; }
+  .topbar {
+    padding:.6rem 1.1rem; display:flex; align-items:center; gap:.8rem; flex-shrink:0;
+    background:rgba(255,255,255,0.6); border-bottom:1px solid rgba(0,0,0,0.08);
+  }
+  .topbar .app-title { font-size:1.05rem; font-weight:bold; display:flex; gap:.4rem; align-items:center; }
+  .topbar .spacer { flex:1; }
+  .score-chip {
+    background:#fff; border:2px solid var(--sunny); color:var(--ink); border-radius:999px;
+    padding:.3rem .9rem; font-size:.9rem; font-weight:bold; box-shadow:0 2px 8px rgba(0,0,0,0.08);
+  }
+  .mute-btn {
+    background:#fff; border:2px solid rgba(0,0,0,0.12); border-radius:999px; cursor:pointer;
+    font-size:1rem; padding:.25rem .6rem; font-family:inherit;
+  }
+  .mute-btn:hover { border-color:var(--sky); }
+  .progress-track {
+    height:8px; border-radius:99px; background:rgba(0,0,0,0.08); overflow:hidden; flex:1; max-width:260px;
+  }
+  .progress-fill { height:100%; width:0%; background:linear-gradient(90deg,var(--teal),var(--sky)); border-radius:99px; transition:width .4s ease; }
+
+  /* ── Stage / views ── */
+  .stage { flex:1; display:flex; justify-content:center; align-content:center; padding:1.4rem; overflow:auto; min-height:0; }
+  .card {
+    background:var(--panel); border-radius:22px; box-shadow:0 14px 44px rgba(45,52,54,0.16);
+    width:100%; max-width:720px; padding:1.8rem 2rem 2rem; position:relative;
+    border:1px solid rgba(0,0,0,0.05); margin:auto;
+  }
+
+  /* Intro */
+  .intro { text-align:center; }
+  .intro .big-emoji { font-size:4rem; animation: bob 3s ease-in-out infinite; display:inline-block; }
+  .intro h1 { font-size:2rem; margin:.4rem 0 .3rem; background:linear-gradient(135deg,var(--sky),var(--violet)); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
+  .intro .sub { color:var(--ink-soft); margin-bottom:1.2rem; }
+  .intro .meta-chip { color:var(--ink-soft); font-size:.9rem; margin-bottom:1.4rem; }
+  .big-btn {
+    font-family:inherit; font-size:1.15rem; font-weight:bold; color:#fff; cursor:pointer;
+    background:linear-gradient(135deg,var(--green),#27ae60); border:none; border-radius:999px;
+    padding:.85rem 2.2rem; box-shadow:0 6px 18px rgba(46,204,113,0.4); transition:transform .15s, box-shadow .15s;
+  }
+  .big-btn:hover { transform:translateY(-2px); }
+  .big-btn.ghost { background:#fff; color:var(--ink); box-shadow:0 2px 8px rgba(0,0,0,0.1); border:2px solid rgba(0,0,0,0.1); margin-left:.7rem; }
+  .ghost-row { margin-top:1.1rem; display:flex; justify-content:center; gap:.4rem; flex-wrap:wrap; }
+  .hint-line { font-size:.82rem; color:var(--ink-soft); margin-top:1rem; }
+
+  /* Question */
+  .q-head { display:flex; justify-content:space-between; align-items:center; gap:.6rem; flex-wrap:wrap; }
+  .q-progress { font-size:.82rem; color:var(--ink-soft); font-weight:bold; padding:.2rem 0; }
+  .timer-wrap { position:relative; width:74px; height:74px; flex-shrink:0; }
+  .timer-wrap svg { width:74px; height:74px; transform:rotate(-90deg); }
+  .timer-wrap .circle-bg { fill:none; stroke:rgba(0,0,0,0.08); stroke-width:7; }
+  .timer-wrap .circle-fg { fill:none; stroke:var(--sky); stroke-width:7; stroke-linecap:round; }
+  .timer-wrap .t-count {
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    font-size:1.5rem; font-weight:bold; color:var(--ink);
+  }
+  .timer-wrap.low .circle-fg { stroke:var(--red); }
+  .timer-wrap.low .t-count { color:var(--red); }
+  .q-text { font-size:1.35rem; line-height:1.45; margin:.7rem 0 1rem; font-weight:bold; }
+  .qimg-wrap { text-align:center; margin:.2rem 0 1rem; }
+  .qimg-wrap img.qimg {
+    max-width:100%; max-height:240px; border-radius:14px; object-fit:contain;
+    border:1px solid rgba(0,0,0,0.08);
+  }
+  .qimg-wrap .emoji-big { font-size:4.2rem; animation: pop 0.5s ease; }
+  .qimg-wrap .caption { font-size:.78rem; color:var(--ink-soft); margin-top:.35rem; }
+
+  .options { display:flex; flex-direction:column; gap:.7rem; }
+  .opt {
+    display:flex; align-items:center; gap:.8rem; width:100%; text-align:left;
+    font-family:inherit; font-size:1.02rem; color:var(--ink); cursor:pointer;
+    background:#f7fbfc; border:2px solid rgba(0,0,0,0.08); border-radius:14px;
+    padding:.72rem 1rem; min-height:48px; transition:border-color .15s, background .15s, transform .1s;
+    position:relative; overflow:hidden;
+  }
+  .opt:hover { border-color:var(--sky); background:#eef6ff; transform:translateY(-1px); }
+  .opt .key {
+    width:30px; height:30px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center;
+    background:#fff; border:2px solid rgba(0,0,0,0.14); font-size:.9rem; font-weight:bold; color:var(--ink-soft);
+  }
+  .opt.correct { border-color:var(--green); background:#eafaf1; }
+  .opt.correct .key { border-color:var(--green); color:var(--green); background:#d5f5e3; }
+  .opt.wrong-chosen { border-color:var(--red); background:#fdecea; }
+  .opt.wrong-chosen .key { border-color:var(--red); color:var(--red); background:#fadbd8; }
+  .opt.dim { opacity:.55; }
+  .opt .mark { margin-left:auto; font-size:1.1rem; }
+
+  /* Reveal banner */
+  .reveal-banner {
+    margin-top:1rem; border-radius:14px; padding:.8rem 1rem; font-size:1.02rem; font-weight:bold;
+    display:flex; gap:.6rem; align-items:center; animation: slideUp .35s ease both;
+  }
+  .reveal-banner.good { background:#eafaf1; color:#1e8449; }
+  .reveal-banner.bad { background:#fdecea; color:#c0392b; }
+  .reveal-banner.slow { background:#fef5e7; color:#b9770e; }
+  .reveal-exp { margin-top:.6rem; background:#f4f8fa; border-radius:12px; padding:.8rem 1rem; font-size:.95rem; color:var(--ink-soft); line-height:1.5; }
+  .reveal-exp b { color:var(--ink); }
+  .next-row { display:flex; align-items:center; justify-content:space-between; gap:.6rem; }
+  .pts-gain { font-weight:bold; font-size:1rem; }
+  .pts-gain.gain { color:var(--green); }
+  .pts-gain.none { color:var(--ink-soft); }
+  .next-btn {
+    font-family:inherit; font-size:1.02rem; font-weight:bold; cursor:pointer; color:#fff;
+    background:linear-gradient(135deg,var(--sky),#2e86de); border:none; border-radius:999px;
+    padding:.7rem 1.7rem; box-shadow:0 4px 14px rgba(79,157,232,0.4); transition:transform .15s;
+  }
+  .next-btn:hover { transform:translateY(-2px); }
+
+  .q-foot { display:flex; justify-content:center; margin-top:1rem; }
+  .speak-btn {
+    font-family:inherit; font-size:.9rem; color:var(--ink-soft); cursor:pointer; background:none;
+    border:1px solid rgba(0,0,0,0.1); border-radius:999px; padding:.35rem 1rem;
+  }
+  .speak-btn:hover { border-color:var(--sky); color:var(--sky); }
+
+  /* Results */
+  .results { text-align:center; }
+  .results h2 { font-size:1.7rem; margin-bottom:.3rem; }
+  .results .sub { color:var(--ink-soft); margin-bottom:1rem; }
+  .ring-wrap { width:150px; height:150px; margin:0 auto .6rem; position:relative; }
+  .ring-wrap svg { width:150px; height:150px; transform:rotate(-90deg); }
+  .ring-wrap .rbg { fill:none; stroke:rgba(0,0,0,0.08); stroke-width:12; }
+  .ring-wrap .rfg { fill:none; stroke:url(#gradA); stroke-width:12; stroke-linecap:round;
+    stroke-dasharray:283; stroke-dashoffset:283; transition:stroke-dashoffset 1s ease; }
+  .ring-wrap .rscore {
+    position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
+  }
+  .ring-wrap .rscore .n { font-size:2rem; font-weight:bold; }
+  .ring-wrap .rscore .pts { font-size:.8rem; color:var(--ink-soft); }
+  .stars { font-size:1.9rem; letter-spacing:.15rem; margin:.2rem 0 .9rem; }
+  .review { text-align:left; margin:1rem 0; }
+  .review-row { display:flex; gap:.7rem; padding:.6rem .4rem; border-bottom:1px solid rgba(0,0,0,0.06); font-size:.86rem; align-items:flex-start; }
+  .review-row .qi { font-weight:bold; color:var(--ink-soft); min-width:1.6rem; }
+  .review-row .qbody { flex:1; }
+  .review-row .qbody .qq { font-weight:bold; margin-bottom:.15rem; }
+  .review-row .qbody .aa { color:var(--ink-soft); }
+  .review-row .pts { font-weight:bold; flex-shrink:0; }
+  .review-row .pts.gain { color:var(--green); }
+  .review-row .pts.none { color:var(--ink-soft); }
+
+  /* Confetti */
+  #confetti { position:fixed; inset:0; pointer-events:none; z-index:200; overflow:hidden; }
+  .confetti {
+    position:absolute; top:-3vh; width:12px; height:12px; border-radius:2px;
+    animation: confetti-fall linear forwards;
+  }
+
+  /* Hamburger / overlay (mobile) */
+  .hamburger { display:none; position:fixed; top:.7rem; left:.7rem; z-index:40;
+    background:#fff; border:1px solid rgba(0,0,0,0.15); border-radius:10px;
+    padding:.35rem .65rem; font-size:1.25rem; cursor:pointer; font-family:inherit; }
+  .overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:19; }
+  .overlay.open { display:block; }
+
+  /* Keyframes */
+  @keyframes bob { 0%,100%{ transform:translateY(0);} 50%{ transform:translateY(-8px);} }
+  @keyframes pop { 0%{ transform:scale(0.4); opacity:0;} 100%{ transform:scale(1); opacity:1;} }
+  @keyframes slideUp { from{ opacity:0; transform:translateY(14px);} to{ opacity:1; transform:translateY(0);} }
+  @keyframes cardIn { from{ opacity:0; transform:translateY(20px) scale(0.97);} to{ opacity:1; transform:none;} }
+  @keyframes confetti-fall { to { transform:translateY(108vh) rotate(var(--rx,180deg)); opacity:.9; } }
+  .card-in { animation:cardIn .35s ease both; }
+
+  @media (max-width:768px) {
+    .sidebar { position:fixed; left:0; top:0; bottom:0; transform:translateX(-100%); z-index:100; box-shadow:0 0 40px rgba(0,0,0,0.2); }
+    .sidebar.open { transform:translateX(0); }
+    .hamburger { display:block; }
+    .card { padding:1.4rem 1.2rem 1.6rem; }
+    .q-text { font-size:1.15rem; }
+  }
+</style>
+</head>
+<body>
+
+<div id="confetti"></div>
+
+<button class="hamburger" id="hamburger">☰</button>
+<div class="overlay" id="overlay"></div>
+
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header" id="sidebar-home"><span class="ticker">🧠</span> <span id="side-title">Quick Quiz</span></div>
+  <div class="tree" id="tree"></div>
+</aside>
+
+<main class="main">
+  <div class="topbar">
+    <span class="app-title"><span>🧠</span><span id="top-title" title="Quick Quiz">Quick Quiz</span></span>
+    <span class="spacer"></span>
+    <div class="progress-track" title="Progress"><div class="progress-fill" id="progress-fill"></div></div>
+    <span class="score-chip" id="score-chip">⭐ Score: 0</span>
+    <button class="mute-btn" id="mute-btn" title="Toggle read-aloud (TTS)">🔊</button>
+  </div>
+  <div class="stage" id="stage"></div>
+</main>
+
+<script type="application/json" id="quiz-data">{"title": "Quick Quiz", "subtitle": "Fun general-knowledge questions from quiz.pdf", "emoji": "🧩", "sections": [{"id": "quick-quiz-i", "title": "Quick Quiz I", "emoji": "1️⃣", "questions": [{"id": "quiz-pdf-q1", "section": "Quick Quiz I", "question": "Which country is currently home to the world's tallest church?", "options": ["Spain", "France", "India", "Sri Lanka"], "correctIndex": 0, "explanation": "Barcelona's Sagrada Família in Spain is now the tallest church on Earth.", "suggestImage": true, "imageNote": "The Sagrada Família basilica in Barcelona with its tall central tower.", "image": {"type": "svg", "src": "data:image/svg+xml;base64,CjxzdmcgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB2aWV3Qm94PSIwIDAgNDAwIDMwMCI+CiAgPHJlY3Qgd2lkdGg9IjQwMCIgaGVpZ2h0PSIzMDAiIGZpbGw9IiNhZWU5ZmYiLz4KICA8Y2lyY2xlIGN4PSIzMzYiIGN5PSI1MiIgcj0iMzAiIGZpbGw9IiNmZmQ5M2QiLz4KICA8ZyBmaWxsPSIjZmZmIiBvcGFjaXR5PSIwLjkiPgogICAgPGVsbGlwc2UgY3g9IjgwIiBjeT0iNjAiIHJ4PSIzNCIgcnk9IjE2Ii8+PGVsbGlwc2UgY3g9IjExMCIgY3k9IjUyIiByeD0iMjQiIHJ5PSIxMyIvPgogIDwvZz4KICA8cmVjdCB5PSIyNTIiIHdpZHRoPSI0MDAiIGhlaWdodD0iNDgiIGZpbGw9IiM4ZmQ5N2EiLz4KICA8cmVjdCB4PSIxMTgiIHk9IjE1MCIgd2lkdGg9IjE2NCIgaGVpZ2h0PSIxMDgiIHJ4PSIxNCIgZmlsbD0iI2Y2Yzg5YSIgc3Ryb2tlPSIjYzk4YzUzIiBzdHJva2Utd2lkdGg9IjYiLz4KICA8cGF0aCBkPSJNMTc1IDI1OCB2LTQ4IGEyNSAyNSAwIDAgMSA1MCAwIHY0OCB6IiBmaWxsPSIjOGE1YTMwIiBzdHJva2U9IiM2ZDQ1MjIiIHN0cm9rZS13aWR0aD0iNSIvPgogIDxjaXJjbGUgY3g9IjIwMCIgY3k9IjE2OCIgcj0iMTMiIGZpbGw9IiM3ZWM4ZTMiIHN0cm9rZT0iI2M5OGM1MyIgc3Ryb2tlLXdpZHRoPSI1Ii8+CiAgPGNpcmNsZSBjeD0iMTQ1IiBjeT0iMjA1IiByPSI5IiBmaWxsPSIjN2VjOGUzIiBzdHJva2U9IiNjOThjNTMiIHN0cm9rZS13aWR0aD0iNCIvPgogIDxjaXJjbGUgY3g9IjI1NSIgY3k9IjIwNSIgcj0iOSIgZmlsbD0iIzdlYzhlMyIgc3Ryb2tlPSIjYzk4YzUzIiBzdHJva2Utd2lkdGg9IjQiLz4KICA8cGF0aCBkPSJNMTI2IDE1NiBMMTQ4IDQ0IEwxNzAgMTU2IFoiIGZpbGw9IiNlOGE3NmIiIHN0cm9rZT0iI2M5OGM1MyIgc3Ryb2tlLXdpZHRoPSI2Ii8+CiAgPHBhdGggZD0iTTE3NCAxNTIgTDIwMCAyNiBMMjI2IDE1MiBaIiBmaWxsPSIjZThhNzZiIiBzdHJva2U9IiNjOThjNTMiIHN0cm9rZS13aWR0aD0iNiIvPgogIDxwYXRoIGQ9Ik0yMzAgMTU2IEwyNTIgNDQgTDI3NCAxNTYgWiIgZmlsbD0iI2U4YTc2YiIgc3Ryb2tlPSIjYzk4YzUzIiBzdHJva2Utd2lkdGg9IjYiLz4KICA8cGF0aCBkPSJNMjAwIDI2IHYtMTYgTTE5MSAxNiBoMTgiIHN0cm9rZT0iI2ZmYjMwMCIgc3Ryb2tlLXdpZHRoPSI3IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KICA8cGF0aCBkPSJNMTQ4IDQ0IHYtMTMgTTE0MSAzNyBoMTQgTTI1MiA0NCB2LTEzIE0yNDUgMzcgaDE0IiBzdHJva2U9IiNmZmIzMDAiIHN0cm9rZS13aWR0aD0iNiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+Cjwvc3ZnPg==", "alt": "The Sagrada Familia basilica with its tall spires"}}, {"id": "quiz-pdf-q2", "section": "Quick Quiz I", "question": "Which Indian city is nicknamed the 'Silk City of India'?", "options": ["Ujain", "Bhagalpur", "Siliguri", "Darjeeling"], "correctIndex": 1, "explanation": "Bhagalpur is famous for its silk, so people call it the Silk City.", "suggestImage": false}, {"id": "quiz-pdf-q3", "section": "Quick Quiz I", "question": "The Nehru Trophy Boat Race is the biggest boat festival of which Indian state?", "options": ["Tamil Nadu", "Kerala", "Gujarat", "Bihar"], "correctIndex": 1, "explanation": "The Nehru Trophy Boat Race is held every year in Kerala's backwaters.", "suggestImage": true, "imageNote": "Long snake boats racing side by side in the backwaters of Kerala.", "image": {"type": "svg", "src": "data:image/svg+xml;base64,CjxzdmcgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB2aWV3Qm94PSIwIDAgNDAwIDMwMCI+CiAgPHJlY3Qgd2lkdGg9IjQwMCIgaGVpZ2h0PSIzMDAiIGZpbGw9IiNiZGVlZmUiLz4KICA8Y2lyY2xlIGN4PSI2MCIgY3k9IjUwIiByPSIyNiIgZmlsbD0iI2ZmZDkzZCIvPgogIDxyZWN0IHk9IjE5NiIgd2lkdGg9IjQwMCIgaGVpZ2h0PSIxMDQiIGZpbGw9IiM0ZmIzZTgiLz4KICA8cGF0aCBkPSJNMCAxOTYgcTIwIC0xMiA0MCAwIHQ0MCAwIHQ0MCAwIHQ0MCAwIHQ0MCAwIHQ0MCAwIHQ0MCAwIHQ0MCAwIHQ0MCAwIiBmaWxsPSJub25lIiBzdHJva2U9IiM4ZWQ2ZjUiIHN0cm9rZS13aWR0aD0iNyIvPgogIDxnIHN0cm9rZT0iIzdhNGEyMiIgc3Ryb2tlLXdpZHRoPSI1Ij4KICAgIDxwYXRoIGQ9Ik0zMzAgMjAwIHYtNzAiIC8+PHBhdGggZD0iTTMzMCAxNDAgcS0zMCAtMjYgLTU0IC0xOCBNMzMwIDE0OCBxMzAgLTI4IDU2IC0xOCBNMzMwIDEzMCBxLTI0IC0zNCAtNTAgLTM0IE0zMzAgMTM2IHEyNiAtMzQgNTIgLTM0IiBmaWxsPSJub25lIiBzdHJva2U9IiMzZmE1NTIiIHN0cm9rZS13aWR0aD0iMTQiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgogIDwvZz4KICA8cGF0aCBkPSJNNDAgMjEwIHEzMCAtMzQgNzAgLTMwIGwxODAgMCBxNDAgNCA3MCAzMCBxLTMwIDIyIC03MCAxNCBsLTE4MCAwIHEtNDAgNiAtNzAgLTE0IHoiIGZpbGw9IiNmOTczMTYiIHN0cm9rZT0iI2MyNDEwYyIgc3Ryb2tlLXdpZHRoPSI2Ii8+CiAgPGcgZmlsbD0iI2ZmZTBiMiIgc3Ryb2tlPSIjOGE1YTMwIiBzdHJva2Utd2lkdGg9IjQiPgogICAgPGNpcmNsZSBjeD0iMTEwIiBjeT0iMTc2IiByPSIxMSIvPjxjaXJjbGUgY3g9IjE1MCIgY3k9IjE3MiIgcj0iMTEiLz48Y2lyY2xlIGN4PSIxOTAiIGN5PSIxNzIiIHI9IjExIi8+PGNpcmNsZSBjeD0iMjMwIiBjeT0iMTcyIiByPSIxMSIvPjxjaXJjbGUgY3g9IjI3MCIgY3k9IjE3NiIgcj0iMTEiLz4KICA8L2c+CiAgPGcgc3Ryb2tlPSIjOGE1YTMwIiBzdHJva2Utd2lkdGg9IjYiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCI+CiAgICA8cGF0aCBkPSJNMTEwIDE4NiBsLTE0IDI2IE0xNTAgMTgzIGwtMTIgMjggTTE5MCAxODMgbDAgMzAgTTIzMCAxODMgbDEyIDI4IE0yNzAgMTg2IGwxNCAyNiIvPgogIDwvZz4KICA8cGF0aCBkPSJNNDAgMjEwIHExMCAtMjIgNiAtNDAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2MyNDEwYyIgc3Ryb2tlLXdpZHRoPSI2Ii8+CiAgPGcgZmlsbD0iI2ZmZiIgb3BhY2l0eT0iMC43NSI+PGVsbGlwc2UgY3g9IjMwMCIgY3k9IjUyIiByeD0iMzAiIHJ5PSIxNCIvPjxlbGxpcHNlIGN4PSIyNzIiIGN5PSI0NiIgcng9IjIwIiByeT0iMTEiLz48L2c+Cjwvc3ZnPg==", "alt": "Long snake boats racing in Kerala backwaters"}}, {"id": "quiz-pdf-q4", "section": "Quick Quiz I", "question": "Who among them was a former American basketball player?", "options": ["Kobe Bean Bryant", "Diego Maradona", "Ruskin Bond", "Bhagat Singh"], "correctIndex": 0, "explanation": "Kobe Bean Bryant played basketball in America; Maradona played football.", "suggestImage": false}, {"id": "quiz-pdf-q5", "section": "Quick Quiz I", "question": "Who is the author of the book 'Malgudi Schooldays'?", "options": ["R. K. Narayan", "Ruskin Bond", "Sarojini Naidu", "Diego Maradona"], "correctIndex": 0, "explanation": "R. K. Narayan wrote the stories set in the imaginary town of Malgudi.", "suggestImage": false}, {"id": "quiz-pdf-q6", "section": "Quick Quiz I", "question": "An Olympic Flag has five equal interlocking rings of blue, yellow, black, red and ____.", "options": ["Green", "Orange", "Blue", "Red"], "correctIndex": 0, "explanation": "The five Olympic ring colors are blue, yellow, black, red and green.", "suggestImage": true, "imageNote": "The Olympic flag showing its five interlocking colored rings.", "image": {"type": "svg", "src": "data:image/svg+xml;base64,CjxzdmcgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB2aWV3Qm94PSIwIDAgNDAwIDMwMCI+CiAgPHJlY3Qgd2lkdGg9IjQwMCIgaGVpZ2h0PSIzMDAiIGZpbGw9IiNhZWU5ZmYiLz4KICA8cmVjdCB4PSI1MiIgeT0iMzQiIHdpZHRoPSIxNCIgaGVpZ2h0PSIyNDYiIHJ4PSI3IiBmaWxsPSIjOGE1YTMwIi8+CiAgPHJlY3QgeD0iNzAiIHk9IjU2IiB3aWR0aD0iMjkyIiBoZWlnaHQ9IjE4MCIgcng9IjgiIGZpbGw9IiNmZmZmZmYiIHN0cm9rZT0iI2QwZDdkZSIgc3Ryb2tlLXdpZHRoPSI1Ii8+CiAgPGcgZmlsbD0ibm9uZSIgc3Ryb2tlLXdpZHRoPSIxMSI+CiAgICA8Y2lyY2xlIGN4PSIxNTgiIGN5PSIxMjYiIHI9IjI2IiBzdHJva2U9IiMwMDgxQzgiLz4KICAgIDxjaXJjbGUgY3g9IjIxNiIgY3k9IjEyNiIgcj0iMjYiIHN0cm9rZT0iIzAwMDAwMCIvPgogICAgPGNpcmNsZSBjeD0iMjc0IiBjeT0iMTI2IiByPSIyNiIgc3Ryb2tlPSIjRUUzMzRFIi8+CiAgICA8Y2lyY2xlIGN4PSIxODciIGN5PSIxNjYiIHI9IjI2IiBzdHJva2U9IiNGQ0IxMzEiLz4KICAgIDxjaXJjbGUgY3g9IjI0NSIgY3k9IjE2NiIgcj0iMjYiIHN0cm9rZT0iIzAwQTY1MSIvPgogIDwvZz4KPC9zdmc+", "alt": "Olympic flag with five interlocking rings"}}, {"id": "quiz-pdf-q7", "section": "Quick Quiz I", "question": "Where is the ancient city of Bhagalpur located in India?", "options": ["Gujarat", "Bihar", "Tamil Nadu", "Kerala"], "correctIndex": 1, "explanation": "Bhagalpur is an ancient city in the Indian state of Bihar.", "suggestImage": false}, {"id": "quiz-pdf-q8", "section": "Quick Quiz I", "question": "Guests who buy tickets to the 'Keys to the Kingdom Tour' at Disney's Magic Kingdom in Florida can visit which part of the theme park?", "options": ["Utilidor", "Fantasyland", "Pool of water", "Nilgiri Mountain"], "correctIndex": 0, "explanation": "The tour enters the Utilidor tunnels that normal park guests cannot visit.", "suggestImage": false}, {"id": "quiz-pdf-q9", "section": "Quick Quiz I", "question": "Lt. Bharati 'Asha' Sahay Choudhry was inspired by ______ to join the Indian National Army.", "options": ["Bhagat Singh", "Netaji Subhas Chandra Bose", "R. K. Narayan", "Ruskin Bond"], "correctIndex": 1, "explanation": "Netaji Subhas Chandra Bose led the Indian National Army that Bharati joined.", "suggestImage": false}, {"id": "quiz-pdf-q10", "section": "Quick Quiz I", "question": "The Walt Disney Company officially celebrates the birthday of ______ on 9th June.", "options": ["Mickey Mouse", "Donald Duck", "Walt Disney", "Kobe Bean Bryant"], "correctIndex": 1, "explanation": "Donald Duck first appeared on 9th June 1934, so that is his birthday.", "suggestImage": false}]}, {"id": "quick-quiz-ii", "title": "Quick Quiz II", "emoji": "2️⃣", "questions": [{"id": "quiz-pdf-q11", "section": "Quick Quiz II", "question": "________ in Andaman and Nicobar Islands has the record for the tallest underwater human stack.", "options": ["Swaraj Dweep", "Lakshadweep", "Kerala", "Gujarat"], "correctIndex": 0, "explanation": "Swaraj Dweep in the Andaman Islands set the 22.3-metre underwater stack record.", "suggestImage": true, "imageNote": "Scuba divers forming a tall vertical human stack underwater.", "image": {"type": "svg", "src": "data:image/svg+xml;base64,CjxzdmcgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB2aWV3Qm94PSIwIDAgNDAwIDMwMCI+CiAgPHJlY3Qgd2lkdGg9IjQwMCIgaGVpZ2h0PSIzMDAiIGZpbGw9IiMxZjdhYzQiLz4KICA8cmVjdCB5PSIyNTIiIHdpZHRoPSI0MDAiIGhlaWdodD0iNDgiIGZpbGw9IiNmMmQ5YTAiLz4KICA8ZyBmaWxsPSIjOGZkOTdhIj48cGF0aCBkPSJNNDAgMjUyIHExMCAtMzQgMjIgMCB6Ii8+PHBhdGggZD0iTTM0OCAyNTIgcTEyIC00MCAyNCAwIHoiLz48cGF0aCBkPSJNOTYgMjUyIHE4IC0yNCAxNiAwIHoiLz48L2c+CiAgPGcgc3Ryb2tlPSIjMGQ0ZjhhIiBzdHJva2Utd2lkdGg9IjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCI+CiAgICA8cGF0aCBkPSJNMjAwIDIzNiB2LTUyIE0yMDAgMTg0IHYtNTIgTTIwMCAxMzIgdi00NCIvPgogIDwvZz4KICA8Zz4KICAgIDxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDIwMCwyMzIpIj48Y2lyY2xlIHI9IjE3IiBmaWxsPSIjZmZlMGIyIiBzdHJva2U9IiMwZDRmOGEiIHN0cm9rZS13aWR0aD0iNSIvPjxyZWN0IHg9Ii0xNiIgeT0iLTYiIHdpZHRoPSIzMiIgaGVpZ2h0PSIxNCIgcng9IjYiIGZpbGw9IiMyZWM3YTkiLz48cGF0aCBkPSJNLTE2IDQgbC0xNiAxMiBNMTYgNCBsMTYgMTIiIHN0cm9rZT0iIzBkNGY4YSIgc3Ryb2tlLXdpZHRoPSI2IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48L2c+CiAgICA8ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgyMDAsMTgwKSI+PGNpcmNsZSByPSIxNyIgZmlsbD0iI2ZmZDliMyIgc3Ryb2tlPSIjMGQ0ZjhhIiBzdHJva2Utd2lkdGg9IjUiLz48cmVjdCB4PSItMTYiIHk9Ii02IiB3aWR0aD0iMzIiIGhlaWdodD0iMTQiIHJ4PSI2IiBmaWxsPSIjZmY4YTY1Ii8+PHBhdGggZD0iTS0xNiA0IGwtMTYgLTEyIE0xNiA0IGwxNiAtMTIiIHN0cm9rZT0iIzBkNGY4YSIgc3Ryb2tlLXdpZHRoPSI2IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48L2c+CiAgICA8ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgyMDAsMTI4KSI+PGNpcmNsZSByPSIxNyIgZmlsbD0iI2ZmZTBiMiIgc3Ryb2tlPSIjMGQ0ZjhhIiBzdHJva2Utd2lkdGg9IjUiLz48cmVjdCB4PSItMTYiIHk9Ii02IiB3aWR0aD0iMzIiIGhlaWdodD0iMTQiIHJ4PSI2IiBmaWxsPSIjZmZkOTNkIi8+PHBhdGggZD0iTS0xNiA0IGwtMTYgLTE0IE0xNiA0IGwxNiAtMTQiIHN0cm9rZT0iIzBkNGY4YSIgc3Ryb2tlLXdpZHRoPSI2IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48L2c+CiAgICA8ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgyMDAsODQpIj48Y2lyY2xlIHI9IjE3IiBmaWxsPSIjZmZkOWIzIiBzdHJva2U9IiMwZDRmOGEiIHN0cm9rZS13aWR0aD0iNSIvPjxyZWN0IHg9Ii0xNiIgeT0iLTYiIHdpZHRoPSIzMiIgaGVpZ2h0PSIxNCIgcng9IjYiIGZpbGw9IiM5YjU5YjYiLz48cGF0aCBkPSJNLTE2IDQgbC0xNCAtMTggTTE2IDQgbDE0IC0xOCIgc3Ryb2tlPSIjMGQ0ZjhhIiBzdHJva2Utd2lkdGg9IjYiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPjwvZz4KICA8L2c+CiAgPGcgZmlsbD0iI2JkZWVmZSIgb3BhY2l0eT0iMC45Ij4KICAgIDxjaXJjbGUgY3g9IjE0NiIgY3k9IjIwMCIgcj0iOCIvPjxjaXJjbGUgY3g9IjEzMiIgY3k9IjE2OCIgcj0iNiIvPjxjaXJjbGUgY3g9IjE0MiIgY3k9IjE0MCIgcj0iOSIvPjxjaXJjbGUgY3g9IjEyOCIgY3k9IjEwNiIgcj0iNSIvPgogIDwvZz4KICA8ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgzMDAsMTk2KSI+PGVsbGlwc2Ugcng9IjI0IiByeT0iMTQiIGZpbGw9IiNmZjlkMmUiLz48cGF0aCBkPSJNMjIgMCBsMTggLTEyIHYyNCB6IiBmaWxsPSIjZmY5ZDJlIi8+PGNpcmNsZSBjeD0iLTkiIGN5PSItMyIgcj0iMyIgZmlsbD0iIzA4MmY0OSIvPjwvZz4KICA8ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSg4Niw5MCkiPjxlbGxpcHNlIHJ4PSIxOCIgcnk9IjExIiBmaWxsPSIjZmZkOTNkIi8+PHBhdGggZD0iTTE2IDAgbDE0IC05IHYxOCB6IiBmaWxsPSIjZmZkOTNkIi8+PGNpcmNsZSBjeD0iLTciIGN5PSItMiIgcj0iMi41IiBmaWxsPSIjMDgyZjQ5Ii8+PC9nPgo8L3N2Zz4=", "alt": "Scuba divers forming a tall underwater human stack"}}, {"id": "quiz-pdf-q12", "section": "Quick Quiz II", "question": "Which of these is a traditional Indian sack race?", "options": ["Dhaan Ki Bori", "Pachisi", "Olympic Flag", "Nehru Trophy Boat Race"], "correctIndex": 0, "explanation": "A 'bori' means sack, so Dhaan Ki Bori is a race run inside sacks.", "suggestImage": false}, {"id": "quiz-pdf-q13", "section": "Quick Quiz II", "question": "The ____________ connects Siliguri to the hill station of Darjeeling in West Bengal.", "options": ["Nilgiri Mountain", "Darjeeling Himalayan Railway", "Nehru Trophy Boat Race", "Swaraj Dweep"], "correctIndex": 1, "explanation": "The Darjeeling Himalayan Railway, the famous toy train, links Siliguri to Darjeeling.", "suggestImage": true, "imageNote": "The small toy train of the Darjeeling Himalayan Railway climbing through green hills.", "image": {"type": "svg", "src": "data:image/svg+xml;base64,CjxzdmcgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB2aWV3Qm94PSIwIDAgNDAwIDMwMCI+CiAgPHJlY3Qgd2lkdGg9IjQwMCIgaGVpZ2h0PSIzMDAiIGZpbGw9IiNiZGVlZmUiLz4KICA8Y2lyY2xlIGN4PSIzNDIiIGN5PSI1MCIgcj0iMjYiIGZpbGw9IiNmZmQ5M2QiLz4KICA8cGF0aCBkPSJNMCAyMTAgcTcwIC0xMTAgMTYwIC02MCBxNjAgLTkwIDE1MCAtMzAgcTUwIC00MCA5MCAtNiB2MTg2IEgwIHoiIGZpbGw9IiM3Y2M5NmEiLz4KICA8cGF0aCBkPSJNMCAyNDQgcTkwIC02MCAxOTAgLTIwIHE5MCAtNDYgMjEwIDYgdjcwIEgwIHoiIGZpbGw9IiM1YmIzNWEiLz4KICA8ZyBmaWxsPSIjZmZmIiBvcGFjaXR5PSIwLjkiPjxlbGxpcHNlIGN4PSI5MCIgY3k9IjU2IiByeD0iMzIiIHJ5PSIxNSIvPjxlbGxpcHNlIGN4PSI2MCIgY3k9IjUwIiByeD0iMjAiIHJ5PSIxMSIvPjwvZz4KICA8cGF0aCBkPSJNMTQgMjc2IHExMDAgLTM0IDE5MCAtMTggcTkwIDE2IDE4NiAtMTQiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzZkNDUyMiIgc3Ryb2tlLXdpZHRoPSI5Ii8+CiAgPHBhdGggZD0iTTE0IDI3NiBxMTAwIC0zNCAxOTAgLTE4IHE5MCAxNiAxODYgLTE0IiBmaWxsPSJub25lIiBzdHJva2U9IiNjYmQ1ZTEiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWRhc2hhcnJheT0iNCAxMiIvPgogIDxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDE1MCwyMzgpIj4KICAgIDxyZWN0IHg9Ii01MiIgeT0iLTM0IiB3aWR0aD0iNTYiIGhlaWdodD0iMzQiIHJ4PSI4IiBmaWxsPSIjYzAzOTJiIiBzdHJva2U9IiM3ZDI0MTciIHN0cm9rZS13aWR0aD0iNSIvPgogICAgPHJlY3QgeD0iLTQ0IiB5PSItNTgiIHdpZHRoPSIyMCIgaGVpZ2h0PSIyNiIgcng9IjUiIGZpbGw9IiNlNzRjM2MiIHN0cm9rZT0iIzdkMjQxNyIgc3Ryb2tlLXdpZHRoPSI1Ii8+CiAgICA8cmVjdCB4PSItOCIgeT0iLTQ2IiB3aWR0aD0iMTQiIGhlaWdodD0iMjAiIHJ4PSI0IiBmaWxsPSIjN2QyNDE3Ii8+CiAgICA8Y2lyY2xlIGN4PSItMzgiIGN5PSI0IiByPSIxMSIgZmlsbD0iIzJkMzQzNiIvPjxjaXJjbGUgY3g9Ii0xMCIgY3k9IjQiIHI9IjExIiBmaWxsPSIjMmQzNDM2Ii8+CiAgICA8Y2lyY2xlIGN4PSItMzgiIGN5PSI0IiByPSI0IiBmaWxsPSIjY2JkNWUxIi8+PGNpcmNsZSBjeD0iLTEwIiBjeT0iNCIgcj0iNCIgZmlsbD0iI2NiZDVlMSIvPgogICAgPGcgZmlsbD0iI2ZmZiIgb3BhY2l0eT0iMC45NSI+PGNpcmNsZSBjeD0iLTM0IiBjeT0iLTc2IiByPSIxMiIvPjxjaXJjbGUgY3g9Ii0xNiIgY3k9Ii05MiIgcj0iOSIvPjxjaXJjbGUgY3g9Ii0yIiBjeT0iLTEwNCIgcj0iNyIvPjwvZz4KICA8L2c+CiAgPGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMjM4LDI0NikiPgogICAgPHJlY3QgeD0iLTIiIHk9Ii0yNiIgd2lkdGg9IjQ2IiBoZWlnaHQ9IjI2IiByeD0iNyIgZmlsbD0iIzI5ODBiOSIgc3Ryb2tlPSIjMWE1Mjc2IiBzdHJva2Utd2lkdGg9IjUiLz4KICAgIDxyZWN0IHg9IjYiIHk9Ii0xOSIgd2lkdGg9IjEyIiBoZWlnaHQ9IjExIiByeD0iMiIgZmlsbD0iI2ZmZTBiMiIvPjxyZWN0IHg9IjI2IiB5PSItMTkiIHdpZHRoPSIxMiIgaGVpZ2h0PSIxMSIgcng9IjIiIGZpbGw9IiNmZmUwYjIiLz4KICAgIDxjaXJjbGUgY3g9IjgiIGN5PSI0IiByPSI5IiBmaWxsPSIjMmQzNDM2Ii8+PGNpcmNsZSBjeD0iMzQiIGN5PSI0IiByPSI5IiBmaWxsPSIjMmQzNDM2Ii8+CiAgPC9nPgogIDxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDMwNiwyNTIpIj4KICAgIDxyZWN0IHg9IjAiIHk9Ii0yNCIgd2lkdGg9IjQyIiBoZWlnaHQ9IjI0IiByeD0iNyIgZmlsbD0iI2YzOWMxMiIgc3Ryb2tlPSIjYjk3NzBlIiBzdHJva2Utd2lkdGg9IjUiLz4KICAgIDxyZWN0IHg9IjgiIHk9Ii0xNyIgd2lkdGg9IjExIiBoZWlnaHQ9IjEwIiByeD0iMiIgZmlsbD0iI2ZmZTBiMiIvPjxyZWN0IHg9IjI2IiB5PSItMTciIHdpZHRoPSIxMSIgaGVpZ2h0PSIxMCIgcng9IjIiIGZpbGw9IiNmZmUwYjIiLz4KICAgIDxjaXJjbGUgY3g9IjEwIiBjeT0iNCIgcj0iOCIgZmlsbD0iIzJkMzQzNiIvPjxjaXJjbGUgY3g9IjMyIiBjeT0iNCIgcj0iOCIgZmlsbD0iIzJkMzQzNiIvPgogIDwvZz4KPC9zdmc+", "alt": "The toy train of the Darjeeling Himalayan Railway on green hills"}}, {"id": "quiz-pdf-q14", "section": "Quick Quiz II", "question": "In a Vietnamese Water Puppetry show, what acts as the stage for the puppets?", "options": ["Pool of water", "Truck filled with water", "Magic Kingdom", "Nilgiri Mountain"], "correctIndex": 0, "explanation": "Water puppets dance on a pool of water that hides the puppeteers.", "suggestImage": true, "imageNote": "Colourful Vietnamese water puppets performing on the surface of a pool.", "image": {"type": "svg", "src": "data:image/svg+xml;base64,CjxzdmcgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB2aWV3Qm94PSIwIDAgNDAwIDMwMCI+CiAgPHJlY3Qgd2lkdGg9IjQwMCIgaGVpZ2h0PSIzMDAiIGZpbGw9IiNmZmU5YzkiLz4KICA8cmVjdCB5PSIxNzYiIHdpZHRoPSI0MDAiIGhlaWdodD0iMTI0IiBmaWxsPSIjNGZiM2U4Ii8+CiAgPGcgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOGVkNmY1IiBzdHJva2Utd2lkdGg9IjYiPgogICAgPHBhdGggZD0iTTEwIDIwNiBxMTggLTEwIDM2IDAgdDM2IDAgdDM2IDAgdDM2IDAgdDM2IDAgdDM2IDAgdDM2IDAgdDM2IDAgdDM2IDAgdDM2IDAiLz4KICAgIDxwYXRoIGQ9Ik0xMCAyNDQgcTE4IC0xMCAzNiAwIHQzNiAwIHQzNiAwIHQzNiAwIHQzNiAwIHQzNiAwIHQzNiAwIHQzNiAwIHQzNiAwIHQzNiAwIi8+CiAgPC9nPgogIDxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDE0MCwxNDgpIj4KICAgIDxwYXRoIGQ9Ik0tMzQgMzAgcS04IC00NiAzNCAtNDYgcTQyIDAgMzQgNDYgeiIgZmlsbD0iI2U3NGMzYyIgc3Ryb2tlPSIjOTIyYjIxIiBzdHJva2Utd2lkdGg9IjYiLz4KICAgIDxjaXJjbGUgY3k9Ii0zMCIgcj0iMjQiIGZpbGw9IiNmZmUwYjIiIHN0cm9rZT0iIzkyMmIyMSIgc3Ryb2tlLXdpZHRoPSI2Ii8+CiAgICA8cGF0aCBkPSJNLTI0IC00NCBxMjQgLTI2IDQ4IDAgcS04IC0yMCAtMjQgLTIwIHEtMTYgMCAtMjQgMjAgeiIgZmlsbD0iIzJkMzQzNiIvPgogICAgPGNpcmNsZSBjeD0iLTgiIGN5PSItMzIiIHI9IjQiIGZpbGw9IiMyZDM0MzYiLz48Y2lyY2xlIGN4PSI4IiBjeT0iLTMyIiByPSI0IiBmaWxsPSIjMmQzNDM2Ii8+CiAgICA8cGF0aCBkPSJNLTggLTIwIHE4IDggMTYgMCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMmQzNDM2IiBzdHJva2Utd2lkdGg9IjQiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgogICAgPHBhdGggZD0iTS0zNCA2IGwtMjYgLTE4IE0zNCA2IGwyNiAtMTgiIHN0cm9rZT0iIzkyMmIyMSIgc3Ryb2tlLXdpZHRoPSI3IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KICA8L2c+CiAgPGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMjY4LDE2MCkiPgogICAgPHBhdGggZD0iTS0yNiAyNCBxLTYgLTM2IDI2IC0zNiBxMzIgMCAyNiAzNiB6IiBmaWxsPSIjZjFjNDBmIiBzdHJva2U9IiNiNzk1MGIiIHN0cm9rZS13aWR0aD0iNiIvPgogICAgPGNpcmNsZSBjeT0iLTI0IiByPSIxOSIgZmlsbD0iI2ZmZTBiMiIgc3Ryb2tlPSIjYjc5NTBiIiBzdHJva2Utd2lkdGg9IjYiLz4KICAgIDxwYXRoIGQ9Ik0tMTkgLTM2IHExOSAtMjIgMzggMCBxLTcgLTE2IC0xOSAtMTYgcS0xMiAwIC0xOSAxNiB6IiBmaWxsPSIjOGU0NGFkIi8+CiAgICA8Y2lyY2xlIGN4PSItNiIgY3k9Ii0yNiIgcj0iMy41IiBmaWxsPSIjMmQzNDM2Ii8+PGNpcmNsZSBjeD0iNiIgY3k9Ii0yNiIgcj0iMy41IiBmaWxsPSIjMmQzNDM2Ii8+CiAgICA8cGF0aCBkPSJNLTYgLTE2IHE2IDcgMTIgMCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMmQzNDM2IiBzdHJva2Utd2lkdGg9IjQiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgogICAgPHBhdGggZD0iTS0yNiA0IGwtMjAgLTE0IE0yNiA0IGwyMCAtMTQiIHN0cm9rZT0iI2I3OTUwYiIgc3Ryb2tlLXdpZHRoPSI2IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KICA8L2c+CiAgPGcgZmlsbD0iI2JkZWVmZSIgb3BhY2l0eT0iMC45Ij48Y2lyY2xlIGN4PSI4MCIgY3k9IjEyMCIgcj0iNyIvPjxjaXJjbGUgY3g9IjMzMCIgY3k9IjEwNiIgcj0iNiIvPjxjaXJjbGUgY3g9IjM0NCIgY3k9Ijg0IiByPSI4Ii8+PC9nPgogIDxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDMzNiwxNDApIj48ZWxsaXBzZSByeD0iMjAiIHJ5PSIxMiIgZmlsbD0iIzJlY2M3MSIvPjxwYXRoIGQ9Ik0xOCAwIGwxNiAtMTAgdjIwIHoiIGZpbGw9IiMyZWNjNzEiLz48Y2lyY2xlIGN4PSItNyIgY3k9Ii0yIiByPSIzIiBmaWxsPSIjMDgyZjQ5Ii8+PHBhdGggZD0iTS02IC0xMCBsLTggLTgiIHN0cm9rZT0iIzJlY2M3MSIgc3Ryb2tlLXdpZHRoPSI0IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48L2c+Cjwvc3ZnPg==", "alt": "Colourful Vietnamese water puppets performing on a pool"}}, {"id": "quiz-pdf-q15", "section": "Quick Quiz II", "question": "Name the national bird of Seychelles.", "options": ["Black parrot", "Peacock", "Giant Panda", "Unicorn"], "correctIndex": 0, "explanation": "The Seychelles black parrot is the national bird of those islands.", "suggestImage": true, "imageNote": "A Seychelles black parrot perched on a branch.", "image": {"type": "emoji", "src": "🦜", "alt": "A parrot, the national bird of Seychelles"}}, {"id": "quiz-pdf-q16", "section": "Quick Quiz II", "question": "Finnie, the official mascot for the 2026 Commonwealth Games, represents which animal?", "options": ["Unicorn", "Giant Panda", "Black parrot", "Peacock"], "correctIndex": 0, "explanation": "Finnie is a unicorn, the national animal of Scotland, picked by Glasgow children.", "suggestImage": true, "imageNote": "Finnie the unicorn mascot with her bright traffic-cone horn.", "image": {"type": "emoji", "src": "🦄", "alt": "A unicorn, mascot Finnie of the 2026 Commonwealth Games"}}, {"id": "quiz-pdf-q17", "section": "Quick Quiz II", "question": "Which country bestows the Mitra Vibhushana award on foreign leaders?", "options": ["India", "Sri Lanka", "France", "Spain"], "correctIndex": 1, "explanation": "Sri Lanka gives the Mitra Vibhushana as its highest honour to foreign leaders.", "suggestImage": false}, {"id": "quiz-pdf-q18", "section": "Quick Quiz II", "question": "Whose message is carried in the King's Baton Relay at the Commonwealth Games?", "options": ["President of U. K.", "King of U. K.", "President of India", "King of Spain"], "correctIndex": 1, "explanation": "The King is Head of the Commonwealth, so the baton carries his message.", "suggestImage": false}, {"id": "quiz-pdf-q19", "section": "Quick Quiz II", "question": "Who among them was one of the earliest woman doctors in India?", "options": ["Dr. Kadambini Ganguly", "Sarojini Naidu", "Ruskin Bond", "Diego Maradona"], "correctIndex": 0, "explanation": "Dr. Kadambini Ganguly was one of India's first women doctors.", "suggestImage": false}, {"id": "quiz-pdf-q20", "section": "Quick Quiz II", "question": "Seychelles' coconut crab can crack a coconut using its powerful claws. True or False.", "options": ["True", "False", "None of these", "Only in water"], "correctIndex": 0, "explanation": "A coconut crab's strong claws can indeed break open a hard coconut.", "suggestImage": true, "imageNote": "A coconut crab gripping and cracking open a coconut with its claw.", "image": {"type": "svg", "src": "data:image/svg+xml;base64,CjxzdmcgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB2aWV3Qm94PSIwIDAgNDAwIDMwMCI+CiAgPHJlY3Qgd2lkdGg9IjQwMCIgaGVpZ2h0PSIzMDAiIGZpbGw9IiNiZGVlZmUiLz4KICA8cmVjdCB5PSIyMTIiIHdpZHRoPSI0MDAiIGhlaWdodD0iODgiIGZpbGw9IiNmMmQ5YTAiLz4KICA8ZyBzdHJva2U9IiM4YTVhMzAiIHN0cm9rZS13aWR0aD0iNiIgZmlsbD0ibm9uZSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIj4KICAgIDxwYXRoIGQ9Ik0xNTAgMjQwIHEtNDAgNiAtNTYgMzQgTTE3MCAyNTIgcS0zMCAxNiAtMzYgNDAgTTI1MCAyNDAgcTQwIDYgNTYgMzQgTTIzMCAyNTIgcTMwIDE2IDM2IDQwIi8+CiAgPC9nPgogIDxlbGxpcHNlIGN4PSIyMDAiIGN5PSIyMjYiIHJ4PSI3NCIgcnk9IjUyIiBmaWxsPSIjN2QzYzk4IiBzdHJva2U9IiM0YTIzNWEiIHN0cm9rZS13aWR0aD0iNyIvPgogIDxwYXRoIGQ9Ik0xMzggMjEwIHEtMzQgLTMwIC02NCAtMzYiIHN0cm9rZT0iIzRhMjM1YSIgc3Ryb2tlLXdpZHRoPSI3IiBmaWxsPSJub25lIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KICA8cGF0aCBkPSJNMTM4IDIyNCBxLTM4IC0xMiAtNjYgLTYiIHN0cm9rZT0iIzRhMjM1YSIgc3Ryb2tlLXdpZHRoPSI3IiBmaWxsPSJub25lIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KICA8ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgyNzYsMTg2KSI+CiAgICA8cGF0aCBkPSJNMCAwIHE0MCAtNDYgNzQgLTMwIHEtOCAzNCAtNDQgNDQgcS0yMiA2IC0zMCAtMTQgeiIgZmlsbD0iI2U3NGMzYyIgc3Ryb2tlPSIjOTIyYjIxIiBzdHJva2Utd2lkdGg9IjciLz4KICAgIDxwYXRoIGQ9Ik01NiAtMjIgcTE2IC04IDI0IDQgcS0xMCA4IC0yMiA2IiBmaWxsPSIjOTIyYjIxIi8+CiAgICA8Y2lyY2xlIGN4PSIzMCIgY3k9Ii04IiByPSI1IiBmaWxsPSIjMmQzNDM2Ii8+CiAgPC9nPgogIDxwYXRoIGQ9Ik0xNDggMjAwIHE1MiAtNzggMTE4IC0zNCIgc3Ryb2tlPSIjNGEyMzVhIiBzdHJva2Utd2lkdGg9IjciIGZpbGw9Im5vbmUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgogIDxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDI3NiwxOTYpIj4KICAgIDxjaXJjbGUgcj0iNDQiIGZpbGw9IiM4YTVhMzAiIHN0cm9rZT0iIzVkM2ExYSIgc3Ryb2tlLXdpZHRoPSI3Ii8+CiAgICA8cGF0aCBkPSJNLTQ0IDAgaDg4IE0wIC00NCB2ODgiIHN0cm9rZT0iIzVkM2ExYSIgc3Ryb2tlLXdpZHRoPSI1Ii8+CiAgICA8cGF0aCBkPSJNLTMwIC0zMCBsNjAgNjAgTTMwIC0zMCBsLTYwIDYwIiBzdHJva2U9IiM1ZDNhMWEiIHN0cm9rZS13aWR0aD0iNSIvPgogICAgPHBhdGggZD0iTTAgLTQ0IHExMCAtMjYgMzAgLTM0IHEtNiAyNCAtMTggMzYiIGZpbGw9IiMzZmE1NTIiIHN0cm9rZT0iIzJjN2E0MSIgc3Ryb2tlLXdpZHRoPSI1Ii8+CiAgPC9nPgogIDxnIGZpbGw9IiMzZmE1NTIiPjxwYXRoIGQ9Ik00MCAyMTIgcTEwIC00NCAyNCAwIHoiLz48cGF0aCBkPSJNMzU2IDIxMiBxMTAgLTQwIDIyIDAgeiIvPjwvZz4KICA8Y2lyY2xlIGN4PSI3NiIgY3k9IjUyIiByPSIyNCIgZmlsbD0iI2ZmZDkzZCIvPgo8L3N2Zz4=", "alt": "A coconut crab cracking open a coconut with its claw"}}]}]}</script>
+
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <linearGradient id="gradA" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4ecdc4"/><stop offset="100%" stop-color="#4f9de8"/>
+    </linearGradient>
+  </defs>
+</svg>
+
+<script>
+(() => {
+"use strict";
+/* ══════════════════════════════════════════════════════════════
+   html-quiz runtime — self-contained, no libraries, no network.
+   Question data is parsed from the #quiz-data script tag.
+   ══════════════════════════════════════════════════════════════ */
+
+// ── Data & config ─────────────────────────────────────────────
+const QUIZ = JSON.parse(document.getElementById('quiz-data').textContent.trim());
+const params = new URLSearchParams(location.search);
+const cfg = {
+  secs: clampInt(params.get('secs'), 30, 2, 60),   // seconds per question
+  max:  clampInt(params.get('max'), 25, 1, 100),   // (informational only; cap applied at build)
+  tts:  params.get('tts') !== 'off' && params.get('tts') !== '0'
+};
+function clampInt(v, d, lo, hi){ const n = parseInt(v,10); return Number.isFinite(n) ? Math.min(hi, Math.max(lo, n)) : d; }
+
+// Build a flat ordered question list across all sections.
+const FLAT = [];
+QUIZ.sections.forEach(s => {
+  s.questions.forEach(q => {
+    FLAT.push({ q, sectionId: s.id, sectionTitle: s.title });
+  });
+});
+const TOTAL = FLAT.length;
+
+// ── State machine ─────────────────────────────────────────────
+let state = {
+  mode: 'intro',        // intro | question | revealed | results
+  scope: null,          // null = all sections, else sectionId
+  list: [],             // ordered [{q, sectionId, sectionTitle}] for current scope
+  iq: 0,
+  answers: [],          // {qid, chosen(-1=timeout), status, pts}
+  score: 0,
+  runToken: 0,
+  transitioning: false
+};
+
+const elStage  = document.getElementById('stage');
+const elScore  = document.getElementById('score-chip');
+const elProg   = document.getElementById('progress-fill');
+const elTree   = document.getElementById('tree');
+const elSide   = document.getElementById('sidebar');
+const overlay  = document.getElementById('overlay');
+const elMute   = document.getElementById('mute-btn');
+let muted = false;
+
+// ── DOM helpers (NO innerHTML anywhere) ───────────────────────
+const h = (tag, cls, text) => {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (text !== undefined) e.textContent = text;   // untrusted text → textContent only
+  return e;
+};
+function clear(node){ while(node.firstChild) node.removeChild(node.firstChild); }
+
+// ── Sound (WebAudio, synthesised; lazy context for autoplay) ─
+let AC = null;
+function ensureAudio(){
+  if (!AC){ try{ AC = new (window.AudioContext || window.webkitAudioContext)(); }catch(e){ return null; } }
+  if (AC.state === 'suspended') AC.resume();
+  return AC;
+}
+function blip(freq, dur, type, delay, vol){
+  const ac = AC || ensureAudio();
+  if (!ac) return;
+  const t0 = ac.currentTime + (delay || 0);
+  const o = ac.createOscillator(), g = ac.createGain();
+  o.type = type || 'sine'; o.frequency.value = freq;
+  g.gain.setValueAtTime(vol || 0.14, t0);
+  g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+  o.connect(g); g.connect(ac.destination);
+  o.start(t0); o.stop(t0 + dur + 0.03);
+}
+const sTick   = () => blip(880, 0.06, 'square');
+const sCorrect= () => { blip(523,0.12,'sine',0); blip(659,0.12,'sine',0.11); blip(784,0.2,'sine',0.22); };
+const sWrong  = () => { blip(220,0.22,'triangle',0); blip(170,0.28,'triangle',0.14); };
+const sTimesUp= () => { blip(440,0.18,'triangle',0); blip(330,0.3,'triangle',0.16); };
+const sPop    = () => { blip(660,0.09,'sine',0,0.1); blip(880,0.1,'sine',0.07,0.08); };
+
+// ── TTS (Web Speech API) ──────────────────────────────────────
+function ttsAvailable(){ return 'speechSynthesis' in window; }
+function pickVoice(){
+  if (!ttsAvailable()) return null;
+  const vs = speechSynthesis.getVoices();
+  return vs.find(v => /^en/i.test(v.lang)) || vs[0] || null;
+}
+function speak(text, onEnd){
+  if (!cfg.tts || muted || !ttsAvailable() || !text) { if (onEnd) onEnd(); return; }
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.rate = 1; u.pitch = 1.05;
+  const v = pickVoice(); if (v) u.voice = v;
+  if (onEnd) u.onend = onEnd;
+  speechSynthesis.speak(u);
+}
+if ('speechSynthesis' in window){
+  speechSynthesis.onvoiceschanged = () => {};   // warm the voice list
+}
+
+// ── Timer ring ────────────────────────────────────────────────
+let rafId = 0;
+function stopTimer(){ if (rafId){ cancelAnimationFrame(rafId); rafId = 0; } }
+function startTimer(secs, token){
+  stopTimer();
+  const C = 2 * Math.PI * 30;                    // r=30 ring
+  const ring = document.getElementById('ring-fg');
+  const count = document.getElementById('t-count');
+  const wrap = document.getElementById('timer-wrap');
+  ring.setAttribute('stroke-dasharray', C);
+  ring.setAttribute('stroke-dashoffset', 0);
+  const deadline = performance.now() + secs * 1000;
+  let lastSec = Math.ceil(secs);
+  const loop = (now) => {
+    if (state.runToken !== token) return;        // stale — question changed
+    const remMs = deadline - now;
+    const remSec = Math.max(0, Math.ceil(remMs / 1000));
+    const frac = Math.max(0, Math.min(1, remMs / (secs * 1000)));
+    ring.setAttribute('stroke-dashoffset', String(C * (1 - frac)));   // SVG attr, not CSS
+    count.textContent = String(remSec);
+    wrap.classList.toggle('low', remSec <= 3);
+    if (remSec < lastSec){ lastSec = remSec; if (remSec > 0 && remSec <= 3 && state.mode === 'question') sTick(); }
+    if (remMs <= 0){ onTimeout(token); return; }
+    rafId = requestAnimationFrame(loop);
+  };
+  rafId = requestAnimationFrame(loop);
+}
+
+// ── Timer markup builder (returned to slot in question card) ──
+function timerMarkup(){
+  const wrap = h('div', 'timer-wrap'); wrap.id = 'timer-wrap';
+  const ns = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(ns, 'svg');
+  svg.setAttribute('viewBox', '0 0 74 74');
+  const bg = document.createElementNS(ns, 'circle');
+  bg.setAttribute('cx','37'); bg.setAttribute('cy','37'); bg.setAttribute('r','30'); bg.setAttribute('class','circle-bg');
+  const fg = document.createElementNS(ns, 'circle');
+  fg.setAttribute('cx','37'); fg.setAttribute('cy','37'); fg.setAttribute('r','30'); fg.setAttribute('class','circle-fg');
+  fg.id = 'ring-fg';
+  svg.appendChild(bg); svg.appendChild(fg);
+  const c = h('div', 't-count', String(cfg.secs)); c.id = 't-count';
+  wrap.appendChild(svg); wrap.appendChild(c);
+  return wrap;
+}
+
+// ── Confetti ──────────────────────────────────────────────────
+const CONF_COLORS = ['#ff6b6b','#ffd93d','#2ecc71','#4f9de8','#9b59b6','#ff9d2e'];
+function burstConfetti(n){
+  const layer = document.getElementById('confetti');
+  for (let i = 0; i < n; i++){
+    const c = h('div', 'confetti');
+    c.style.left = (Math.random() * 100) + 'vw';
+    c.style.background = CONF_COLORS[i % CONF_COLORS.length];
+    c.style.setProperty('--rx', (Math.random() * 540 - 270) + 'deg');
+    c.style.animationDuration = (1.6 + Math.random() * 1.6) + 's';
+    c.style.animationDelay = (Math.random() * 0.5) + 's';
+    c.style.width = (7 + Math.random() * 8) + 'px';
+    c.style.height = (7 + Math.random() * 8) + 'px';
+    c.addEventListener('animationend', () => c.remove());
+    layer.appendChild(c);
+  }
+}
+
+// ── Tree building ─────────────────────────────────────────────
+function renderTree(){
+  clear(elTree);
+  QUIZ.sections.forEach(sec => {
+    const node = h('div', 'tree-node');
+    node.setAttribute('data-sec', sec.id);
+    const arrow = h('span', 'arrow', '▶');
+    const dot = h('span', 'dot');
+    dot.style.background = sectionColor(sec.id);
+    const label = h('span', null, sec.emoji + ' ' + sec.title);
+    const badge = h('span', 'badge', String(sec.questions.length));
+    node.appendChild(arrow); node.appendChild(dot); node.appendChild(label); node.appendChild(badge);
+    node.addEventListener('click', () => {
+      arrow.classList.toggle('open');
+      const kids = document.getElementById('children-' + sec.id);
+      if (kids) kids.classList.toggle('open');
+    });
+    elTree.appendChild(node);
+
+    const kids = h('div', 'tree-children');
+    kids.id = 'children-' + sec.id;
+    sec.questions.forEach(q => {
+      const leaf = h('div', 'tree-node tree-leaf');
+      leaf.setAttribute('data-qid', q.id);
+      const qn = h('span', null, 'Q' + (FLAT.length ? '' : '') + q.id.split('-q')[1]);
+      const st = h('span', 'st');
+      leaf.appendChild(h('span', 'arrow', '•'));
+      leaf.appendChild(qn); leaf.appendChild(st);
+      leaf.addEventListener('click', () => startAtSection(sec.id, q.id));
+      kids.appendChild(leaf);
+    });
+    elTree.appendChild(kids);
+  });
+}
+function sectionColor(id){
+  const pal = ['#4ecdc4','#ffb300','#9b59b6','#4f9de8','#ff6b6b','#2ecc71','#e67e22','#e84393'];
+  let x = 0; for (const ch of id) x = (x + ch.charCodeAt(0)) % pal.length;
+  return pal[x];
+}
+function updateTreeStatus(){
+  const answered = new Map(state.answers.map(a => [a.qid, a.status]));
+  document.querySelectorAll('#tree .tree-leaf').forEach(leaf => {
+    const st = leaf.querySelector('.st');
+    const qid = leaf.getAttribute('data-qid');
+    const s = answered.get(qid);
+    st.textContent = '';
+    st.className = 'st';
+    if (s === 'correct'){ st.textContent = '✓'; st.classList.add('good'); }
+    else if (s === 'wrong'){ st.textContent = '✗'; st.classList.add('bad'); }
+    else if (s === 'timeout'){ st.textContent = '⏰'; st.classList.add('slow'); }
+  });
+  // highlight active section node
+  document.querySelectorAll('#tree .tree-node[data-sec]').forEach(n => {
+    n.classList.toggle('active', state.scope === null || n.getAttribute('data-sec') === state.scope);
+  });
+}
+
+// ── Scope / nav ───────────────────────────────────────────────
+function shuffle(arr){
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--){ const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+  return a;
+}
+function startScope(scopeId){
+  state.scope = scopeId || null;
+  if (state.scope) {
+    state.list = FLAT.filter(f => f.sectionId === state.scope);
+  } else {
+    // group by section, shuffle sections, keep questions in source order within each
+    const bySec = [];
+    const secOrder = [];
+    FLAT.forEach(f => { if (!secOrder.includes(f.sectionId)) secOrder.push(f.sectionId); });
+    secOrder.forEach(sid => bySec.push(FLAT.filter(f => f.sectionId === sid)));
+    state.list = shuffle(bySec).flat();
+  }
+  state.iq = 0; state.answers = []; state.score = 0; state.runToken++;
+  updateScore();
+  if (state.list.length === 0){ renderIntro(); return; }
+  renderQuestion();
+}
+function startAtSection(secId, qid){
+  state.scope = secId;
+  state.list = FLAT.filter(f => f.sectionId === secId);
+  const idx = state.list.findIndex(f => f.q.id === qid);
+  state.iq = idx >= 0 ? idx : 0;
+  state.answers = []; state.score = 0; state.runToken++;
+  updateScore();
+  closeDrawer();
+  renderQuestion();
+}
+function currentQ(){
+  const f = state.list[state.iq];
+  return f ? f.q : null;
+}
+
+// ── Views ─────────────────────────────────────────────────────
+function renderIntro(){
+  state.mode = 'intro';
+  clear(elStage);
+  const card = h('div', 'card intro card-in');
+  const big = h('div', 'big-emoji', QUIZ.emoji || '🧠');
+  const title = h('h1', null, QUIZ.title || 'Quick Quiz');
+  const sub = h('div', 'sub', QUIZ.subtitle || 'Test yourself & learn with fun quiz!');
+  const meta = h('div', 'meta-chip', '🎯 ' + TOTAL + ' questions · ⭐ up to ' + (TOTAL * 10) + ' points · ⏱️ ' + cfg.secs + 's each');
+  const start = h('button', 'big-btn', '▶ Start Quiz');
+  start.addEventListener('click', () => { ensureAudio(); state.runToken++; startScope(null); });
+  card.appendChild(big); card.appendChild(title); card.appendChild(sub);
+  const row = h('div', 'ghost-row');
+  const samp = h('button', 'big-btn ghost', '🔊 Hear me');
+  samp.addEventListener('click', () => { ensureAudio(); speak('Hello friend! Let’s play and learn together!'); });
+  const imgAll = h('div', 'hint-line', 'Open a section in the left menu to play a single topic.');
+  row.appendChild(samp);
+  card.appendChild(meta); card.appendChild(start); card.appendChild(row); card.appendChild(imgAll);
+  elStage.appendChild(card);
+  updateProgress(0);
+}
+function speakQuestion(q, onEnd){
+  const all = 'Question ' + q.question + '. Options: ' +
+    q.options.map((o, i) => String.fromCharCode(65 + i) + '. ' + o).join('. ') + '.';
+  speak(all, onEnd);
+}
+function renderQuestion(){
+  state.mode = 'question';
+  const q = currentQ();
+  if (!q){ renderResults(); return; }
+  const token = ++state.runToken;
+  stopTimer();
+  clear(elStage);
+  const card = h('div', 'card card-in');
+  const head = h('div', 'q-head');
+  head.appendChild(h('div', 'q-progress', 'Question ' + (state.iq + 1) + ' of ' + state.list.length));
+  head.appendChild(timerMarkup());
+  card.appendChild(head);
+
+  // question text
+  card.appendChild(h('div', 'q-text', q.question));
+
+  // optional image
+  if (q.image){
+    const iw = h('div', 'qimg-wrap');
+    if (q.image.type === 'emoji'){
+      iw.appendChild(h('div', 'emoji-big', q.image.src));
+    } else {
+      const img = h('img', 'qimg');
+      img.setAttribute('src', q.image.src);
+      img.setAttribute('alt', q.image.alt || '');
+      iw.appendChild(img);
+    }
+    if (q.image.caption) iw.appendChild(h('div', 'caption', q.image.caption));
+    card.appendChild(iw);
+  }
+
+  // options
+  const opts = h('div', 'options');
+  q.options.forEach((text, i) => {
+    const b = h('button', 'opt');
+    b.setAttribute('data-idx', String(i));
+    b.appendChild(h('span', 'key', String.fromCharCode(65 + i)));
+    b.appendChild(h('span', null, text));
+    b.appendChild(h('span', 'mark'));
+    b.addEventListener('click', () => { ensureAudio(); if (state.mode === 'question') answer(i); });
+    opts.appendChild(b);
+  });
+  card.appendChild(opts);
+
+  // speak button
+  const foot = h('div', 'q-foot');
+  const spk = h('button', 'speak-btn', '🔊 Read aloud');
+  spk.addEventListener('click', () => { ensureAudio(); speakQuestion(q); });
+  foot.appendChild(spk);
+  card.appendChild(foot);
+  elStage.appendChild(card);
+
+  updateProgress(state.iq / state.list.length);
+  speakQuestion(q, () => { if (state.runToken === token && state.mode === 'question') startTimer(cfg.secs, token); });
+}
+function reveal(q, status, chosen){
+  state.mode = 'revealed';
+  stopTimer();
+  state.answers.push({ qid: q.id, chosen, status, pts: status === 'correct' ? 10 : 0 });
+  if (status === 'correct') state.score += 10;
+  updateScore();
+  updateTreeStatus();
+  burstConfetti(status === 'correct' ? 60 : 0);
+
+  const card = document.querySelector('#stage .card');
+  // banner
+  const banner = h('div', 'reveal-banner ' + (status === 'correct' ? 'good' : status === 'wrong' ? 'bad' : 'slow'));
+  const icon = status === 'correct' ? '✅' : status === 'wrong' ? '❌' : '⏰';
+  const msg = status === 'correct' ? 'Correct! Great job!' : status === 'wrong' ? 'Oops! Not quite.' : "Time's up!";
+  banner.appendChild(h('span', null, icon + ' ' + msg));
+  card.appendChild(banner);
+  // explanation
+  const exp = h('div', 'reveal-exp');
+  const b = h('b', null, '💡 '); b.textContent = '💡 ' + q.options[q.correctIndex];
+  exp.appendChild(b);
+  exp.appendChild(h('div', null, q.explanation));
+  card.appendChild(exp);
+  // highlight options
+  const buttons = card.querySelectorAll('.opt');
+  buttons.forEach((btn, i) => {
+    btn.disabled = true;
+    const mark = btn.querySelector('.mark');
+    if (i === q.correctIndex){ btn.classList.add('correct'); mark.textContent = '✓'; }
+    else if (i === chosen){ btn.classList.add('wrong-chosen'); mark.textContent = '✗'; }
+    else btn.classList.add('dim');
+  });
+  // next row
+  const row = h('div', 'next-row');
+  const pts = h('div', 'pts-gain ' + (status === 'correct' ? 'gain' : 'none'),
+                status === 'correct' ? '+10 points' : '+0 points');
+  const nb = h('button', 'next-btn', state.iq + 1 >= state.list.length ? 'See results 🏆' : 'Next ➡️');
+  nb.addEventListener('click', () => { state.iq++; if (state.iq >= state.list.length) renderResults(); else renderQuestion(); });
+  row.appendChild(pts); row.appendChild(nb);
+  const head = card.querySelector('.q-head');
+  if (head) head.appendChild(row); else card.appendChild(row);
+  // duplicate next-row at bottom for easy access
+  const row2 = h('div', 'next-row');
+  row2.appendChild(h('div', 'pts-gain ' + (status === 'correct' ? 'gain' : 'none'),
+                status === 'correct' ? '+10 points' : '+0 points'));
+  const nb2 = h('button', 'next-btn', state.iq + 1 >= state.list.length ? 'See results 🏆' : 'Next ➡️');
+  nb2.addEventListener('click', () => { state.iq++; if (state.iq >= state.list.length) renderResults(); else renderQuestion(); });
+  row2.appendChild(nb2);
+  card.appendChild(row2);
+}
+function answer(i){
+  const q = currentQ();
+  ensureAudio();
+  if (i === q.correctIndex) sCorrect(); else sWrong();
+  reveal(q, i === q.correctIndex ? 'correct' : 'wrong', i);
+}
+function onTimeout(token){
+  if (state.runToken !== token) return;   // stale
+  const q = currentQ();
+  ensureAudio(); sTimesUp();
+  reveal(q, 'timeout', -1);
+  speak(q.explanation);
+}
+function renderResults(){
+  state.mode = 'results';
+  stopTimer();
+  clear(elStage);
+  const card = h('div', 'card results card-in');
+  const count = state.list.length;
+  const maxPts = count * 10;
+  const words = pctWord(state.score / maxPts);
+  card.appendChild(h('div', 'big-emoji', words.emoji));
+  card.appendChild(h('h2', null, words.title));
+  card.appendChild(h('div', 'sub', 'You scored ' + state.score + ' of ' + maxPts + ' points'));
+
+  // score ring
+  const rw = h('div', 'ring-wrap');
+  const ns = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(ns, 'svg');
+  svg.setAttribute('viewBox', '0 0 120 120');
+  const bg = document.createElementNS(ns, 'circle');
+  bg.setAttribute('cx','60'); bg.setAttribute('cy','60'); bg.setAttribute('r','45'); bg.setAttribute('class','rbg');
+  const fg = document.createElementNS(ns, 'circle');
+  fg.setAttribute('cx','60'); fg.setAttribute('cy','60'); fg.setAttribute('r','45'); fg.setAttribute('class','rfg');
+  fg.id = 'ring-fg-r';
+  svg.appendChild(bg); svg.appendChild(fg);
+  rw.appendChild(svg);
+  const rs = h('div', 'rscore');
+  const n = h('div', 'n', String(state.score)); n.id = 'rscore-n'; n.className = 'n rscore-n';
+  rs.appendChild(n); rs.appendChild(h('div', 'pts', 'points'));
+  rw.appendChild(rs);
+  card.appendChild(rw);
+
+  const stars = h('div', 'stars', '⭐'.repeat(words.stars) + '☆'.repeat(5 - words.stars));
+  card.appendChild(stars);
+
+  // review
+  const review = h('div', 'review');
+  state.answers.forEach((a, i) => {
+    const f = state.list[i];
+    const row = h('div', 'review-row');
+    row.appendChild(h('div', 'qi', 'Q' + (i + 1)));
+    const body = h('div', 'qbody');
+    body.appendChild(h('div', 'qq', f.q.question));
+    const your = a.chosen >= 0 ? f.q.options[a.chosen] : 'No answer';
+    body.appendChild(h('div', 'aa', 'Your answer: ' + your));
+    body.appendChild(h('div', 'aa', '✅ ' + f.q.options[f.q.correctIndex]));
+    row.appendChild(body);
+    row.appendChild(h('div', 'pts ' + (a.pts ? 'gain' : 'none'), (a.pts ? '+' : '') + a.pts));
+    review.appendChild(row);
+  });
+  card.appendChild(review);
+
+  if (QUIZ.truncated){
+    card.appendChild(h('div', 'hint-line', 'Showing ' + QUIZ.truncated.shown + ' of ' + QUIZ.truncated.total + ' questions.'));
+  }
+
+  const row2 = h('div', 'ghost-row');
+  const again = h('button', 'big-btn ghost', '🔄 Play again');
+  again.addEventListener('click', () => { burstConfetti(0); startScope(state.scope); });
+  const menu = h('button', 'big-btn ghost', '🏠 Menu');
+  menu.addEventListener('click', () => renderIntro());
+  row2.appendChild(again); row2.appendChild(menu);
+  card.appendChild(row2);
+  elStage.appendChild(card);
+
+  // deferred: animate ring + settle score number + confetti
+  setTimeout(() => {
+    const C = 283;
+    const fgR = document.getElementById('ring-fg-r');
+    fgR.setAttribute('stroke-dashoffset', String(C * (1 - (state.score / maxPts))));
+    const num = document.getElementById('rscore-n');
+    if (num) num.textContent = String(state.score);   // settle immediately so chip & ring always agree
+    burstConfetti(140);
+    sPop();
+  }, 60);
+}
+function pctWord(p){
+  if (p >= 0.9)  return { emoji:'🏆', title:'Amazing!', stars:5 };
+  if (p >= 0.7)  return { emoji:'🌟', title:'Great job!', stars:4 };
+  if (p >= 0.5)  return { emoji:'😄', title:'Good try!', stars:3 };
+  if (p >= 0.3)  return { emoji:'🙂', title:'Keep going!', stars:2 };
+  return { emoji:'💪', title:'Practice makes better!', stars:1 };
+}
+function updateScore(){ elScore.textContent = '⭐ Score: ' + state.score; }
+function updateProgress(p){
+  if (elProg) elProg.style.width = Math.round(Math.max(0, Math.min(1, p)) * 100) + '%';
+  // track is shared for all-scope run; on intro show 0
+}
+
+// ── Mobile drawer ─────────────────────────────────────────────
+function closeDrawer(){
+  elSide.classList.remove('open'); overlay.classList.remove('open');
+}
+document.getElementById('hamburger').addEventListener('click', () => {
+  elSide.classList.toggle('open'); overlay.classList.toggle('open');
+});
+overlay.addEventListener('click', closeDrawer);
+document.getElementById('sidebar-home').addEventListener('click', () => { closeDrawer(); renderIntro(); });
+elMute.addEventListener('click', () => {
+  muted = !muted;
+  elMute.textContent = muted ? '🔇' : '🔊';
+  if (muted && 'speechSynthesis' in window) speechSynthesis.cancel();
+});
+
+// ── Boot ──────────────────────────────────────────────────────
+renderTree();
+renderIntro();
+})();
+</script>
+</body>
+</html>

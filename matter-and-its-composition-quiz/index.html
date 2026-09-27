@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Matter & Its Composition — Quiz</title>
+<style>
+  /* ══════════════ KID-FRIENDLY PALETTE (bright daylight) ══════════════ */
+  :root {
+    --bg: linear-gradient(160deg, #fff8e1 0%, #e0f7fa 60%, #dff4ff 100%);
+    --panel: #ffffff;
+    --ink: #2d3436;
+    --ink-soft: #6b7a85;
+    --coral: #ff6b6b;
+    --sunny: #ffd93d;
+    --teal: #4ecdc4;
+    --sky: #4f9de8;
+    --violet: #9b59b6;
+    --green: #2ecc71;
+    --amber: #ffb300;
+    --red: #ff6b6b;
+    --sidebar-w: 264px;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { height:100%; }
+  body {
+    background: var(--bg); color: var(--ink); overflow:hidden;
+    font-family: 'Comic Sans MS','Chalkboard SE','Marker Felt','Segoe UI','Trebuchet MS',sans-serif;
+    display:flex;
+  }
+
+  /* ── Sidebar tree ── */
+  .sidebar {
+    width: var(--sidebar-w); min-width: var(--sidebar-w); height:100vh;
+    background: rgba(255,255,255,0.82); border-right:1px solid rgba(0,0,0,0.08);
+    display:flex; flex-direction:column; z-index:20; overflow-y:auto;
+    backdrop-filter: blur(4px);
+    transition: transform .3s ease;
+  }
+  .sidebar-header {
+    padding:1.1rem 1rem .8rem; border-bottom:1px solid rgba(0,0,0,0.08);
+    font-size:1.05rem; font-weight:bold; cursor:pointer; display:flex; gap:.4rem; align-items:center;
+    flex-shrink:0;
+  }
+  .sidebar-header .ticker { color:var(--sky); }
+  .tree { flex:1; padding:.5rem 0; overflow-y:auto; }
+  .tree-node {
+    padding:.5rem .8rem .5rem 1rem; cursor:pointer; display:flex; align-items:center; gap:.45rem;
+    font-size:.86rem; transition: background .15s; border-left:3px solid transparent;
+    user-select:none; color:var(--ink);
+  }
+  .tree-node:hover { background:rgba(79,157,232,0.1); }
+  .tree-node.active { border-left-color: var(--amber); background:rgba(255,217,61,0.14); }
+  .tree-node .arrow { font-size:.65rem; width:12px; text-align:center; flex-shrink:0; transition:transform .2s; color:var(--ink-soft); }
+  .tree-node .arrow.open { transform:rotate(90deg); }
+  .tree-node .dot { width:11px; height:11px; border-radius:50%; flex-shrink:0; }
+  .tree-node .badge {
+    margin-left:auto; font-size:.68rem; background:rgba(78,205,196,0.2); color:var(--teal);
+    border-radius:999px; padding:.05rem .5rem; flex-shrink:0;
+  }
+  .tree-children { overflow:hidden; max-height:0; transition:max-height .3s ease; }
+  .tree-children.open { max-height:600px; }
+  .tree-children .tree-node { padding-left:2.2rem; font-size:.8rem; }
+  .tree-leaf .st {
+    margin-left:auto; font-size:.72rem; width:1.1rem; text-align:center; flex-shrink:0;
+  }
+  .st.good { color:var(--green); }
+  .st.bad { color:var(--red); }
+  .st.slow { color:var(--amber); }
+
+  /* ── Main column ── */
+  .main { flex:1; display:flex; flex-direction:column; position:relative; z-index:5; min-width:0; }
+  .topbar {
+    padding:.6rem 1.1rem; display:flex; align-items:center; gap:.8rem; flex-shrink:0;
+    background:rgba(255,255,255,0.6); border-bottom:1px solid rgba(0,0,0,0.08);
+  }
+  .topbar .app-title { font-size:1.05rem; font-weight:bold; display:flex; gap:.4rem; align-items:center; }
+  .topbar .spacer { flex:1; }
+  .score-chip {
+    background:#fff; border:2px solid var(--sunny); color:var(--ink); border-radius:999px;
+    padding:.3rem .9rem; font-size:.9rem; font-weight:bold; box-shadow:0 2px 8px rgba(0,0,0,0.08);
+  }
+  .mute-btn {
+    background:#fff; border:2px solid rgba(0,0,0,0.12); border-radius:999px; cursor:pointer;
+    font-size:1rem; padding:.25rem .6rem; font-family:inherit;
+  }
+  .mute-btn:hover { border-color:var(--sky); }
+  .progress-track {
+    height:8px; border-radius:99px; background:rgba(0,0,0,0.08); overflow:hidden; flex:1; max-width:260px;
+  }
+  .progress-fill { height:100%; width:0%; background:linear-gradient(90deg,var(--teal),var(--sky)); border-radius:99px; transition:width .4s ease; }
+
+  /* ── Stage / views ── */
+  .stage { flex:1; display:flex; justify-content:center; align-content:center; padding:1.4rem; overflow:auto; min-height:0; }
+  .card {
+    background:var(--panel); border-radius:22px; box-shadow:0 14px 44px rgba(45,52,54,0.16);
+    width:100%; max-width:720px; padding:1.8rem 2rem 2rem; position:relative;
+    border:1px solid rgba(0,0,0,0.05); margin:auto;
+  }
+
+  /* Intro */
+  .intro { text-align:center; }
+  .intro .big-emoji { font-size:4rem; animation: bob 3s ease-in-out infinite; display:inline-block; }
+  .intro h1 { font-size:2rem; margin:.4rem 0 .3rem; background:linear-gradient(135deg,var(--sky),var(--violet)); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
+  .intro .sub { color:var(--ink-soft); margin-bottom:1.2rem; }
+  .intro .meta-chip { color:var(--ink-soft); font-size:.9rem; margin-bottom:1.4rem; }
+  .big-btn {
+    font-family:inherit; font-size:1.15rem; font-weight:bold; color:#fff; cursor:pointer;
+    background:linear-gradient(135deg,var(--green),#27ae60); border:none; border-radius:999px;
+    padding:.85rem 2.2rem; box-shadow:0 6px 18px rgba(46,204,113,0.4); transition:transform .15s, box-shadow .15s;
+  }
+  .big-btn:hover { transform:translateY(-2px); }
+  .big-btn.ghost { background:#fff; color:var(--ink); box-shadow:0 2px 8px rgba(0,0,0,0.1); border:2px solid rgba(0,0,0,0.1); margin-left:.7rem; }
+  .ghost-row { margin-top:1.1rem; display:flex; justify-content:center; gap:.4rem; flex-wrap:wrap; }
+  .hint-line { font-size:.82rem; color:var(--ink-soft); margin-top:1rem; }
+
+  /* Question */
+  .q-head { display:flex; justify-content:space-between; align-items:center; gap:.6rem; flex-wrap:wrap; }
+  .q-progress { font-size:.82rem; color:var(--ink-soft); font-weight:bold; padding:.2rem 0; }
+  .timer-wrap { position:relative; width:74px; height:74px; flex-shrink:0; }
+  .timer-wrap svg { width:74px; height:74px; transform:rotate(-90deg); }
+  .timer-wrap .circle-bg { fill:none; stroke:rgba(0,0,0,0.08); stroke-width:7; }
+  .timer-wrap .circle-fg { fill:none; stroke:var(--sky); stroke-width:7; stroke-linecap:round; }
+  .timer-wrap .t-count {
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    font-size:1.5rem; font-weight:bold; color:var(--ink);
+  }
+  .timer-wrap.low .circle-fg { stroke:var(--red); }
+  .timer-wrap.low .t-count { color:var(--red); }
+  .q-text { font-size:1.35rem; line-height:1.45; margin:.7rem 0 1rem; font-weight:bold; }
+  .qimg-wrap { text-align:center; margin:.2rem 0 1rem; }
+  .qimg-wrap img.qimg {
+    max-width:100%; max-height:240px; border-radius:14px; object-fit:contain;
+    border:1px solid rgba(0,0,0,0.08);
+  }
+  .qimg-wrap .emoji-big { font-size:4.2rem; animation: pop 0.5s ease; }
+  .qimg-wrap .caption { font-size:.78rem; color:var(--ink-soft); margin-top:.35rem; }
+
+  .options { display:flex; flex-direction:column; gap:.7rem; }
+  .opt {
+    display:flex; align-items:center; gap:.8rem; width:100%; text-align:left;
+    font-family:inherit; font-size:1.02rem; color:var(--ink); cursor:pointer;
+    background:#f7fbfc; border:2px solid rgba(0,0,0,0.08); border-radius:14px;
+    padding:.72rem 1rem; min-height:48px; transition:border-color .15s, background .15s, transform .1s;
+    position:relative; overflow:hidden;
+  }
+  .opt:hover { border-color:var(--sky); background:#eef6ff; transform:translateY(-1px); }
+  .opt .key {
+    width:30px; height:30px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center;
+    background:#fff; border:2px solid rgba(0,0,0,0.14); font-size:.9rem; font-weight:bold; color:var(--ink-soft);
+  }
+  .opt.correct { border-color:var(--green); background:#eafaf1; }
+  .opt.correct .key { border-color:var(--green); color:var(--green); background:#d5f5e3; }
+  .opt.wrong-chosen { border-color:var(--red); background:#fdecea; }
+  .opt.wrong-chosen .key { border-color:var(--red); color:var(--red); background:#fadbd8; }
+  .opt.dim { opacity:.55; }
+  .opt .mark { margin-left:auto; font-size:1.1rem; }
+
+  /* Reveal banner */
+  .reveal-banner {
+    margin-top:1rem; border-radius:14px; padding:.8rem 1rem; font-size:1.02rem; font-weight:bold;
+    display:flex; gap:.6rem; align-items:center; animation: slideUp .35s ease both;
+  }
+  .reveal-banner.good { background:#eafaf1; color:#1e8449; }
+  .reveal-banner.bad { background:#fdecea; color:#c0392b; }
+  .reveal-banner.slow { background:#fef5e7; color:#b9770e; }
+  .reveal-exp { margin-top:.6rem; background:#f4f8fa; border-radius:12px; padding:.8rem 1rem; font-size:.95rem; color:var(--ink-soft); line-height:1.5; }
+  .reveal-exp b { color:var(--ink); }
+  .next-row { display:flex; align-items:center; justify-content:space-between; gap:.6rem; }
+  .pts-gain { font-weight:bold; font-size:1rem; }
+  .pts-gain.gain { color:var(--green); }
+  .pts-gain.none { color:var(--ink-soft); }
+  .next-btn {
+    font-family:inherit; font-size:1.02rem; font-weight:bold; cursor:pointer; color:#fff;
+    background:linear-gradient(135deg,var(--sky),#2e86de); border:none; border-radius:999px;
+    padding:.7rem 1.7rem; box-shadow:0 4px 14px rgba(79,157,232,0.4); transition:transform .15s;
+  }
+  .next-btn:hover { transform:translateY(-2px); }
+
+  .q-foot { display:flex; justify-content:center; margin-top:1rem; }
+  .speak-btn {
+    font-family:inherit; font-size:.9rem; color:var(--ink-soft); cursor:pointer; background:none;
+    border:1px solid rgba(0,0,0,0.1); border-radius:999px; padding:.35rem 1rem;
+  }
+  .speak-btn:hover { border-color:var(--sky); color:var(--sky); }
+
+  /* Results */
+  .results { text-align:center; }
+  .results h2 { font-size:1.7rem; margin-bottom:.3rem; }
+  .results .sub { color:var(--ink-soft); margin-bottom:1rem; }
+  .ring-wrap { width:150px; height:150px; margin:0 auto .6rem; position:relative; }
+  .ring-wrap svg { width:150px; height:150px; transform:rotate(-90deg); }
+  .ring-wrap .rbg { fill:none; stroke:rgba(0,0,0,0.08); stroke-width:12; }
+  .ring-wrap .rfg { fill:none; stroke:url(#gradA); stroke-width:12; stroke-linecap:round;
+    stroke-dasharray:283; stroke-dashoffset:283; transition:stroke-dashoffset 1s ease; }
+  .ring-wrap .rscore {
+    position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
+  }
+  .ring-wrap .rscore .n { font-size:2rem; font-weight:bold; }
+  .ring-wrap .rscore .pts { font-size:.8rem; color:var(--ink-soft); }
+  .stars { font-size:1.9rem; letter-spacing:.15rem; margin:.2rem 0 .9rem; }
+  .review { text-align:left; margin:1rem 0; }
+  .review-row { display:flex; gap:.7rem; padding:.6rem .4rem; border-bottom:1px solid rgba(0,0,0,0.06); font-size:.86rem; align-items:flex-start; }
+  .review-row .qi { font-weight:bold; color:var(--ink-soft); min-width:1.6rem; }
+  .review-row .qbody { flex:1; }
+  .review-row .qbody .qq { font-weight:bold; margin-bottom:.15rem; }
+  .review-row .qbody .aa { color:var(--ink-soft); }
+  .review-row .pts { font-weight:bold; flex-shrink:0; }
+  .review-row .pts.gain { color:var(--green); }
+  .review-row .pts.none { color:var(--ink-soft); }
+
+  /* Confetti */
+  #confetti { position:fixed; inset:0; pointer-events:none; z-index:200; overflow:hidden; }
+  .confetti {
+    position:absolute; top:-3vh; width:12px; height:12px; border-radius:2px;
+    animation: confetti-fall linear forwards;
+  }
+
+  /* Hamburger / overlay (mobile) */
+  .hamburger { display:none; position:fixed; top:.7rem; left:.7rem; z-index:40;
+    background:#fff; border:1px solid rgba(0,0,0,0.15); border-radius:10px;
+    padding:.35rem .65rem; font-size:1.25rem; cursor:pointer; font-family:inherit; }
+  .overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:19; }
+  .overlay.open { display:block; }
+
+  /* Keyframes */
+  @keyframes bob { 0%,100%{ transform:translateY(0);} 50%{ transform:translateY(-8px);} }
+  @keyframes pop { 0%{ transform:scale(0.4); opacity:0;} 100%{ transform:scale(1); opacity:1;} }
+  @keyframes slideUp { from{ opacity:0; transform:translateY(14px);} to{ opacity:1; transform:translateY(0);} }
+  @keyframes cardIn { from{ opacity:0; transform:translateY(20px) scale(0.97);} to{ opacity:1; transform:none;} }
+  @keyframes confetti-fall { to { transform:translateY(108vh) rotate(var(--rx,180deg)); opacity:.9; } }
+  .card-in { animation:cardIn .35s ease both; }
+
+  @media (max-width:768px) {
+    .sidebar { position:fixed; left:0; top:0; bottom:0; transform:translateX(-100%); z-index:100; box-shadow:0 0 40px rgba(0,0,0,0.2); }
+    .sidebar.open { transform:translateX(0); }
+    .hamburger { display:block; }
+    .card { padding:1.4rem 1.2rem 1.6rem; }
+    .q-text { font-size:1.15rem; }
+  }
+</style>
+</head>
+<body>
+
+<div id="confetti"></div>
+
+<button class="hamburger" id="hamburger">☰</button>
+<div class="overlay" id="overlay"></div>
+
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header" id="sidebar-home"><span class="ticker">🧠</span> <span id="side-title">Matter & Its Composition</span></div>
+  <div class="tree" id="tree"></div>
+</aside>
+
+<main class="main">
+  <div class="topbar">
+    <span class="app-title"><span>🧠</span><span id="top-title" title="Matter & Its Composition">Matter & Its Composition</span></span>
+    <span class="spacer"></span>
+    <div class="progress-track" title="Progress"><div class="progress-fill" id="progress-fill"></div></div>
+    <span class="score-chip" id="score-chip">⭐ Score: 0</span>
+    <button class="mute-btn" id="mute-btn" title="Toggle read-aloud (TTS)">🔊</button>
+  </div>
+  <div class="stage" id="stage"></div>
+</main>
+
+<script type="application/json" id="quiz-data">{"title": "Matter & Its Composition", "subtitle": "Chapter 1 \u2014 Science Quiz", "emoji": "\ud83d\udd2c", "sections": [{"id": "intro-matter", "title": "Introduction to Matter", "emoji": "\ud83d\udd2c", "questions": [{"id": "matter-and-its-composition-pdf-q1", "section": "Introduction to Matter", "question": "What is matter?", "options": ["A type of energy like heat or light", "Only things that are alive like plants and animals", "Something that can be created but not destroyed", "The basic substance of which all materials are made"], "correctIndex": 3, "explanation": "Matter is the basic substance of which all materials, living or non-living, are made of.", "suggestImage": true, "imageNote": "Diagram showing matter classification into living, non-living, pure substances, and impure substances", "image": {"type": "emoji", "src": "\ud83d\udd2c", "alt": "Matter classification diagram", "caption": ""}}, {"id": "matter-and-its-composition-pdf-q2", "section": "Introduction to Matter", "question": "In which three states does matter exist?", "options": ["Big, small, and medium", "Hot, cold, and warm", "Solids, liquids, and gases", "Fire, water, and air"], "correctIndex": 2, "explanation": "Matter exists in three states: solids, liquids, and gases.", "suggestImage": true, "imageNote": "Illustration showing solid (closely packed particles), liquid (loosely packed), and gas (far apart particles)", "image": {"type": "svg", "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0MDAgMjAwIj4KICAgIDxyZWN0IHdpZHRoPSI0MDAiIGhlaWdodD0iMjAwIiByeD0iMTIiIGZpbGw9IiNmMGY5ZmYiLz4KICAgIDx0ZXh0IHg9IjIwMCIgeT0iMjIiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IiMyZDM0MzYiIGZvbnQtc2l6ZT0iMTMiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXdlaWdodD0iYm9sZCI+VGhyZWUgU3RhdGVzIG9mIE1hdHRlcjwvdGV4dD4KICAgIDxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDIwLDQwKSI+PHJlY3QgeD0iMCIgeT0iMCIgd2lkdGg9IjExMCIgaGVpZ2h0PSIxMzAiIHJ4PSIxMCIgZmlsbD0iI2VhZmFmMSIgc3Ryb2tlPSIjMmVjYzcxIiBzdHJva2Utd2lkdGg9IjIiLz4KICAgIDx0ZXh0IHg9IjU1IiB5PSIyMCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0iIzJlY2M3MSIgZm9udC1zaXplPSIxMiIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiIGZvbnQtd2VpZ2h0PSJib2xkIj5TT0xJRDwvdGV4dD4KICAgIDxjaXJjbGUgY3g9IjMwIiBjeT0iNTAiIHI9IjgiIGZpbGw9IiM0ZWNkYzQiLz48Y2lyY2xlIGN4PSI1MCIgY3k9IjUwIiByPSI4IiBmaWxsPSIjNGVjZGM0Ii8+PGNpcmNsZSBjeD0iNzAiIGN5PSI1MCIgcj0iOCIgZmlsbD0iIzRlY2RjNCIvPjxjaXJjbGUgY3g9IjkwIiBjeT0iNTAiIHI9IjgiIGZpbGw9IiM0ZWNkYzQiLz4KICAgIDxjaXJjbGUgY3g9IjMwIiBjeT0iNzAiIHI9IjgiIGZpbGw9IiM0ZWNkYzQiLz48Y2lyY2xlIGN4PSI1MCIgY3k9IjcwIiByPSI4IiBmaWxsPSIjNGVjZGM0Ii8+PGNpcmNsZSBjeD0iNzAiIGN5PSI3MCIgcj0iOCIgZmlsbD0iIzRlY2RjNCIvPjxjaXJjbGUgY3g9IjkwIiBjeT0iNzAiIHI9IjgiIGZpbGw9IiM0ZWNkYzQiLz4KICAgIDxjaXJjbGUgY3g9IjMwIiBjeT0iOTAiIHI9IjgiIGZpbGw9IiM0ZWNkYzQiLz48Y2lyY2xlIGN4PSI1MCIgY3k9IjkwIiByPSI4IiBmaWxsPSIjNGVjZGM0Ii8+PGNpcmNsZSBjeD0iNzAiIGN5PSI5MCIgcj0iOCIgZmlsbD0iIzRlY2RjNCIvPjxjaXJjbGUgY3g9IjkwIiBjeT0iOTAiIHI9IjgiIGZpbGw9IiM0ZWNkYzQiLz4KICAgIDx0ZXh0IHg9IjU1IiB5PSIxMjAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IiM2YjdhODUiIGZvbnQtc2l6ZT0iOSIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiPkNsb3NlbHkgcGFja2VkPC90ZXh0PjwvZz4KICAgIDxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDE0NSw0MCkiPjxyZWN0IHg9IjAiIHk9IjAiIHdpZHRoPSIxMTAiIGhlaWdodD0iMTMwIiByeD0iMTAiIGZpbGw9IiNlZWY2ZmYiIHN0cm9rZT0iIzRmOWRlOCIgc3Ryb2tlLXdpZHRoPSIyIi8+CiAgICA8dGV4dCB4PSI1NSIgeT0iMjAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IiM0ZjlkZTgiIGZvbnQtc2l6ZT0iMTIiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXdlaWdodD0iYm9sZCI+TElRVUlEPC90ZXh0PgogICAgPGNpcmNsZSBjeD0iMzUiIGN5PSI1NSIgcj0iOCIgZmlsbD0iIzRmOWRlOCIvPjxjaXJjbGUgY3g9IjU4IiBjeT0iNTAiIHI9IjgiIGZpbGw9IiM0ZjlkZTgiLz48Y2lyY2xlIGN4PSI3OCIgY3k9IjYwIiByPSI4IiBmaWxsPSIjNGY5ZGU4Ii8+CiAgICA8Y2lyY2xlIGN4PSI0NSIgY3k9IjcyIiByPSI4IiBmaWxsPSIjNGY5ZGU4Ii8+PGNpcmNsZSBjeD0iNjgiIGN5PSI3NSIgcj0iOCIgZmlsbD0iIzRmOWRlOCIvPjxjaXJjbGUgY3g9IjQwIiBjeT0iOTAiIHI9IjgiIGZpbGw9IiM0ZjlkZTgiLz4KICAgIDxjaXJjbGUgY3g9IjYwIiBjeT0iOTIiIHI9IjgiIGZpbGw9IiM0ZjlkZTgiLz48Y2lyY2xlIGN4PSI4MCIgY3k9Ijg4IiByPSI4IiBmaWxsPSIjNGY5ZGU4Ii8+CiAgICA8dGV4dCB4PSI1NSIgeT0iMTIwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjNmI3YTg1IiBmb250LXNpemU9IjkiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIj5Mb29zZWx5IHBhY2tlZDwvdGV4dD48L2c+CiAgICA8ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgyNzAsNDApIj48cmVjdCB4PSIwIiB5PSIwIiB3aWR0aD0iMTEwIiBoZWlnaHQ9IjEzMCIgcng9IjEwIiBmaWxsPSIjZmVmNWU3IiBzdHJva2U9IiNmZmIzMDAiIHN0cm9rZS13aWR0aD0iMiIvPgogICAgPHRleHQgeD0iNTUiIHk9IjIwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjZmZiMzAwIiBmb250LXNpemU9IjEyIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC13ZWlnaHQ9ImJvbGQiPkdBUzwvdGV4dD4KICAgIDxjaXJjbGUgY3g9IjI1IiBjeT0iNDgiIHI9IjgiIGZpbGw9IiNmZmIzMDAiLz48Y2lyY2xlIGN4PSI4NSIgY3k9IjY1IiByPSI4IiBmaWxsPSIjZmZiMzAwIi8+CiAgICA8Y2lyY2xlIGN4PSI1MCIgY3k9IjkwIiByPSI4IiBmaWxsPSIjZmZiMzAwIi8+PGNpcmNsZSBjeD0iNzUiIGN5PSIxMDUiIHI9IjgiIGZpbGw9IiNmZmIzMDAiLz4KICAgIDxjaXJjbGUgY3g9IjMwIiBjeT0iMTEwIiByPSI4IiBmaWxsPSIjZmZiMzAwIi8+PGNpcmNsZSBjeD0iOTAiIGN5PSI0MCIgcj0iOCIgZmlsbD0iI2ZmYjMwMCIvPgogICAgPHRleHQgeD0iNTUiIHk9IjEyMCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0iIzZiN2E4NSIgZm9udC1zaXplPSI5IiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiI+RmFyIGFwYXJ0PC90ZXh0PjwvZz4KICAgIDwvc3ZnPg==", "alt": "Illustration of particles in solid (closely packed), liquid (loosely packed), and gas (far apart)", "caption": ""}}]}, {"id": "experimental-study", "title": "Experimental Study", "emoji": "\u2696\ufe0f", "questions": [{"id": "matter-and-its-composition-pdf-q3", "section": "Experimental Study", "question": "When a solid is placed on a weighing scale, the scale tilts. What does this show?", "options": ["Solids have no weight", "Solids do not occupy space", "Solids are very light", "Solids have mass"], "correctIndex": 3, "explanation": "The scale tilts due to the mass of the solid, showing all solids have mass.", "suggestImage": true, "imageNote": "Weighing scale experiment showing a solid, liquid, and gas each tilting the scale", "image": {"type": "emoji", "src": "\u2696\ufe0f", "alt": "Weighing scale experiment", "caption": ""}}, {"id": "matter-and-its-composition-pdf-q4", "section": "Experimental Study", "question": "A solid stone is put into a measuring cylinder filled with water. What happens to the water level?", "options": ["The water level stays the same", "The water level goes down", "The water level rises up", "The water disappears completely"], "correctIndex": 2, "explanation": "The stone pushes the water up because it occupies the space of the water.", "suggestImage": true, "imageNote": "Measuring cylinder showing water level rising when a stone is immersed", "image": {"type": "svg", "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0MDAgMjAwIj4KICAgIDxyZWN0IHdpZHRoPSI0MDAiIGhlaWdodD0iMjAwIiByeD0iMTIiIGZpbGw9IiNmMGY5ZmYiLz4KICAgIDx0ZXh0IHg9IjIwMCIgeT0iMjIiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IiMyZDM0MzYiIGZvbnQtc2l6ZT0iMTMiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXdlaWdodD0iYm9sZCI+TWVhc3VyaW5nIEN5bGluZGVyIEV4cGVyaW1lbnQ8L3RleHQ+CiAgICA8ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgzMCwzNSkiPgogICAgPHJlY3QgeD0iMTAiIHk9IjAiIHdpZHRoPSI2MCIgaGVpZ2h0PSIxMzAiIHJ4PSIzIiBmaWxsPSJub25lIiBzdHJva2U9IiM0ZjlkZTgiIHN0cm9rZS13aWR0aD0iMi41Ii8+CiAgICA8cmVjdCB4PSIxNSIgeT0iNDAiIHdpZHRoPSI1MCIgaGVpZ2h0PSI4NSIgZmlsbD0iIzRmOWRlOCIgb3BhY2l0eT0iMC4zIi8+CiAgICA8bGluZSB4MT0iMTAiIHkxPSI0MCIgeDI9IjAiIHkyPSI0MCIgc3Ryb2tlPSIjZmY2YjZiIiBzdHJva2Utd2lkdGg9IjEuNSIgc3Ryb2tlLWRhc2hhcnJheT0iMywyIi8+CiAgICA8dGV4dCB4PSItNSIgeT0iMzYiIGZpbGw9IiNmZjZiNmIiIGZvbnQtc2l6ZT0iOSIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiPkE8L3RleHQ+CiAgICA8Y2lyY2xlIGN4PSI0MCIgY3k9IjcwIiByPSIxMiIgZmlsbD0iIzhCNzM1NSIgc3Ryb2tlPSIjNWQ0ZTM3IiBzdHJva2Utd2lkdGg9IjEuNSIvPgogICAgPHRleHQgeD0iNDAiIHk9IjE2NSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0iIzZiN2E4NSIgZm9udC1zaXplPSIxMCIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiPkJlZm9yZTogbWFyayBBPC90ZXh0PgogICAgPC9nPgogICAgPGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMTcwLDM1KSI+CiAgICA8dGV4dCB4PSI2MCIgeT0iNjUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IiMyZDM0MzYiIGZvbnQtc2l6ZT0iMjQiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIj7ihpI8L3RleHQ+CiAgICA8L2c+CiAgICA8ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgyMzAsMzUpIj4KICAgIDxyZWN0IHg9IjEwIiB5PSIwIiB3aWR0aD0iNjAiIGhlaWdodD0iMTMwIiByeD0iMyIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjNGY5ZGU4IiBzdHJva2Utd2lkdGg9IjIuNSIvPgogICAgPHJlY3QgeD0iMTUiIHk9IjI1IiB3aWR0aD0iNTAiIGhlaWdodD0iMTAwIiBmaWxsPSIjNGY5ZGU4IiBvcGFjaXR5PSIwLjMiLz4KICAgIDxsaW5lIHgxPSIxMCIgeTE9IjQwIiB4Mj0iMCIgeTI9IjQwIiBzdHJva2U9IiNmZjZiNmIiIHN0cm9rZS13aWR0aD0iMS41IiBzdHJva2UtZGFzaGFycmF5PSIzLDIiLz4KICAgIDx0ZXh0IHg9Ii01IiB5PSIzNiIgZmlsbD0iI2ZmNmI2YiIgZm9udC1zaXplPSI5IiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiI+QTwvdGV4dD4KICAgIDxjaXJjbGUgY3g9IjQwIiBjeT0iNjUiIHI9IjEyIiBmaWxsPSIjOEI3MzU1IiBzdHJva2U9IiM1ZDRlMzciIHN0cm9rZS13aWR0aD0iMS41Ii8+CiAgICA8dGV4dCB4PSI4MCIgeT0iMzAiIGZpbGw9IiMyZWNjNzEiIGZvbnQtc2l6ZT0iMTEiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXdlaWdodD0iYm9sZCI+4oaRIFdhdGVyIHJpc2VzITwvdGV4dD4KICAgIDx0ZXh0IHg9IjQwIiB5PSIxNjUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IiM2YjdhODUiIGZvbnQtc2l6ZT0iMTAiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIj5BZnRlcjogbGV2ZWwgcmlzZXM8L3RleHQ+CiAgICA8L2c+CiAgICA8L3N2Zz4=", "alt": "Measuring cylinder showing water level rising when a stone is immersed, proving solids occupy space", "caption": ""}}, {"id": "matter-and-its-composition-pdf-q13", "section": "Experimental Study", "question": "When a crystal of iodine is heated in a closed flask, what happens?", "options": ["It breaks into smaller pieces", "It melts into a liquid", "It turns into vapours and fills the flask", "Nothing happens"], "correctIndex": 2, "explanation": "The iodine crystal turns into vapours that fill the complete flask, showing particles in a gas fill all available space.", "suggestImage": true, "imageNote": "Diagram of iodine crystal being heated in a closed flask with purple vapours filling it", "image": {"type": "svg", "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMDAgMjAwIj4KICAgIDxyZWN0IHdpZHRoPSIzMDAiIGhlaWdodD0iMjAwIiByeD0iMTIiIGZpbGw9IiNmMGY5ZmYiLz4KICAgIDx0ZXh0IHg9IjE1MCIgeT0iMjAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IiMyZDM0MzYiIGZvbnQtc2l6ZT0iMTMiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXdlaWdodD0iYm9sZCI+SW9kaW5lIEV4cGVyaW1lbnQ8L3RleHQ+CiAgICA8ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSg1MCwzNSkiPgogICAgPGVsbGlwc2UgY3g9IjEwMCIgY3k9IjE1MCIgcng9IjYwIiByeT0iMTIiIGZpbGw9IiNkZGQiLz4KICAgIDxwYXRoIGQ9Ik01NSwxNTAgTDU1LDcwIFE1NSw1MCA3NSw1MCBMMTI1LDUwIFExNDUsNTAgMTQ1LDcwIEwxNDUsMTUwIiBmaWxsPSJub25lIiBzdHJva2U9IiM0ZjlkZTgiIHN0cm9rZS13aWR0aD0iMi41Ii8+CiAgICA8cmVjdCB4PSI4NSIgeT0iMTQwIiB3aWR0aD0iMzAiIGhlaWdodD0iOCIgcng9IjIiIGZpbGw9IiM4QjQ1MTMiLz4KICAgIDxjaXJjbGUgY3g9IjEwMCIgY3k9IjE0MCIgcj0iNCIgZmlsbD0iIzliNTliNiIvPgogICAgPHBhdGggZD0iTTgwLDEzMCBROTAsMTAwIDcwLDgwIiBzdHJva2U9IiM5YjU5YjYiIHN0cm9rZS13aWR0aD0iMS41IiBmaWxsPSJub25lIiBvcGFjaXR5PSIwLjUiLz4KICAgIDxwYXRoIGQ9Ik0xMDAsMTM1IFExMTAsOTUgOTUsNzAiIHN0cm9rZT0iIzliNTliNiIgc3Ryb2tlLXdpZHRoPSIyIiBmaWxsPSJub25lIiBvcGFjaXR5PSIwLjYiLz4KICAgIDxwYXRoIGQ9Ik0xMTUsMTMwIFExMDUsMTAwIDEyMCw4MCIgc3Ryb2tlPSIjOWI1OWI2IiBzdHJva2Utd2lkdGg9IjEuNSIgZmlsbD0ibm9uZSIgb3BhY2l0eT0iMC41Ii8+CiAgICA8dGV4dCB4PSIxMDAiIHk9IjQwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjOWI1OWI2IiBmb250LXNpemU9IjExIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC13ZWlnaHQ9ImJvbGQiPlB1cnBsZSB2YXBvdXJzPC90ZXh0PgogICAgPHRleHQgeD0iMTAwIiB5PSIyNSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0iI2ZmNmI2YiIgZm9udC1zaXplPSIxOCI+8J+UpTwvdGV4dD4KICAgIDwvZz4KICAgIDwvc3ZnPg==", "alt": "Iodine crystal being heated in a closed flask turning into purple vapours filling the flask", "caption": ""}}]}, {"id": "three-states", "title": "Three States of Matter", "emoji": "\ud83e\uddca", "questions": [{"id": "matter-and-its-composition-pdf-q5", "section": "Three States of Matter", "question": "A solid has a definite volume and a definite shape. What about a liquid?", "options": ["No definite volume and no definite shape", "Definite volume and definite shape", "No definite volume but definite shape", "Definite volume but no definite shape"], "correctIndex": 3, "explanation": "Liquids have a definite volume but take the shape of their container.", "suggestImage": true, "imageNote": "Table comparing properties of solids, liquids, and gases side by side", "image": {"type": "svg", "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0MDAgMjIwIj4KICAgIDxyZWN0IHdpZHRoPSI0MDAiIGhlaWdodD0iMjIwIiByeD0iMTIiIGZpbGw9IiNmMGY5ZmYiLz4KICAgIDx0ZXh0IHg9IjIwMCIgeT0iMjIiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IiMyZDM0MzYiIGZvbnQtc2l6ZT0iMTMiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXdlaWdodD0iYm9sZCI+UHJvcGVydGllcyBvZiBNYXR0ZXI8L3RleHQ+CiAgICA8ZyBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMCI+CiAgICA8cmVjdCB4PSIxMCIgeT0iMzUiIHdpZHRoPSIxMDAiIGhlaWdodD0iMjgiIHJ4PSI0IiBmaWxsPSIjNmI3YTg1Ii8+PHRleHQgeD0iNjAiIHk9IjUzIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSJ3aGl0ZSIgZm9udC13ZWlnaHQ9ImJvbGQiPlByb3BlcnR5PC90ZXh0PgogICAgPHJlY3QgeD0iMTE1IiB5PSIzNSIgd2lkdGg9IjkwIiBoZWlnaHQ9IjI4IiByeD0iNCIgZmlsbD0iIzJlY2M3MSIvPjx0ZXh0IHg9IjE2MCIgeT0iNTMiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IndoaXRlIiBmb250LXdlaWdodD0iYm9sZCI+U09MSUQ8L3RleHQ+CiAgICA8cmVjdCB4PSIyMTAiIHk9IjM1IiB3aWR0aD0iOTAiIGhlaWdodD0iMjgiIHJ4PSI0IiBmaWxsPSIjNGY5ZGU4Ii8+PHRleHQgeD0iMjU1IiB5PSI1MyIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0id2hpdGUiIGZvbnQtd2VpZ2h0PSJib2xkIj5MSVFVSUQ8L3RleHQ+CiAgICA8cmVjdCB4PSIzMDUiIHk9IjM1IiB3aWR0aD0iODUiIGhlaWdodD0iMjgiIHJ4PSI0IiBmaWxsPSIjZmZiMzAwIi8+PHRleHQgeD0iMzQ3IiB5PSI1MyIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0id2hpdGUiIGZvbnQtd2VpZ2h0PSJib2xkIj5HQVM8L3RleHQ+CiAgICA8bGluZSB4MT0iMTAiIHkxPSI2MyIgeDI9IjM5MCIgeTI9IjYzIiBzdHJva2U9IiNkZGQiIHN0cm9rZS13aWR0aD0iMSIvPgogICAgPHRleHQgeD0iNjAiIHk9IjgwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5Wb2x1bWU8L3RleHQ+PHRleHQgeD0iMTYwIiB5PSI4MCIgdGV4dC1hbmNob3I9Im1pZGRsZSI+RGVmaW5pdGU8L3RleHQ+PHRleHQgeD0iMjU1IiB5PSI4MCIgdGV4dC1hbmNob3I9Im1pZGRsZSI+RGVmaW5pdGU8L3RleHQ+PHRleHQgeD0iMzQ3IiB5PSI4MCIgdGV4dC1hbmNob3I9Im1pZGRsZSI+Tm9uZTwvdGV4dD4KICAgIDxsaW5lIHgxPSIxMCIgeTE9IjkwIiB4Mj0iMzkwIiB5Mj0iOTAiIHN0cm9rZT0iI2RkZCIgc3Ryb2tlLXdpZHRoPSIxIi8+CiAgICA8dGV4dCB4PSI2MCIgeT0iMTA3IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5TaGFwZTwvdGV4dD48dGV4dCB4PSIxNjAiIHk9IjEwNyIgdGV4dC1hbmNob3I9Im1pZGRsZSI+RGVmaW5pdGU8L3RleHQ+PHRleHQgeD0iMjU1IiB5PSIxMDciIHRleHQtYW5jaG9yPSJtaWRkbGUiPk5vbmU8L3RleHQ+PHRleHQgeD0iMzQ3IiB5PSIxMDciIHRleHQtYW5jaG9yPSJtaWRkbGUiPk5vbmU8L3RleHQ+CiAgICA8bGluZSB4MT0iMTAiIHkxPSIxMTciIHgyPSIzOTAiIHkyPSIxMTciIHN0cm9rZT0iI2RkZCIgc3Ryb2tlLXdpZHRoPSIxIi8+CiAgICA8dGV4dCB4PSI2MCIgeT0iMTM0IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5EZW5zaXR5PC90ZXh0Pjx0ZXh0IHg9IjE2MCIgeT0iMTM0IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5IaWdoPC90ZXh0Pjx0ZXh0IHg9IjI1NSIgeT0iMTM0IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5MZXNzPC90ZXh0Pjx0ZXh0IHg9IjM0NyIgeT0iMTM0IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5MZWFzdDwvdGV4dD4KICAgIDxsaW5lIHgxPSIxMCIgeTE9IjE0NCIgeDI9IjM5MCIgeTI9IjE0NCIgc3Ryb2tlPSIjZGRkIiBzdHJva2Utd2lkdGg9IjEiLz4KICAgIDx0ZXh0IHg9IjYwIiB5PSIxNjEiIHRleHQtYW5jaG9yPSJtaWRkbGUiPkNvbXByZXNzPC90ZXh0Pjx0ZXh0IHg9IjE2MCIgeT0iMTYxIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5ObzwvdGV4dD48dGV4dCB4PSIyNTUiIHk9IjE2MSIgdGV4dC1hbmNob3I9Im1pZGRsZSI+U2xpZ2h0PC90ZXh0Pjx0ZXh0IHg9IjM0NyIgeT0iMTYxIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5IaWdoPC90ZXh0PgogICAgPGxpbmUgeDE9IjEwIiB5MT0iMTcxIiB4Mj0iMzkwIiB5Mj0iMTcxIiBzdHJva2U9IiNkZGQiIHN0cm9rZS13aWR0aD0iMSIvPgogICAgPHRleHQgeD0iNjAiIHk9IjE4OCIgdGV4dC1hbmNob3I9Im1pZGRsZSI+RnJlZSBTdXJmYWNlPC90ZXh0Pjx0ZXh0IHg9IjE2MCIgeT0iMTg4IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5BbnkgIzwvdGV4dD48dGV4dCB4PSIyNTUiIHk9IjE4OCIgdGV4dC1hbmNob3I9Im1pZGRsZSI+T25lPC90ZXh0Pjx0ZXh0IHg9IjM0NyIgeT0iMTg4IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5Ob25lPC90ZXh0PgogICAgPGxpbmUgeDE9IjEwIiB5MT0iMTk4IiB4Mj0iMzkwIiB5Mj0iMTk4IiBzdHJva2U9IiNkZGQiIHN0cm9rZS13aWR0aD0iMSIvPgogICAgPC9nPgogICAgPC9zdmc+", "alt": "Comparison table of solids, liquids, and gases showing volume, shape, density, compressibility, and free surfaces", "caption": ""}}, {"id": "matter-and-its-composition-pdf-q6", "section": "Three States of Matter", "question": "Which state of matter has no definite volume and no definite shape?", "options": ["Solids", "None of the three", "Liquids", "Gases"], "correctIndex": 3, "explanation": "Gases have no definite volume or shape and take the shape and size of their container.", "suggestImage": false}, {"id": "matter-and-its-composition-pdf-q7", "section": "Three States of Matter", "question": "How many free upper surfaces does a liquid have?", "options": ["Any number", "None", "One", "Two"], "correctIndex": 2, "explanation": "Liquids have one upper free surface, while solids have any number and gases have none.", "suggestImage": false}, {"id": "matter-and-its-composition-pdf-q8", "section": "Three States of Matter", "question": "Which state of matter is highly compressible?", "options": ["Solid", "All three are equally compressible", "Gas", "Liquid"], "correctIndex": 2, "explanation": "Gases are highly compressible, while liquids are only slightly compressible and solids cannot be compressed.", "suggestImage": false}]}, {"id": "intermolecular", "title": "Intermolecular Attraction", "emoji": "\ud83e\uddf2", "questions": [{"id": "matter-and-its-composition-pdf-q9", "section": "Intermolecular Attraction", "question": "In which state of matter are the atoms very closely packed together?", "options": ["Solids", "Gases", "Liquids", "All three states"], "correctIndex": 0, "explanation": "In solids, atoms are very closely packed with minimum space between them.", "suggestImage": true, "imageNote": "Diagram showing closely packed particles in solids versus spaced out particles in liquids and gases", "image": {"type": "svg", "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0MDAgMTgwIj4KICAgIDxyZWN0IHdpZHRoPSI0MDAiIGhlaWdodD0iMTgwIiByeD0iMTIiIGZpbGw9IiNmMGY5ZmYiLz4KICAgIDx0ZXh0IHg9IjIwMCIgeT0iMjAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IiMyZDM0MzYiIGZvbnQtc2l6ZT0iMTMiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXdlaWdodD0iYm9sZCI+UGFydGljbGUgUGFja2luZzwvdGV4dD4KICAgIDxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDE1LDM1KSI+CiAgICA8cmVjdCB4PSIwIiB5PSIwIiB3aWR0aD0iMTIwIiBoZWlnaHQ9IjExMCIgcng9IjgiIGZpbGw9IiNlYWZhZjEiIHN0cm9rZT0iIzJlY2M3MSIgc3Ryb2tlLXdpZHRoPSIyIi8+CiAgICA8dGV4dCB4PSI2MCIgeT0iMTgiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IiMyZWNjNzEiIGZvbnQtc2l6ZT0iMTEiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXdlaWdodD0iYm9sZCI+U09MSUQ8L3RleHQ+CiAgICA8Y2lyY2xlIGN4PSIyNSIgY3k9IjQ1IiByPSIxMCIgZmlsbD0iIzRlY2RjNCIvPjxjaXJjbGUgY3g9IjQ1IiBjeT0iNDUiIHI9IjEwIiBmaWxsPSIjNGVjZGM0Ii8+PGNpcmNsZSBjeD0iNjUiIGN5PSI0NSIgcj0iMTAiIGZpbGw9IiM0ZWNkYzQiLz48Y2lyY2xlIGN4PSI4NSIgY3k9IjQ1IiByPSIxMCIgZmlsbD0iIzRlY2RjNCIvPjxjaXJjbGUgY3g9IjEwNSIgY3k9IjQ1IiByPSIxMCIgZmlsbD0iIzRlY2RjNCIvPgogICAgPGNpcmNsZSBjeD0iMjUiIGN5PSI2NSIgcj0iMTAiIGZpbGw9IiM0ZWNkYzQiLz48Y2lyY2xlIGN4PSI0NSIgY3k9IjY1IiByPSIxMCIgZmlsbD0iIzRlY2RjNCIvPjxjaXJjbGUgY3g9IjY1IiBjeT0iNjUiIHI9IjEwIiBmaWxsPSIjNGVjZGM0Ii8+PGNpcmNsZSBjeD0iODUiIGN5PSI2NSIgcj0iMTAiIGZpbGw9IiM0ZWNkYzQiLz48Y2lyY2xlIGN4PSIxMDUiIGN5PSI2NSIgcj0iMTAiIGZpbGw9IiM0ZWNkYzQiLz4KICAgIDxjaXJjbGUgY3g9IjI1IiBjeT0iODUiIHI9IjEwIiBmaWxsPSIjNGVjZGM0Ii8+PGNpcmNsZSBjeD0iNDUiIGN5PSI4NSIgcj0iMTAiIGZpbGw9IiM0ZWNkYzQiLz48Y2lyY2xlIGN4PSI2NSIgY3k9Ijg1IiByPSIxMCIgZmlsbD0iIzRlY2RjNCIvPjxjaXJjbGUgY3g9Ijg1IiBjeT0iODUiIHI9IjEwIiBmaWxsPSIjNGVjZGM0Ii8+PGNpcmNsZSBjeD0iMTA1IiBjeT0iODUiIHI9IjEwIiBmaWxsPSIjNGVjZGM0Ii8+CiAgICA8dGV4dCB4PSI2MCIgeT0iMTA4IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjNmI3YTg1IiBmb250LXNpemU9IjkiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIj5NaW5pbXVtIHNwYWNlPC90ZXh0PjwvZz4KICAgIDxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDE0NSwzNSkiPgogICAgPHJlY3QgeD0iMCIgeT0iMCIgd2lkdGg9IjEyMCIgaGVpZ2h0PSIxMTAiIHJ4PSI4IiBmaWxsPSIjZWVmNmZmIiBzdHJva2U9IiM0ZjlkZTgiIHN0cm9rZS13aWR0aD0iMiIvPgogICAgPHRleHQgeD0iNjAiIHk9IjE4IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjNGY5ZGU4IiBmb250LXNpemU9IjExIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC13ZWlnaHQ9ImJvbGQiPkxJUVVJRDwvdGV4dD4KICAgIDxjaXJjbGUgY3g9IjMwIiBjeT0iNDgiIHI9IjEwIiBmaWxsPSIjNGY5ZGU4Ii8+PGNpcmNsZSBjeD0iNjAiIGN5PSI1MiIgcj0iMTAiIGZpbGw9IiM0ZjlkZTgiLz48Y2lyY2xlIGN4PSI5MCIgY3k9IjQ2IiByPSIxMCIgZmlsbD0iIzRmOWRlOCIvPgogICAgPGNpcmNsZSBjeD0iNDAiIGN5PSI2OCIgcj0iMTAiIGZpbGw9IiM0ZjlkZTgiLz48Y2lyY2xlIGN4PSI3NSIgY3k9IjcwIiByPSIxMCIgZmlsbD0iIzRmOWRlOCIvPgogICAgPGNpcmNsZSBjeD0iMzAiIGN5PSI4OCIgcj0iMTAiIGZpbGw9IiM0ZjlkZTgiLz48Y2lyY2xlIGN4PSI2MCIgY3k9IjkwIiByPSIxMCIgZmlsbD0iIzRmOWRlOCIvPjxjaXJjbGUgY3g9Ijk1IiBjeT0iODUiIHI9IjEwIiBmaWxsPSIjNGY5ZGU4Ii8+CiAgICA8dGV4dCB4PSI2MCIgeT0iMTA4IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjNmI3YTg1IiBmb250LXNpemU9IjkiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIj5Nb3JlIHNwYWNlPC90ZXh0PjwvZz4KICAgIDxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDI3NSwzNSkiPgogICAgPHJlY3QgeD0iMCIgeT0iMCIgd2lkdGg9IjExMCIgaGVpZ2h0PSIxMTAiIHJ4PSI4IiBmaWxsPSIjZmVmNWU3IiBzdHJva2U9IiNmZmIzMDAiIHN0cm9rZS13aWR0aD0iMiIvPgogICAgPHRleHQgeD0iNTUiIHk9IjE4IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjZmZiMzAwIiBmb250LXNpemU9IjExIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC13ZWlnaHQ9ImJvbGQiPkdBUzwvdGV4dD4KICAgIDxjaXJjbGUgY3g9IjIwIiBjeT0iNDAiIHI9IjEwIiBmaWxsPSIjZmZiMzAwIi8+PGNpcmNsZSBjeD0iOTAiIGN5PSI4MCIgcj0iMTAiIGZpbGw9IiNmZmIzMDAiLz4KICAgIDxjaXJjbGUgY3g9IjYwIiBjeT0iMTAwIiByPSIxMCIgZmlsbD0iI2ZmYjMwMCIvPjxjaXJjbGUgY3g9IjgwIiBjeT0iMzUiIHI9IjEwIiBmaWxsPSIjZmZiMzAwIi8+CiAgICA8Y2lyY2xlIGN4PSIzNSIgY3k9Ijc1IiByPSIxMCIgZmlsbD0iI2ZmYjMwMCIvPgogICAgPHRleHQgeD0iNTUiIHk9IjEwOCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0iIzZiN2E4NSIgZm9udC1zaXplPSI5IiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiI+TWF4aW11bSBzcGFjZTwvdGV4dD48L2c+CiAgICA8L3N2Zz4=", "alt": "Diagram showing closely packed particles in solids, loosely packed in liquids, and far apart in gases", "caption": ""}}, {"id": "matter-and-its-composition-pdf-q10", "section": "Intermolecular Attraction", "question": "What is the intermolecular force of attraction in gases?", "options": ["Medium", "Stronger than in liquids", "Negligible (very weak)", "Very strong"], "correctIndex": 2, "explanation": "Gases have negligible force of attraction between their particles, the weakest of all three states.", "suggestImage": true, "imageNote": "Illustration showing force of attraction arrows between particles in solids, liquids, and gases", "image": {"type": "svg", "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0MDAgMTgwIj4KICAgIDxyZWN0IHdpZHRoPSI0MDAiIGhlaWdodD0iMTgwIiByeD0iMTIiIGZpbGw9IiNmMGY5ZmYiLz4KICAgIDx0ZXh0IHg9IjIwMCIgeT0iMjAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IiMyZDM0MzYiIGZvbnQtc2l6ZT0iMTMiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXdlaWdodD0iYm9sZCI+Rm9yY2Ugb2YgQXR0cmFjdGlvbjwvdGV4dD4KICAgIDxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDE1LDM1KSI+CiAgICA8cmVjdCB4PSIwIiB5PSIwIiB3aWR0aD0iMTIwIiBoZWlnaHQ9IjExMCIgcng9IjgiIGZpbGw9IiNlYWZhZjEiIHN0cm9rZT0iIzJlY2M3MSIgc3Ryb2tlLXdpZHRoPSIyIi8+CiAgICA8dGV4dCB4PSI2MCIgeT0iMTgiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IiMyZWNjNzEiIGZvbnQtc2l6ZT0iMTEiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXdlaWdodD0iYm9sZCI+U09MSUQ8L3RleHQ+CiAgICA8Y2lyY2xlIGN4PSI0MCIgY3k9IjU1IiByPSIxMiIgZmlsbD0iIzRlY2RjNCIvPjxjaXJjbGUgY3g9IjgwIiBjeT0iNTUiIHI9IjEyIiBmaWxsPSIjNGVjZGM0Ii8+CiAgICA8bGluZSB4MT0iNTIiIHkxPSI1NSIgeDI9IjY4IiB5Mj0iNTUiIHN0cm9rZT0iIzJkMzQzNiIgc3Ryb2tlLXdpZHRoPSIzIi8+CiAgICA8bGluZSB4MT0iNDAiIHkxPSI1NSIgeDI9IjgwIiB5Mj0iNTUiIHN0cm9rZT0iI2ZmNmI2YiIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtZGFzaGFycmF5PSI0LDMiLz4KICAgIDx0ZXh0IHg9IjYwIiB5PSI4MCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0iI2ZmNmI2YiIgZm9udC1zaXplPSIxMCIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiIGZvbnQtd2VpZ2h0PSJib2xkIj7ihpAg4oaSPC90ZXh0PgogICAgPHRleHQgeD0iNjAiIHk9IjEwMCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0iIzJkMzQzNiIgZm9udC1zaXplPSIxMCIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiIGZvbnQtd2VpZ2h0PSJib2xkIj5WZXJ5IFN0cm9uZzwvdGV4dD48L2c+CiAgICA8ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgxNDUsMzUpIj4KICAgIDxyZWN0IHg9IjAiIHk9IjAiIHdpZHRoPSIxMjAiIGhlaWdodD0iMTEwIiByeD0iOCIgZmlsbD0iI2VlZjZmZiIgc3Ryb2tlPSIjNGY5ZGU4IiBzdHJva2Utd2lkdGg9IjIiLz4KICAgIDx0ZXh0IHg9IjYwIiB5PSIxOCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0iIzRmOWRlOCIgZm9udC1zaXplPSIxMSIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiIGZvbnQtd2VpZ2h0PSJib2xkIj5MSVFVSUQ8L3RleHQ+CiAgICA8Y2lyY2xlIGN4PSIzNSIgY3k9IjU1IiByPSIxMiIgZmlsbD0iIzRmOWRlOCIvPjxjaXJjbGUgY3g9Ijg1IiBjeT0iNTUiIHI9IjEyIiBmaWxsPSIjNGY5ZGU4Ii8+CiAgICA8bGluZSB4MT0iNDciIHkxPSI1NSIgeDI9IjczIiB5Mj0iNTUiIHN0cm9rZT0iIzJkMzQzNiIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtZGFzaGFycmF5PSI0LDMiLz4KICAgIDx0ZXh0IHg9IjYwIiB5PSI4MCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0iIzRmOWRlOCIgZm9udC1zaXplPSIxMCIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiPuKGkCDihpI8L3RleHQ+CiAgICA8dGV4dCB4PSI2MCIgeT0iMTAwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjMmQzNDM2IiBmb250LXNpemU9IjEwIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC13ZWlnaHQ9ImJvbGQiPkxlc3MgU3Ryb25nPC90ZXh0PjwvZz4KICAgIDxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDI3NSwzNSkiPgogICAgPHJlY3QgeD0iMCIgeT0iMCIgd2lkdGg9IjExMCIgaGVpZ2h0PSIxMTAiIHJ4PSI4IiBmaWxsPSIjZmVmNWU3IiBzdHJva2U9IiNmZmIzMDAiIHN0cm9rZS13aWR0aD0iMiIvPgogICAgPHRleHQgeD0iNTUiIHk9IjE4IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjZmZiMzAwIiBmb250LXNpemU9IjExIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC13ZWlnaHQ9ImJvbGQiPkdBUzwvdGV4dD4KICAgIDxjaXJjbGUgY3g9IjIwIiBjeT0iNDUiIHI9IjEyIiBmaWxsPSIjZmZiMzAwIi8+PGNpcmNsZSBjeD0iOTAiIGN5PSI3NSIgcj0iMTIiIGZpbGw9IiNmZmIzMDAiLz4KICAgIDxsaW5lIHgxPSIzMiIgeTE9IjQ4IiB4Mj0iNzgiIHkyPSI3MiIgc3Ryb2tlPSIjNmI3YTg1IiBzdHJva2Utd2lkdGg9IjEiIHN0cm9rZS1kYXNoYXJyYXk9IjIsNCIvPgogICAgPHRleHQgeD0iNTUiIHk9IjEwMCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0iIzJkMzQzNiIgZm9udC1zaXplPSIxMCIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiIGZvbnQtd2VpZ2h0PSJib2xkIj5OZWdsaWdpYmxlPC90ZXh0PjwvZz4KICAgIDwvc3ZnPg==", "alt": "Force of attraction between particles: very strong in solids, less strong in liquids, negligible in gases", "caption": ""}}, {"id": "matter-and-its-composition-pdf-q11", "section": "Intermolecular Attraction", "question": "Which state of matter has the most kinetic energy in its particles?", "options": ["Liquid", "Solid", "They all have the same", "Gas"], "correctIndex": 3, "explanation": "Gas particles have very large kinetic energy because they move freely in any direction.", "suggestImage": false}, {"id": "matter-and-its-composition-pdf-q12", "section": "Intermolecular Attraction", "question": "How do particles in a solid move?", "options": ["They do not move at all", "They move in any random direction", "They move freely within the liquid", "They vibrate about their own positions"], "correctIndex": 3, "explanation": "Particles in a solid vibrate about their own fixed positions because of strong forces holding them together.", "suggestImage": true, "imageNote": "Diagram showing particle movement patterns: vibrating in solids, flowing in liquids, random in gases", "image": {"type": "svg", "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0MDAgMTgwIj4KICAgIDxyZWN0IHdpZHRoPSI0MDAiIGhlaWdodD0iMTgwIiByeD0iMTIiIGZpbGw9IiNmMGY5ZmYiLz4KICAgIDx0ZXh0IHg9IjIwMCIgeT0iMjAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IiMyZDM0MzYiIGZvbnQtc2l6ZT0iMTMiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXdlaWdodD0iYm9sZCI+UGFydGljbGUgTW92ZW1lbnQ8L3RleHQ+CiAgICA8ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgxNSwzNSkiPgogICAgPHJlY3QgeD0iMCIgeT0iMCIgd2lkdGg9IjEyMCIgaGVpZ2h0PSIxMTAiIHJ4PSI4IiBmaWxsPSIjZWFmYWYxIiBzdHJva2U9IiMyZWNjNzEiIHN0cm9rZS13aWR0aD0iMiIvPgogICAgPHRleHQgeD0iNjAiIHk9IjE4IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjMmVjYzcxIiBmb250LXNpemU9IjExIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC13ZWlnaHQ9ImJvbGQiPlNPTElEPC90ZXh0PgogICAgPGNpcmNsZSBjeD0iNjAiIGN5PSI1NSIgcj0iMTIiIGZpbGw9IiM0ZWNkYzQiLz4KICAgIDxwYXRoIGQ9Ik02MCw0MyBMNTUsMzggTTYwLDQzIEw2NSwzOCBNNjAsNDMgTDU4LDMzIiBzdHJva2U9IiNmZjZiNmIiIHN0cm9rZS13aWR0aD0iMS41IiBmaWxsPSJub25lIi8+CiAgICA8cGF0aCBkPSJNNjAsNjcgTDU1LDcyIE02MCw2NyBMNjUsNzIiIHN0cm9rZT0iI2ZmNmI2YiIgc3Ryb2tlLXdpZHRoPSIxLjUiIGZpbGw9Im5vbmUiLz4KICAgIDx0ZXh0IHg9IjYwIiB5PSI5NSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0iIzJkMzQzNiIgZm9udC1zaXplPSIxMCIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiPlZpYnJhdGVzIGluIHBsYWNlPC90ZXh0PjwvZz4KICAgIDxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDE0NSwzNSkiPgogICAgPHJlY3QgeD0iMCIgeT0iMCIgd2lkdGg9IjEyMCIgaGVpZ2h0PSIxMTAiIHJ4PSI4IiBmaWxsPSIjZWVmNmZmIiBzdHJva2U9IiM0ZjlkZTgiIHN0cm9rZS13aWR0aD0iMiIvPgogICAgPHRleHQgeD0iNjAiIHk9IjE4IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjNGY5ZGU4IiBmb250LXNpemU9IjExIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC13ZWlnaHQ9ImJvbGQiPkxJUVVJRDwvdGV4dD4KICAgIDxjaXJjbGUgY3g9IjMwIiBjeT0iNTAiIHI9IjEwIiBmaWxsPSIjNGY5ZGU4Ii8+CiAgICA8cGF0aCBkPSJNMzAsNTAgQzQ1LDQwIDc1LDYwIDkwLDUwIiBzdHJva2U9IiNmZjZiNmIiIHN0cm9rZS13aWR0aD0iMiIgZmlsbD0ibm9uZSIgbWFya2VyLWVuZD0idXJsKCNhcnIpIi8+CiAgICA8Y2lyY2xlIGN4PSI5MCIgY3k9IjUwIiByPSIxMCIgZmlsbD0iIzRmOWRlOCIgb3BhY2l0eT0iMC40Ii8+CiAgICA8dGV4dCB4PSI2MCIgeT0iOTUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IiMyZDM0MzYiIGZvbnQtc2l6ZT0iMTAiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIj5GbG93cyBmcmVlbHk8L3RleHQ+PC9nPgogICAgPGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMjc1LDM1KSI+CiAgICA8cmVjdCB4PSIwIiB5PSIwIiB3aWR0aD0iMTEwIiBoZWlnaHQ9IjExMCIgcng9IjgiIGZpbGw9IiNmZWY1ZTciIHN0cm9rZT0iI2ZmYjMwMCIgc3Ryb2tlLXdpZHRoPSIyIi8+CiAgICA8dGV4dCB4PSI1NSIgeT0iMTgiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IiNmZmIzMDAiIGZvbnQtc2l6ZT0iMTEiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXdlaWdodD0iYm9sZCI+R0FTPC90ZXh0PgogICAgPGNpcmNsZSBjeD0iMzAiIGN5PSI0MCIgcj0iMTAiIGZpbGw9IiNmZmIzMDAiLz4KICAgIDxwYXRoIGQ9Ik0zMCw0MCBMODAsMzAiIHN0cm9rZT0iI2ZmNmI2YiIgc3Ryb2tlLXdpZHRoPSIyIiBmaWxsPSJub25lIi8+CiAgICA8Y2lyY2xlIGN4PSI4MCIgY3k9IjMwIiByPSI4IiBmaWxsPSIjZmZiMzAwIiBvcGFjaXR5PSIwLjQiLz4KICAgIDxwYXRoIGQ9Ik04MCw4MCBMMjUsNzAiIHN0cm9rZT0iIzliNTliNiIgc3Ryb2tlLXdpZHRoPSIyIiBmaWxsPSJub25lIi8+CiAgICA8Y2lyY2xlIGN4PSIyNSIgY3k9IjcwIiByPSI4IiBmaWxsPSIjOWI1OWI2IiBvcGFjaXR5PSIwLjQiLz4KICAgIDx0ZXh0IHg9IjU1IiB5PSIxMDAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IiMyZDM0MzYiIGZvbnQtc2l6ZT0iMTAiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIj5SYW5kb20gZGlyZWN0aW9uPC90ZXh0PjwvZz4KICAgIDxkZWZzPjxtYXJrZXIgaWQ9ImFyciIgdmlld0JveD0iMCAwIDEwIDEwIiByZWZYPSI1IiByZWZZPSI1IiBtYXJrZXJXaWR0aD0iNCIgbWFya2VySGVpZ2h0PSI0IiBvcmllbnQ9ImF1dG8iPjxwYXRoIGQ9Ik0wLDAgTDEwLDUgTDAsMTAgeiIgZmlsbD0iI2ZmNmI2YiIvPjwvbWFya2VyPjwvZGVmcz4KICAgIDwvc3ZnPg==", "alt": "Particle movement patterns: vibrating in solids, flowing in liquids, random in gases", "caption": ""}}]}, {"id": "interconversion", "title": "Interconversion of Matter", "emoji": "\ud83d\udd04", "questions": [{"id": "matter-and-its-composition-pdf-q14", "section": "Interconversion of Matter", "question": "What is the process called when a solid changes into a liquid on heating?", "options": ["Freezing", "Vaporization", "Condensation", "Melting"], "correctIndex": 3, "explanation": "Melting is the conversion of a substance from solid state to liquid state on heating.", "suggestImage": true, "imageNote": "Diagram showing the cycle of state changes: melting, vaporization, condensation, and solidification", "image": {"type": "svg", "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0MDAgMjIwIj4KICAgIDxyZWN0IHdpZHRoPSI0MDAiIGhlaWdodD0iMjIwIiByeD0iMTIiIGZpbGw9IiNmMGY5ZmYiLz4KICAgIDx0ZXh0IHg9IjIwMCIgeT0iMjAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IiMyZDM0MzYiIGZvbnQtc2l6ZT0iMTMiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXdlaWdodD0iYm9sZCI+SW50ZXJjb252ZXJzaW9uIG9mIE1hdHRlcjwvdGV4dD4KICAgIDxnIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIj4KICAgIDxyZWN0IHg9IjEyMCIgeT0iNDAiIHdpZHRoPSI4MCIgaGVpZ2h0PSIzNSIgcng9IjgiIGZpbGw9IiMyZWNjNzEiLz4KICAgIDx0ZXh0IHg9IjE2MCIgeT0iNjIiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IndoaXRlIiBmb250LXNpemU9IjEyIiBmb250LXdlaWdodD0iYm9sZCI+U09MSUQ8L3RleHQ+CiAgICA8cmVjdCB4PSIyNjAiIHk9IjQwIiB3aWR0aD0iODAiIGhlaWdodD0iMzUiIHJ4PSI4IiBmaWxsPSIjNGY5ZGU4Ii8+CiAgICA8dGV4dCB4PSIzMDAiIHk9IjYyIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSJ3aGl0ZSIgZm9udC1zaXplPSIxMiIgZm9udC13ZWlnaHQ9ImJvbGQiPkxJUVVJRDwvdGV4dD4KICAgIDxyZWN0IHg9IjE5MCIgeT0iMTUwIiB3aWR0aD0iODAiIGhlaWdodD0iMzUiIHJ4PSI4IiBmaWxsPSIjZmZiMzAwIi8+CiAgICA8dGV4dCB4PSIyMzAiIHk9IjE3MiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0id2hpdGUiIGZvbnQtc2l6ZT0iMTIiIGZvbnQtd2VpZ2h0PSJib2xkIj5HQVM8L3RleHQ+CiAgICA8cGF0aCBkPSJNMjAwLDU1IEwyNTUsNTUiIHN0cm9rZT0iI2ZmNmI2YiIgc3Ryb2tlLXdpZHRoPSIyLjUiIGZpbGw9Im5vbmUiIG1hcmtlci1lbmQ9InVybCgjYTIpIi8+CiAgICA8cGF0aCBkPSJNMjU1LDY4IEwyMDAsNjgiIHN0cm9rZT0iIzRmOWRlOCIgc3Ryb2tlLXdpZHRoPSIyLjUiIGZpbGw9Im5vbmUiIG1hcmtlci1lbmQ9InVybCgjYTMpIi8+CiAgICA8dGV4dCB4PSIyMjgiIHk9IjQ4IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjZmY2YjZiIiBmb250LXNpemU9IjkiIGZvbnQtd2VpZ2h0PSJib2xkIj5NZWx0aW5nPC90ZXh0PgogICAgPHRleHQgeD0iMjI4IiB5PSI4MiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0iIzRmOWRlOCIgZm9udC1zaXplPSI5IiBmb250LXdlaWdodD0iYm9sZCI+RnJlZXppbmc8L3RleHQ+CiAgICA8cGF0aCBkPSJNMzQwLDc1IEwyNzAsMTQ4IiBzdHJva2U9IiNmZjZiNmIiIHN0cm9rZS13aWR0aD0iMi41IiBmaWxsPSJub25lIiBtYXJrZXItZW5kPSJ1cmwoI2EyKSIvPgogICAgPHBhdGggZD0iTTI3MCwxNjUgTDM0MCw4MiIgc3Ryb2tlPSIjNGY5ZGU4IiBzdHJva2Utd2lkdGg9IjIuNSIgZmlsbD0ibm9uZSIgbWFya2VyLWVuZD0idXJsKCNhMykiLz4KICAgIDx0ZXh0IHg9IjMyMCIgeT0iMTEwIiBmaWxsPSIjZmY2YjZiIiBmb250LXNpemU9IjkiIGZvbnQtd2VpZ2h0PSJib2xkIj5WYXBvcml6YXRpb248L3RleHQ+CiAgICA8dGV4dCB4PSIzMDUiIHk9IjEzNSIgZmlsbD0iIzRmOWRlOCIgZm9udC1zaXplPSI5IiBmb250LXdlaWdodD0iYm9sZCI+Q29uZGVuc2F0aW9uPC90ZXh0PgogICAgPHBhdGggZD0iTTEyMCw3NSBMMTkwLDE0OCIgc3Ryb2tlPSIjZmZiMzAwIiBzdHJva2Utd2lkdGg9IjIuNSIgZmlsbD0ibm9uZSIgbWFya2VyLWVuZD0idXJsKCNhNCkiLz4KICAgIDxwYXRoIGQ9Ik0xOTAsMTY1IEwxMjAsODIiIHN0cm9rZT0iIzRlY2RjNCIgc3Ryb2tlLXdpZHRoPSIyLjUiIGZpbGw9Im5vbmUiIG1hcmtlci1lbmQ9InVybCgjYTUpIi8+CiAgICA8dGV4dCB4PSIxMTUiIHk9IjExMCIgZmlsbD0iI2ZmYjMwMCIgZm9udC1zaXplPSI5IiBmb250LXdlaWdodD0iYm9sZCI+U3VibGltYXRpb248L3RleHQ+CiAgICA8L2c+CiAgICA8ZGVmcz4KICAgIDxtYXJrZXIgaWQ9ImEyIiB2aWV3Qm94PSIwIDAgMTAgMTAiIHJlZlg9IjkiIHJlZlk9IjUiIG1hcmtlcldpZHRoPSI1IiBtYXJrZXJIZWlnaHQ9IjUiIG9yaWVudD0iYXV0byI+PHBhdGggZD0iTTAsMCBMMTAsNSBMMCwxMHoiIGZpbGw9IiNmZjZiNmIiLz48L21hcmtlcj4KICAgIDxtYXJrZXIgaWQ9ImEzIiB2aWV3Qm94PSIwIDAgMTAgMTAiIHJlZlg9IjkiIHJlZlk9IjUiIG1hcmtlcldpZHRoPSI1IiBtYXJrZXJIZWlnaHQ9IjUiIG9yaWVudD0iYXV0byI+PHBhdGggZD0iTTAsMCBMMTAsNSBMMCwxMHoiIGZpbGw9IiM0ZjlkZTgiLz48L21hcmtlcj4KICAgIDxtYXJrZXIgaWQ9ImE0IiB2aWV3Qm94PSIwIDAgMTAgMTAiIHJlZlg9IjkiIHJlZlk9IjUiIG1hcmtlcldpZHRoPSI1IiBtYXJrZXJIZWlnaHQ9IjUiIG9yaWVudD0iYXV0byI+PHBhdGggZD0iTTAsMCBMMTAsNSBMMCwxMHoiIGZpbGw9IiNmZmIzMDAiLz48L21hcmtlcj4KICAgIDxtYXJrZXIgaWQ9ImE1IiB2aWV3Qm94PSIwIDAgMTAgMTAiIHJlZlg9IjkiIHJlZlk9IjUiIG1hcmtlcldpZHRoPSI1IiBtYXJrZXJIZWlnaHQ9IjUiIG9yaWVudD0iYXV0byI+PHBhdGggZD0iTTAsMCBMMTAsNSBMMCwxMHoiIGZpbGw9IiM0ZWNkYzQiLz48L21hcmtlcj4KICAgIDwvZGVmcz4KICAgIDwvc3ZnPg==", "alt": "Cycle diagram showing melting, vaporization, condensation, and freezing between solid, liquid, and gas states", "caption": ""}}, {"id": "matter-and-its-composition-pdf-q15", "section": "Interconversion of Matter", "question": "At what temperature does ice (solid water) change into liquid water?", "options": ["0 degrees Celsius", "100 degrees Celsius", "25 degrees Celsius", "50 degrees Celsius"], "correctIndex": 0, "explanation": "The melting point of ice is 0 degrees Celsius, where solids and liquids co-exist.", "suggestImage": false}, {"id": "matter-and-its-composition-pdf-q16", "section": "Interconversion of Matter", "question": "When a vapour cools down and turns into a liquid, what is this process called?", "options": ["Freezing", "Condensation (liquefaction)", "Evaporation", "Melting"], "correctIndex": 1, "explanation": "Condensation is the conversion of a substance from vapour state to liquid state on cooling.", "suggestImage": true, "imageNote": "Diagram showing condensation: water vapour turning back into liquid droplets", "image": {"type": "svg", "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMDAgMTgwIj4KICAgIDxyZWN0IHdpZHRoPSIzMDAiIGhlaWdodD0iMTgwIiByeD0iMTIiIGZpbGw9IiNmMGY5ZmYiLz4KICAgIDx0ZXh0IHg9IjE1MCIgeT0iMjAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IiMyZDM0MzYiIGZvbnQtc2l6ZT0iMTMiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXdlaWdodD0iYm9sZCI+Q29uZGVuc2F0aW9uPC90ZXh0PgogICAgPGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoNDAsMzApIj4KICAgIDx0ZXh0IHg9IjUwIiB5PSIxNSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0iIzZiN2E4NSIgZm9udC1zaXplPSIxMSIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiPldhcm0gYWlyPC90ZXh0PgogICAgPHBhdGggZD0iTTMwLDI1IFE0MCw0NSAzMCw2NSIgc3Ryb2tlPSIjZmZiMzAwIiBzdHJva2Utd2lkdGg9IjIiIGZpbGw9Im5vbmUiLz4KICAgIDxwYXRoIGQ9Ik01MCwyMCBRNjAsNTAgNTAsNzAiIHN0cm9rZT0iI2ZmYjMwMCIgc3Ryb2tlLXdpZHRoPSIyIiBmaWxsPSJub25lIi8+CiAgICA8cGF0aCBkPSJNNzAsMjUgUTgwLDU1IDcwLDY1IiBzdHJva2U9IiNmZmIzMDAiIHN0cm9rZS13aWR0aD0iMiIgZmlsbD0ibm9uZSIvPgogICAgPHRleHQgeD0iMTMwIiB5PSI1MCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0iIzJkMzQzNiIgZm9udC1zaXplPSIyMCI+4oaSPC90ZXh0PgogICAgPGNpcmNsZSBjeD0iMjAwIiBjeT0iMzAiIHI9IjUiIGZpbGw9IiM0ZjlkZTgiLz4KICAgIDxjaXJjbGUgY3g9IjIxMCIgY3k9IjQ1IiByPSI0IiBmaWxsPSIjNGY5ZGU4Ii8+CiAgICA8Y2lyY2xlIGN4PSIxOTUiIGN5PSI1NSIgcj0iNiIgZmlsbD0iIzRmOWRlOCIvPgogICAgPGNpcmNsZSBjeD0iMjA4IiBjeT0iNjUiIHI9IjUiIGZpbGw9IiM0ZjlkZTgiLz4KICAgIDxjaXJjbGUgY3g9IjE5OCIgY3k9Ijc4IiByPSI3IiBmaWxsPSIjNGY5ZGU4Ii8+CiAgICA8Y2lyY2xlIGN4PSIyMTUiIGN5PSI4NSIgcj0iNCIgZmlsbD0iIzRmOWRlOCIvPgogICAgPHRleHQgeD0iMjAwIiB5PSIxMTAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IiM0ZjlkZTgiIGZvbnQtc2l6ZT0iMTEiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXdlaWdodD0iYm9sZCI+Q29vbCBzdXJmYWNlPC90ZXh0PgogICAgPHRleHQgeD0iMjAwIiB5PSIxMjUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IiM2YjdhODUiIGZvbnQtc2l6ZT0iMTAiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIj5XYXRlciBkcm9wbGV0cyBmb3JtPC90ZXh0PgogICAgPHBhdGggZD0iTTE5NSw4OCBMMTk1LDEwMCIgc3Ryb2tlPSIjNGY5ZGU4IiBzdHJva2Utd2lkdGg9IjIiLz4KICAgIDxwYXRoIGQ9Ik0xOTUsMTAwIFExOTIsMTA1IDE5NSwxMTAiIHN0cm9rZT0iIzRmOWRlOCIgc3Ryb2tlLXdpZHRoPSIyIiBmaWxsPSIjNGY5ZGU4IiBvcGFjaXR5PSIwLjUiLz4KICAgIDwvZz4KICAgIDwvc3ZnPg==", "alt": "Diagram showing water vapour cooling on a surface and forming liquid water droplets (condensation)", "caption": ""}}, {"id": "matter-and-its-composition-pdf-q17", "section": "Interconversion of Matter", "question": "What is the fixed temperature at which a liquid changes into vapour called?", "options": ["Melting point", "Condensation point", "Freezing point", "Boiling point"], "correctIndex": 3, "explanation": "The boiling point is the fixed temperature at which a liquid changes into vapour.", "suggestImage": false}, {"id": "matter-and-its-composition-pdf-q18", "section": "Interconversion of Matter", "question": "The boiling point of water is:", "options": ["0 degrees Celsius", "212 degrees Fahrenheit", "100 degrees Celsius", "50 degrees Celsius"], "correctIndex": 2, "explanation": "The boiling point of water is 100 degrees Celsius, where liquid water changes into steam.", "suggestImage": false}, {"id": "matter-and-its-composition-pdf-q19", "section": "Interconversion of Matter", "question": "What is the process called when a liquid changes into a solid on cooling?", "options": ["Condensation", "Boiling", "Melting", "Solidification (freezing)"], "correctIndex": 3, "explanation": "Solidification or freezing is the conversion of a liquid to a solid state on cooling.", "suggestImage": true, "imageNote": "Water turning into ice cubes to illustrate solidification", "image": {"type": "svg", "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMDAgMTgwIj4KICAgIDxyZWN0IHdpZHRoPSIzMDAiIGhlaWdodD0iMTgwIiByeD0iMTIiIGZpbGw9IiNmMGY5ZmYiLz4KICAgIDx0ZXh0IHg9IjE1MCIgeT0iMjAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IiMyZDM0MzYiIGZvbnQtc2l6ZT0iMTMiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXdlaWdodD0iYm9sZCI+U29saWRpZmljYXRpb24gKEZyZWV6aW5nKTwvdGV4dD4KICAgIDxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDIwLDMwKSI+CiAgICA8cmVjdCB4PSIyMCIgeT0iMTUiIHdpZHRoPSI2MCIgaGVpZ2h0PSI4MCIgcng9IjUiIGZpbGw9IiM0ZjlkZTgiIG9wYWNpdHk9IjAuNCIgc3Ryb2tlPSIjNGY5ZGU4IiBzdHJva2Utd2lkdGg9IjIiLz4KICAgIDxwYXRoIGQ9Ik0zNSwyNSBRNDUsMjAgNTUsMjUgUTY1LDMwIDU1LDM1IiBzdHJva2U9IiM0ZjlkZTgiIHN0cm9rZS13aWR0aD0iMS41IiBmaWxsPSJub25lIi8+CiAgICA8dGV4dCB4PSI1MCIgeT0iNjUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IiM0ZjlkZTgiIGZvbnQtc2l6ZT0iMTAiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIj5MSVFVSUQ8L3RleHQ+CiAgICA8dGV4dCB4PSI1MCIgeT0iMTIwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjNmI3YTg1IiBmb250LXNpemU9IjEwIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiI+V2F0ZXI8L3RleHQ+CiAgICA8dGV4dCB4PSIxMzAiIHk9IjU1IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjZmY2YjZiIiBmb250LXNpemU9IjIyIj7ihpI8L3RleHQ+CiAgICA8dGV4dCB4PSIxMzAiIHk9Ijc1IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjZmY2YjZiIiBmb250LXNpemU9IjEwIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiI+4p2E77iPIENvb2w8L3RleHQ+CiAgICA8ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgxODAsMjApIj4KICAgIDxwb2x5Z29uIHBvaW50cz0iMjUsMCA1MCwxNSA1MCw1MCAzNSw2MCAwLDUwIDAsMTUiIGZpbGw9IiNiM2U1ZmMiIHN0cm9rZT0iIzRmYzNmNyIgc3Ryb2tlLXdpZHRoPSIyIi8+CiAgICA8dGV4dCB4PSIyNSIgeT0iMzUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IiMwMjg4ZDEiIGZvbnQtc2l6ZT0iMTAiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXdlaWdodD0iYm9sZCI+SUNFPC90ZXh0PgogICAgPC9nPgogICAgPHRleHQgeD0iMjA1IiB5PSIxMjAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IiM2YjdhODUiIGZvbnQtc2l6ZT0iMTAiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIj5Tb2xpZDwvdGV4dD4KICAgIDwvZz4KICAgIDwvc3ZnPg==", "alt": "Diagram showing liquid water turning into solid ice cubes through solidification", "caption": ""}}]}, {"id": "objective-questions", "title": "Objective Type Questions", "emoji": "\ud83d\udcdd", "questions": [{"id": "matter-and-its-composition-pdf-q20", "section": "Objective Type Questions", "question": "What kind of substance is made up of only one kind of particles?", "options": ["Homogeneous (a substance)", "Heterogeneous", "A mixture", "An impure substance"], "correctIndex": 0, "explanation": "A homogeneous substance is made up of one kind of particles, like pure elements or compounds.", "suggestImage": false}]}]}</script>
+
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <linearGradient id="gradA" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4ecdc4"/><stop offset="100%" stop-color="#4f9de8"/>
+    </linearGradient>
+  </defs>
+</svg>
+
+<script>
+(() => {
+"use strict";
+/* ══════════════════════════════════════════════════════════════
+   html-quiz runtime — self-contained, no libraries, no network.
+   Question data is parsed from the #quiz-data script tag.
+   ══════════════════════════════════════════════════════════════ */
+
+// ── Data & config ─────────────────────────────────────────────
+const QUIZ = JSON.parse(document.getElementById('quiz-data').textContent.trim());
+const params = new URLSearchParams(location.search);
+const cfg = {
+  secs: clampInt(params.get('secs'), 30, 2, 60),   // seconds per question
+  max:  clampInt(params.get('max'), 25, 1, 100),   // (informational only; cap applied at build)
+  tts:  params.get('tts') !== 'off' && params.get('tts') !== '0'
+};
+function clampInt(v, d, lo, hi){ const n = parseInt(v,10); return Number.isFinite(n) ? Math.min(hi, Math.max(lo, n)) : d; }
+
+// Build a flat ordered question list across all sections.
+const FLAT = [];
+QUIZ.sections.forEach(s => {
+  s.questions.forEach(q => {
+    FLAT.push({ q, sectionId: s.id, sectionTitle: s.title });
+  });
+});
+const TOTAL = FLAT.length;
+
+// ── State machine ─────────────────────────────────────────────
+let state = {
+  mode: 'intro',        // intro | question | revealed | results
+  scope: null,          // null = all sections, else sectionId
+  list: [],             // ordered [{q, sectionId, sectionTitle}] for current scope
+  iq: 0,
+  answers: [],          // {qid, chosen(-1=timeout), status, pts}
+  score: 0,
+  runToken: 0,
+  transitioning: false
+};
+
+const elStage  = document.getElementById('stage');
+const elScore  = document.getElementById('score-chip');
+const elProg   = document.getElementById('progress-fill');
+const elTree   = document.getElementById('tree');
+const elSide   = document.getElementById('sidebar');
+const overlay  = document.getElementById('overlay');
+const elMute   = document.getElementById('mute-btn');
+let muted = false;
+
+// ── DOM helpers (NO innerHTML anywhere) ───────────────────────
+const h = (tag, cls, text) => {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (text !== undefined) e.textContent = text;   // untrusted text → textContent only
+  return e;
+};
+function clear(node){ while(node.firstChild) node.removeChild(node.firstChild); }
+
+// ── Sound (WebAudio, synthesised; lazy context for autoplay) ─
+let AC = null;
+function ensureAudio(){
+  if (!AC){ try{ AC = new (window.AudioContext || window.webkitAudioContext)(); }catch(e){ return null; } }
+  if (AC.state === 'suspended') AC.resume();
+  return AC;
+}
+function blip(freq, dur, type, delay, vol){
+  const ac = AC || ensureAudio();
+  if (!ac) return;
+  const t0 = ac.currentTime + (delay || 0);
+  const o = ac.createOscillator(), g = ac.createGain();
+  o.type = type || 'sine'; o.frequency.value = freq;
+  g.gain.setValueAtTime(vol || 0.14, t0);
+  g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+  o.connect(g); g.connect(ac.destination);
+  o.start(t0); o.stop(t0 + dur + 0.03);
+}
+const sTick   = () => blip(880, 0.06, 'square');
+const sCorrect= () => { blip(523,0.12,'sine',0); blip(659,0.12,'sine',0.11); blip(784,0.2,'sine',0.22); };
+const sWrong  = () => { blip(220,0.22,'triangle',0); blip(170,0.28,'triangle',0.14); };
+const sTimesUp= () => { blip(440,0.18,'triangle',0); blip(330,0.3,'triangle',0.16); };
+const sPop    = () => { blip(660,0.09,'sine',0,0.1); blip(880,0.1,'sine',0.07,0.08); };
+
+// ── TTS (Web Speech API) ──────────────────────────────────────
+function ttsAvailable(){ return 'speechSynthesis' in window; }
+function pickVoice(){
+  if (!ttsAvailable()) return null;
+  const vs = speechSynthesis.getVoices();
+  return vs.find(v => /^en/i.test(v.lang)) || vs[0] || null;
+}
+function speak(text, onEnd){
+  if (!cfg.tts || muted || !ttsAvailable() || !text) { if (onEnd) onEnd(); return; }
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.rate = 1; u.pitch = 1.05;
+  const v = pickVoice(); if (v) u.voice = v;
+  if (onEnd) u.onend = onEnd;
+  speechSynthesis.speak(u);
+}
+if ('speechSynthesis' in window){
+  speechSynthesis.onvoiceschanged = () => {};   // warm the voice list
+}
+
+// ── Timer ring ────────────────────────────────────────────────
+let rafId = 0;
+function stopTimer(){ if (rafId){ cancelAnimationFrame(rafId); rafId = 0; } }
+function startTimer(secs, token){
+  stopTimer();
+  const C = 2 * Math.PI * 30;                    // r=30 ring
+  const ring = document.getElementById('ring-fg');
+  const count = document.getElementById('t-count');
+  const wrap = document.getElementById('timer-wrap');
+  ring.setAttribute('stroke-dasharray', C);
+  ring.setAttribute('stroke-dashoffset', 0);
+  const deadline = performance.now() + secs * 1000;
+  let lastSec = Math.ceil(secs);
+  const loop = (now) => {
+    if (state.runToken !== token) return;        // stale — question changed
+    const remMs = deadline - now;
+    const remSec = Math.max(0, Math.ceil(remMs / 1000));
+    const frac = Math.max(0, Math.min(1, remMs / (secs * 1000)));
+    ring.setAttribute('stroke-dashoffset', String(C * (1 - frac)));   // SVG attr, not CSS
+    count.textContent = String(remSec);
+    wrap.classList.toggle('low', remSec <= 3);
+    if (remSec < lastSec){ lastSec = remSec; if (remSec > 0 && remSec <= 3 && state.mode === 'question') sTick(); }
+    if (remMs <= 0){ onTimeout(token); return; }
+    rafId = requestAnimationFrame(loop);
+  };
+  rafId = requestAnimationFrame(loop);
+}
+
+// ── Timer markup builder (returned to slot in question card) ──
+function timerMarkup(){
+  const wrap = h('div', 'timer-wrap'); wrap.id = 'timer-wrap';
+  const ns = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(ns, 'svg');
+  svg.setAttribute('viewBox', '0 0 74 74');
+  const bg = document.createElementNS(ns, 'circle');
+  bg.setAttribute('cx','37'); bg.setAttribute('cy','37'); bg.setAttribute('r','30'); bg.setAttribute('class','circle-bg');
+  const fg = document.createElementNS(ns, 'circle');
+  fg.setAttribute('cx','37'); fg.setAttribute('cy','37'); fg.setAttribute('r','30'); fg.setAttribute('class','circle-fg');
+  fg.id = 'ring-fg';
+  svg.appendChild(bg); svg.appendChild(fg);
+  const c = h('div', 't-count', String(cfg.secs)); c.id = 't-count';
+  wrap.appendChild(svg); wrap.appendChild(c);
+  return wrap;
+}
+
+// ── Confetti ──────────────────────────────────────────────────
+const CONF_COLORS = ['#ff6b6b','#ffd93d','#2ecc71','#4f9de8','#9b59b6','#ff9d2e'];
+function burstConfetti(n){
+  const layer = document.getElementById('confetti');
+  for (let i = 0; i < n; i++){
+    const c = h('div', 'confetti');
+    c.style.left = (Math.random() * 100) + 'vw';
+    c.style.background = CONF_COLORS[i % CONF_COLORS.length];
+    c.style.setProperty('--rx', (Math.random() * 540 - 270) + 'deg');
+    c.style.animationDuration = (1.6 + Math.random() * 1.6) + 's';
+    c.style.animationDelay = (Math.random() * 0.5) + 's';
+    c.style.width = (7 + Math.random() * 8) + 'px';
+    c.style.height = (7 + Math.random() * 8) + 'px';
+    c.addEventListener('animationend', () => c.remove());
+    layer.appendChild(c);
+  }
+}
+
+// ── Tree building ─────────────────────────────────────────────
+function renderTree(){
+  clear(elTree);
+  QUIZ.sections.forEach(sec => {
+    const node = h('div', 'tree-node');
+    node.setAttribute('data-sec', sec.id);
+    const arrow = h('span', 'arrow', '▶');
+    const dot = h('span', 'dot');
+    dot.style.background = sectionColor(sec.id);
+    const label = h('span', null, sec.emoji + ' ' + sec.title);
+    const badge = h('span', 'badge', String(sec.questions.length));
+    node.appendChild(arrow); node.appendChild(dot); node.appendChild(label); node.appendChild(badge);
+    node.addEventListener('click', () => {
+      arrow.classList.toggle('open');
+      const kids = document.getElementById('children-' + sec.id);
+      if (kids) kids.classList.toggle('open');
+    });
+    elTree.appendChild(node);
+
+    const kids = h('div', 'tree-children');
+    kids.id = 'children-' + sec.id;
+    sec.questions.forEach(q => {
+      const leaf = h('div', 'tree-node tree-leaf');
+      leaf.setAttribute('data-qid', q.id);
+      const qn = h('span', null, 'Q' + (FLAT.length ? '' : '') + q.id.split('-q')[1]);
+      const st = h('span', 'st');
+      leaf.appendChild(h('span', 'arrow', '•'));
+      leaf.appendChild(qn); leaf.appendChild(st);
+      leaf.addEventListener('click', () => startAtSection(sec.id, q.id));
+      kids.appendChild(leaf);
+    });
+    elTree.appendChild(kids);
+  });
+}
+function sectionColor(id){
+  const pal = ['#4ecdc4','#ffb300','#9b59b6','#4f9de8','#ff6b6b','#2ecc71','#e67e22','#e84393'];
+  let x = 0; for (const ch of id) x = (x + ch.charCodeAt(0)) % pal.length;
+  return pal[x];
+}
+function updateTreeStatus(){
+  const answered = new Map(state.answers.map(a => [a.qid, a.status]));
+  document.querySelectorAll('#tree .tree-leaf').forEach(leaf => {
+    const st = leaf.querySelector('.st');
+    const qid = leaf.getAttribute('data-qid');
+    const s = answered.get(qid);
+    st.textContent = '';
+    st.className = 'st';
+    if (s === 'correct'){ st.textContent = '✓'; st.classList.add('good'); }
+    else if (s === 'wrong'){ st.textContent = '✗'; st.classList.add('bad'); }
+    else if (s === 'timeout'){ st.textContent = '⏰'; st.classList.add('slow'); }
+  });
+  // highlight active section node
+  document.querySelectorAll('#tree .tree-node[data-sec]').forEach(n => {
+    n.classList.toggle('active', state.scope === null || n.getAttribute('data-sec') === state.scope);
+  });
+}
+
+// ── Scope / nav ───────────────────────────────────────────────
+function shuffle(arr){
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--){ const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+  return a;
+}
+function startScope(scopeId){
+  state.scope = scopeId || null;
+  if (state.scope) {
+    state.list = FLAT.filter(f => f.sectionId === state.scope);
+  } else {
+    // group by section, shuffle sections, keep questions in source order within each
+    const bySec = [];
+    const secOrder = [];
+    FLAT.forEach(f => { if (!secOrder.includes(f.sectionId)) secOrder.push(f.sectionId); });
+    secOrder.forEach(sid => bySec.push(FLAT.filter(f => f.sectionId === sid)));
+    state.list = shuffle(bySec).flat();
+  }
+  state.iq = 0; state.answers = []; state.score = 0; state.runToken++;
+  updateScore();
+  if (state.list.length === 0){ renderIntro(); return; }
+  renderQuestion();
+}
+function startAtSection(secId, qid){
+  state.scope = secId;
+  state.list = FLAT.filter(f => f.sectionId === secId);
+  const idx = state.list.findIndex(f => f.q.id === qid);
+  state.iq = idx >= 0 ? idx : 0;
+  state.answers = []; state.score = 0; state.runToken++;
+  updateScore();
+  closeDrawer();
+  renderQuestion();
+}
+function currentQ(){
+  const f = state.list[state.iq];
+  return f ? f.q : null;
+}
+
+// ── Views ─────────────────────────────────────────────────────
+function renderIntro(){
+  state.mode = 'intro';
+  clear(elStage);
+  const card = h('div', 'card intro card-in');
+  const big = h('div', 'big-emoji', QUIZ.emoji || '🧠');
+  const title = h('h1', null, QUIZ.title || 'Matter & Its Composition');
+  const sub = h('div', 'sub', QUIZ.subtitle || 'Test yourself & learn with fun quiz!');
+  const meta = h('div', 'meta-chip', '🎯 ' + TOTAL + ' questions · ⭐ up to ' + (TOTAL * 10) + ' points · ⏱️ ' + cfg.secs + 's each');
+  const start = h('button', 'big-btn', '▶ Start Quiz');
+  start.addEventListener('click', () => { ensureAudio(); state.runToken++; startScope(null); });
+  card.appendChild(big); card.appendChild(title); card.appendChild(sub);
+  const row = h('div', 'ghost-row');
+  const samp = h('button', 'big-btn ghost', '🔊 Hear me');
+  samp.addEventListener('click', () => { ensureAudio(); speak('Hello friend! Let’s play and learn together!'); });
+  const imgAll = h('div', 'hint-line', 'Open a section in the left menu to play a single topic.');
+  row.appendChild(samp);
+  card.appendChild(meta); card.appendChild(start); card.appendChild(row); card.appendChild(imgAll);
+  elStage.appendChild(card);
+  updateProgress(0);
+}
+function speakQuestion(q, onEnd){
+  const all = 'Question ' + q.question + '. Options: ' +
+    q.options.map((o, i) => String.fromCharCode(65 + i) + '. ' + o).join('. ') + '.';
+  speak(all, onEnd);
+}
+function renderQuestion(){
+  state.mode = 'question';
+  const q = currentQ();
+  if (!q){ renderResults(); return; }
+  const token = ++state.runToken;
+  stopTimer();
+  clear(elStage);
+  const card = h('div', 'card card-in');
+  const head = h('div', 'q-head');
+  head.appendChild(h('div', 'q-progress', 'Question ' + (state.iq + 1) + ' of ' + state.list.length));
+  head.appendChild(timerMarkup());
+  card.appendChild(head);
+
+  // question text
+  card.appendChild(h('div', 'q-text', q.question));
+
+  // optional image
+  if (q.image){
+    const iw = h('div', 'qimg-wrap');
+    if (q.image.type === 'emoji'){
+      iw.appendChild(h('div', 'emoji-big', q.image.src));
+    } else {
+      const img = h('img', 'qimg');
+      img.setAttribute('src', q.image.src);
+      img.setAttribute('alt', q.image.alt || '');
+      iw.appendChild(img);
+    }
+    if (q.image.caption) iw.appendChild(h('div', 'caption', q.image.caption));
+    card.appendChild(iw);
+  }
+
+  // options
+  const opts = h('div', 'options');
+  q.options.forEach((text, i) => {
+    const b = h('button', 'opt');
+    b.setAttribute('data-idx', String(i));
+    b.appendChild(h('span', 'key', String.fromCharCode(65 + i)));
+    b.appendChild(h('span', null, text));
+    b.appendChild(h('span', 'mark'));
+    b.addEventListener('click', () => { ensureAudio(); if (state.mode === 'question') answer(i); });
+    opts.appendChild(b);
+  });
+  card.appendChild(opts);
+
+  // speak button
+  const foot = h('div', 'q-foot');
+  const spk = h('button', 'speak-btn', '🔊 Read aloud');
+  spk.addEventListener('click', () => { ensureAudio(); speakQuestion(q); });
+  foot.appendChild(spk);
+  card.appendChild(foot);
+  elStage.appendChild(card);
+
+  updateProgress(state.iq / state.list.length);
+  speakQuestion(q, () => { if (state.runToken === token && state.mode === 'question') startTimer(cfg.secs, token); });
+}
+function reveal(q, status, chosen){
+  state.mode = 'revealed';
+  stopTimer();
+  state.answers.push({ qid: q.id, chosen, status, pts: status === 'correct' ? 10 : 0 });
+  if (status === 'correct') state.score += 10;
+  updateScore();
+  updateTreeStatus();
+  burstConfetti(status === 'correct' ? 60 : 0);
+
+  const card = document.querySelector('#stage .card');
+  // banner
+  const banner = h('div', 'reveal-banner ' + (status === 'correct' ? 'good' : status === 'wrong' ? 'bad' : 'slow'));
+  const icon = status === 'correct' ? '✅' : status === 'wrong' ? '❌' : '⏰';
+  const msg = status === 'correct' ? 'Correct! Great job!' : status === 'wrong' ? 'Oops! Not quite.' : "Time's up!";
+  banner.appendChild(h('span', null, icon + ' ' + msg));
+  card.appendChild(banner);
+  // explanation
+  const exp = h('div', 'reveal-exp');
+  const b = h('b', null, '💡 '); b.textContent = '💡 ' + q.options[q.correctIndex];
+  exp.appendChild(b);
+  exp.appendChild(h('div', null, q.explanation));
+  card.appendChild(exp);
+  // highlight options
+  const buttons = card.querySelectorAll('.opt');
+  buttons.forEach((btn, i) => {
+    btn.disabled = true;
+    const mark = btn.querySelector('.mark');
+    if (i === q.correctIndex){ btn.classList.add('correct'); mark.textContent = '✓'; }
+    else if (i === chosen){ btn.classList.add('wrong-chosen'); mark.textContent = '✗'; }
+    else btn.classList.add('dim');
+  });
+  // next row
+  const row = h('div', 'next-row');
+  const pts = h('div', 'pts-gain ' + (status === 'correct' ? 'gain' : 'none'),
+                status === 'correct' ? '+10 points' : '+0 points');
+  const nb = h('button', 'next-btn', state.iq + 1 >= state.list.length ? 'See results 🏆' : 'Next ➡️');
+  nb.addEventListener('click', () => { state.iq++; if (state.iq >= state.list.length) renderResults(); else renderQuestion(); });
+  row.appendChild(pts); row.appendChild(nb);
+  const head = card.querySelector('.q-head');
+  if (head) head.appendChild(row); else card.appendChild(row);
+  // duplicate next-row at bottom for easy access
+  const row2 = h('div', 'next-row');
+  row2.appendChild(h('div', 'pts-gain ' + (status === 'correct' ? 'gain' : 'none'),
+                status === 'correct' ? '+10 points' : '+0 points'));
+  const nb2 = h('button', 'next-btn', state.iq + 1 >= state.list.length ? 'See results 🏆' : 'Next ➡️');
+  nb2.addEventListener('click', () => { state.iq++; if (state.iq >= state.list.length) renderResults(); else renderQuestion(); });
+  row2.appendChild(nb2);
+  card.appendChild(row2);
+}
+function answer(i){
+  const q = currentQ();
+  ensureAudio();
+  if (i === q.correctIndex) sCorrect(); else sWrong();
+  reveal(q, i === q.correctIndex ? 'correct' : 'wrong', i);
+}
+function onTimeout(token){
+  if (state.runToken !== token) return;   // stale
+  const q = currentQ();
+  ensureAudio(); sTimesUp();
+  reveal(q, 'timeout', -1);
+  speak(q.explanation);
+}
+function renderResults(){
+  state.mode = 'results';
+  stopTimer();
+  clear(elStage);
+  const card = h('div', 'card results card-in');
+  const count = state.list.length;
+  const maxPts = count * 10;
+  const words = pctWord(state.score / maxPts);
+  card.appendChild(h('div', 'big-emoji', words.emoji));
+  card.appendChild(h('h2', null, words.title));
+  card.appendChild(h('div', 'sub', 'You scored ' + state.score + ' of ' + maxPts + ' points'));
+
+  // score ring
+  const rw = h('div', 'ring-wrap');
+  const ns = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(ns, 'svg');
+  svg.setAttribute('viewBox', '0 0 120 120');
+  const bg = document.createElementNS(ns, 'circle');
+  bg.setAttribute('cx','60'); bg.setAttribute('cy','60'); bg.setAttribute('r','45'); bg.setAttribute('class','rbg');
+  const fg = document.createElementNS(ns, 'circle');
+  fg.setAttribute('cx','60'); fg.setAttribute('cy','60'); fg.setAttribute('r','45'); fg.setAttribute('class','rfg');
+  fg.id = 'ring-fg-r';
+  svg.appendChild(bg); svg.appendChild(fg);
+  rw.appendChild(svg);
+  const rs = h('div', 'rscore');
+  const n = h('div', 'n', String(state.score)); n.id = 'rscore-n';
+  rs.appendChild(n); rs.appendChild(h('div', 'pts', 'points'));
+  rw.appendChild(rs);
+  card.appendChild(rw);
+
+  const stars = h('div', 'stars', '⭐'.repeat(words.stars) + '☆'.repeat(5 - words.stars));
+  card.appendChild(stars);
+
+  // review
+  const review = h('div', 'review');
+  state.answers.forEach((a, i) => {
+    const f = state.list[i];
+    const row = h('div', 'review-row');
+    row.appendChild(h('div', 'qi', 'Q' + (i + 1)));
+    const body = h('div', 'qbody');
+    body.appendChild(h('div', 'qq', f.q.question));
+    const your = a.chosen >= 0 ? f.q.options[a.chosen] : 'No answer';
+    body.appendChild(h('div', 'aa', 'Your answer: ' + your));
+    body.appendChild(h('div', 'aa', '✅ ' + f.q.options[f.q.correctIndex]));
+    row.appendChild(body);
+    row.appendChild(h('div', 'pts ' + (a.pts ? 'gain' : 'none'), (a.pts ? '+' : '') + a.pts));
+    review.appendChild(row);
+  });
+  card.appendChild(review);
+
+  if (QUIZ.truncated){
+    card.appendChild(h('div', 'hint-line', 'Showing ' + QUIZ.truncated.shown + ' of ' + QUIZ.truncated.total + ' questions.'));
+  }
+
+  const row2 = h('div', 'ghost-row');
+  const again = h('button', 'big-btn ghost', '🔄 Play again');
+  again.addEventListener('click', () => { burstConfetti(0); startScope(state.scope); });
+  const menu = h('button', 'big-btn ghost', '🏠 Menu');
+  menu.addEventListener('click', () => renderIntro());
+  row2.appendChild(again); row2.appendChild(menu);
+  card.appendChild(row2);
+  elStage.appendChild(card);
+
+  // deferred: animate ring + count-up + confetti
+  setTimeout(() => {
+    const C = 283;
+    const fgR = document.getElementById('ring-fg-r');
+    fgR.setAttribute('stroke-dashoffset', String(C * (1 - (state.score / maxPts))));
+    // count up
+    const t0 = performance.now(), dur = 900;
+    const num = document.getElementById('rscore-n');
+    (function step(now){
+      const p = Math.min(1, (now - t0) / dur);
+      if (num) num.textContent = String(Math.round(state.score * p));
+      if (p < 1) requestAnimationFrame(step);
+    })(t0);
+    burstConfetti(140);
+    sPop();
+  }, 60);
+}
+function pctWord(p){
+  if (p >= 0.9)  return { emoji:'🏆', title:'Amazing!', stars:5 };
+  if (p >= 0.7)  return { emoji:'🌟', title:'Great job!', stars:4 };
+  if (p >= 0.5)  return { emoji:'😄', title:'Good try!', stars:3 };
+  if (p >= 0.3)  return { emoji:'🙂', title:'Keep going!', stars:2 };
+  return { emoji:'💪', title:'Practice makes better!', stars:1 };
+}
+function updateScore(){ elScore.textContent = '⭐ Score: ' + state.score; }
+function updateProgress(p){
+  if (elProg) elProg.style.width = Math.round(Math.max(0, Math.min(1, p)) * 100) + '%';
+  // track is shared for all-scope run; on intro show 0
+}
+
+// ── Mobile drawer ─────────────────────────────────────────────
+function closeDrawer(){
+  elSide.classList.remove('open'); overlay.classList.remove('open');
+}
+document.getElementById('hamburger').addEventListener('click', () => {
+  elSide.classList.toggle('open'); overlay.classList.toggle('open');
+});
+overlay.addEventListener('click', closeDrawer);
+document.getElementById('sidebar-home').addEventListener('click', () => { closeDrawer(); renderIntro(); });
+elMute.addEventListener('click', () => {
+  muted = !muted;
+  elMute.textContent = muted ? '🔇' : '🔊';
+  if (muted && 'speechSynthesis' in window) speechSynthesis.cancel();
+});
+
+// ── Boot ──────────────────────────────────────────────────────
+renderTree();
+renderIntro();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>The Turkish Invasion — Quiz</title>
+<style>
+  /* ══════════════ KID-FRIENDLY PALETTE (bright daylight) ══════════════ */
+  :root {
+    --bg: linear-gradient(160deg, #fff8e1 0%, #e0f7fa 60%, #dff4ff 100%);
+    --panel: #ffffff;
+    --ink: #2d3436;
+    --ink-soft: #6b7a85;
+    --coral: #ff6b6b;
+    --sunny: #ffd93d;
+    --teal: #4ecdc4;
+    --sky: #4f9de8;
+    --violet: #9b59b6;
+    --green: #2ecc71;
+    --amber: #ffb300;
+    --red: #ff6b6b;
+    --sidebar-w: 264px;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { height:100%; }
+  body {
+    background: var(--bg); color: var(--ink); overflow:hidden;
+    font-family: 'Comic Sans MS','Chalkboard SE','Marker Felt','Segoe UI','Trebuchet MS',sans-serif;
+    display:flex;
+  }
+
+  /* ── Sidebar tree ── */
+  .sidebar {
+    width: var(--sidebar-w); min-width: var(--sidebar-w); height:100vh;
+    background: rgba(255,255,255,0.82); border-right:1px solid rgba(0,0,0,0.08);
+    display:flex; flex-direction:column; z-index:20; overflow-y:auto;
+    backdrop-filter: blur(4px);
+    transition: transform .3s ease;
+  }
+  .sidebar-header {
+    padding:1.1rem 1rem .8rem; border-bottom:1px solid rgba(0,0,0,0.08);
+    font-size:1.05rem; font-weight:bold; cursor:pointer; display:flex; gap:.4rem; align-items:center;
+    flex-shrink:0;
+  }
+  .sidebar-header .ticker { color:var(--sky); }
+  .tree { flex:1; padding:.5rem 0; overflow-y:auto; }
+  .tree-node {
+    padding:.5rem .8rem .5rem 1rem; cursor:pointer; display:flex; align-items:center; gap:.45rem;
+    font-size:.86rem; transition: background .15s; border-left:3px solid transparent;
+    user-select:none; color:var(--ink);
+  }
+  .tree-node:hover { background:rgba(79,157,232,0.1); }
+  .tree-node.active { border-left-color: var(--amber); background:rgba(255,217,61,0.14); }
+  .tree-node .arrow { font-size:.65rem; width:12px; text-align:center; flex-shrink:0; transition:transform .2s; color:var(--ink-soft); }
+  .tree-node .arrow.open { transform:rotate(90deg); }
+  .tree-node .dot { width:11px; height:11px; border-radius:50%; flex-shrink:0; }
+  .tree-node .badge {
+    margin-left:auto; font-size:.68rem; background:rgba(78,205,196,0.2); color:var(--teal);
+    border-radius:999px; padding:.05rem .5rem; flex-shrink:0;
+  }
+  .tree-children { overflow:hidden; max-height:0; transition:max-height .3s ease; }
+  .tree-children.open { max-height:600px; }
+  .tree-children .tree-node { padding-left:2.2rem; font-size:.8rem; }
+  .tree-leaf .st {
+    margin-left:auto; font-size:.72rem; width:1.1rem; text-align:center; flex-shrink:0;
+  }
+  .st.good { color:var(--green); }
+  .st.bad { color:var(--red); }
+  .st.slow { color:var(--amber); }
+
+  /* ── Main column ── */
+  .main { flex:1; display:flex; flex-direction:column; position:relative; z-index:5; min-width:0; }
+  .topbar {
+    padding:.6rem 1.1rem; display:flex; align-items:center; gap:.8rem; flex-shrink:0;
+    background:rgba(255,255,255,0.6); border-bottom:1px solid rgba(0,0,0,0.08);
+  }
+  .topbar .app-title { font-size:1.05rem; font-weight:bold; display:flex; gap:.4rem; align-items:center; }
+  .topbar .spacer { flex:1; }
+  .score-chip {
+    background:#fff; border:2px solid var(--sunny); color:var(--ink); border-radius:999px;
+    padding:.3rem .9rem; font-size:.9rem; font-weight:bold; box-shadow:0 2px 8px rgba(0,0,0,0.08);
+  }
+  .mute-btn {
+    background:#fff; border:2px solid rgba(0,0,0,0.12); border-radius:999px; cursor:pointer;
+    font-size:1rem; padding:.25rem .6rem; font-family:inherit;
+  }
+  .mute-btn:hover { border-color:var(--sky); }
+  .progress-track {
+    height:8px; border-radius:99px; background:rgba(0,0,0,0.08); overflow:hidden; flex:1; max-width:260px;
+  }
+  .progress-fill { height:100%; width:0%; background:linear-gradient(90deg,var(--teal),var(--sky)); border-radius:99px; transition:width .4s ease; }
+
+  /* ── Stage / views ── */
+  .stage { flex:1; display:flex; justify-content:center; align-content:center; padding:1.4rem; overflow:auto; min-height:0; }
+  .card {
+    background:var(--panel); border-radius:22px; box-shadow:0 14px 44px rgba(45,52,54,0.16);
+    width:100%; max-width:720px; padding:1.8rem 2rem 2rem; position:relative;
+    border:1px solid rgba(0,0,0,0.05); margin:auto;
+  }
+
+  /* Intro */
+  .intro { text-align:center; }
+  .intro .big-emoji { font-size:4rem; animation: bob 3s ease-in-out infinite; display:inline-block; }
+  .intro h1 { font-size:2rem; margin:.4rem 0 .3rem; background:linear-gradient(135deg,var(--sky),var(--violet)); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
+  .intro .sub { color:var(--ink-soft); margin-bottom:1.2rem; }
+  .intro .meta-chip { color:var(--ink-soft); font-size:.9rem; margin-bottom:1.4rem; }
+  .big-btn {
+    font-family:inherit; font-size:1.15rem; font-weight:bold; color:#fff; cursor:pointer;
+    background:linear-gradient(135deg,var(--green),#27ae60); border:none; border-radius:999px;
+    padding:.85rem 2.2rem; box-shadow:0 6px 18px rgba(46,204,113,0.4); transition:transform .15s, box-shadow .15s;
+  }
+  .big-btn:hover { transform:translateY(-2px); }
+  .big-btn.ghost { background:#fff; color:var(--ink); box-shadow:0 2px 8px rgba(0,0,0,0.1); border:2px solid rgba(0,0,0,0.1); margin-left:.7rem; }
+  .ghost-row { margin-top:1.1rem; display:flex; justify-content:center; gap:.4rem; flex-wrap:wrap; }
+  .hint-line { font-size:.82rem; color:var(--ink-soft); margin-top:1rem; }
+
+  /* Question */
+  .q-head { display:flex; justify-content:space-between; align-items:center; gap:.6rem; flex-wrap:wrap; }
+  .q-progress { font-size:.82rem; color:var(--ink-soft); font-weight:bold; padding:.2rem 0; }
+  .timer-wrap { position:relative; width:74px; height:74px; flex-shrink:0; }
+  .timer-wrap svg { width:74px; height:74px; transform:rotate(-90deg); }
+  .timer-wrap .circle-bg { fill:none; stroke:rgba(0,0,0,0.08); stroke-width:7; }
+  .timer-wrap .circle-fg { fill:none; stroke:var(--sky); stroke-width:7; stroke-linecap:round; }
+  .timer-wrap .t-count {
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    font-size:1.5rem; font-weight:bold; color:var(--ink);
+  }
+  .timer-wrap.low .circle-fg { stroke:var(--red); }
+  .timer-wrap.low .t-count { color:var(--red); }
+  .q-text { font-size:1.35rem; line-height:1.45; margin:.7rem 0 1rem; font-weight:bold; }
+  .qimg-wrap { text-align:center; margin:.2rem 0 1rem; }
+  .qimg-wrap img.qimg {
+    max-width:100%; max-height:240px; border-radius:14px; object-fit:contain;
+    border:1px solid rgba(0,0,0,0.08);
+  }
+  .qimg-wrap .emoji-big { font-size:4.2rem; animation: pop 0.5s ease; }
+  .qimg-wrap .caption { font-size:.78rem; color:var(--ink-soft); margin-top:.35rem; }
+
+  .options { display:flex; flex-direction:column; gap:.7rem; }
+  .opt {
+    display:flex; align-items:center; gap:.8rem; width:100%; text-align:left;
+    font-family:inherit; font-size:1.02rem; color:var(--ink); cursor:pointer;
+    background:#f7fbfc; border:2px solid rgba(0,0,0,0.08); border-radius:14px;
+    padding:.72rem 1rem; min-height:48px; transition:border-color .15s, background .15s, transform .1s;
+    position:relative; overflow:hidden;
+  }
+  .opt:hover { border-color:var(--sky); background:#eef6ff; transform:translateY(-1px); }
+  .opt .key {
+    width:30px; height:30px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center;
+    background:#fff; border:2px solid rgba(0,0,0,0.14); font-size:.9rem; font-weight:bold; color:var(--ink-soft);
+  }
+  .opt.correct { border-color:var(--green); background:#eafaf1; }
+  .opt.correct .key { border-color:var(--green); color:var(--green); background:#d5f5e3; }
+  .opt.wrong-chosen { border-color:var(--red); background:#fdecea; }
+  .opt.wrong-chosen .key { border-color:var(--red); color:var(--red); background:#fadbd8; }
+  .opt.dim { opacity:.55; }
+  .opt .mark { margin-left:auto; font-size:1.1rem; }
+
+  /* Reveal banner */
+  .reveal-banner {
+    margin-top:1rem; border-radius:14px; padding:.8rem 1rem; font-size:1.02rem; font-weight:bold;
+    display:flex; gap:.6rem; align-items:center; animation: slideUp .35s ease both;
+  }
+  .reveal-banner.good { background:#eafaf1; color:#1e8449; }
+  .reveal-banner.bad { background:#fdecea; color:#c0392b; }
+  .reveal-banner.slow { background:#fef5e7; color:#b9770e; }
+  .reveal-exp { margin-top:.6rem; background:#f4f8fa; border-radius:12px; padding:.8rem 1rem; font-size:.95rem; color:var(--ink-soft); line-height:1.5; }
+  .reveal-exp b { color:var(--ink); }
+  .next-row { display:flex; align-items:center; justify-content:space-between; gap:.6rem; }
+  .pts-gain { font-weight:bold; font-size:1rem; }
+  .pts-gain.gain { color:var(--green); }
+  .pts-gain.none { color:var(--ink-soft); }
+  .next-btn {
+    font-family:inherit; font-size:1.02rem; font-weight:bold; cursor:pointer; color:#fff;
+    background:linear-gradient(135deg,var(--sky),#2e86de); border:none; border-radius:999px;
+    padding:.7rem 1.7rem; box-shadow:0 4px 14px rgba(79,157,232,0.4); transition:transform .15s;
+  }
+  .next-btn:hover { transform:translateY(-2px); }
+
+  .q-foot { display:flex; justify-content:center; margin-top:1rem; }
+  .speak-btn {
+    font-family:inherit; font-size:.9rem; color:var(--ink-soft); cursor:pointer; background:none;
+    border:1px solid rgba(0,0,0,0.1); border-radius:999px; padding:.35rem 1rem;
+  }
+  .speak-btn:hover { border-color:var(--sky); color:var(--sky); }
+
+  /* Results */
+  .results { text-align:center; }
+  .results h2 { font-size:1.7rem; margin-bottom:.3rem; }
+  .results .sub { color:var(--ink-soft); margin-bottom:1rem; }
+  .ring-wrap { width:150px; height:150px; margin:0 auto .6rem; position:relative; }
+  .ring-wrap svg { width:150px; height:150px; transform:rotate(-90deg); }
+  .ring-wrap .rbg { fill:none; stroke:rgba(0,0,0,0.08); stroke-width:12; }
+  .ring-wrap .rfg { fill:none; stroke:url(#gradA); stroke-width:12; stroke-linecap:round;
+    stroke-dasharray:283; stroke-dashoffset:283; transition:stroke-dashoffset 1s ease; }
+  .ring-wrap .rscore {
+    position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
+  }
+  .ring-wrap .rscore .n { font-size:2rem; font-weight:bold; }
+  .ring-wrap .rscore .pts { font-size:.8rem; color:var(--ink-soft); }
+  .stars { font-size:1.9rem; letter-spacing:.15rem; margin:.2rem 0 .9rem; }
+  .review { text-align:left; margin:1rem 0; }
+  .review-row { display:flex; gap:.7rem; padding:.6rem .4rem; border-bottom:1px solid rgba(0,0,0,0.06); font-size:.86rem; align-items:flex-start; }
+  .review-row .qi { font-weight:bold; color:var(--ink-soft); min-width:1.6rem; }
+  .review-row .qbody { flex:1; }
+  .review-row .qbody .qq { font-weight:bold; margin-bottom:.15rem; }
+  .review-row .qbody .aa { color:var(--ink-soft); }
+  .review-row .pts { font-weight:bold; flex-shrink:0; }
+  .review-row .pts.gain { color:var(--green); }
+  .review-row .pts.none { color:var(--ink-soft); }
+
+  /* Confetti */
+  #confetti { position:fixed; inset:0; pointer-events:none; z-index:200; overflow:hidden; }
+  .confetti {
+    position:absolute; top:-3vh; width:12px; height:12px; border-radius:2px;
+    animation: confetti-fall linear forwards;
+  }
+
+  /* Hamburger / overlay (mobile) */
+  .hamburger { display:none; position:fixed; top:.7rem; left:.7rem; z-index:40;
+    background:#fff; border:1px solid rgba(0,0,0,0.15); border-radius:10px;
+    padding:.35rem .65rem; font-size:1.25rem; cursor:pointer; font-family:inherit; }
+  .overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:19; }
+  .overlay.open { display:block; }
+
+  /* Keyframes */
+  @keyframes bob { 0%,100%{ transform:translateY(0);} 50%{ transform:translateY(-8px);} }
+  @keyframes pop { 0%{ transform:scale(0.4); opacity:0;} 100%{ transform:scale(1); opacity:1;} }
+  @keyframes slideUp { from{ opacity:0; transform:translateY(14px);} to{ opacity:1; transform:translateY(0);} }
+  @keyframes cardIn { from{ opacity:0; transform:translateY(20px) scale(0.97);} to{ opacity:1; transform:none;} }
+  @keyframes confetti-fall { to { transform:translateY(108vh) rotate(var(--rx,180deg)); opacity:.9; } }
+  .card-in { animation:cardIn .35s ease both; }
+
+  @media (max-width:768px) {
+    .sidebar { position:fixed; left:0; top:0; bottom:0; transform:translateX(-100%); z-index:100; box-shadow:0 0 40px rgba(0,0,0,0.2); }
+    .sidebar.open { transform:translateX(0); }
+    .hamburger { display:block; }
+    .card { padding:1.4rem 1.2rem 1.6rem; }
+    .q-text { font-size:1.15rem; }
+  }
+</style>
+</head>
+<body>
+
+<div id="confetti"></div>
+
+<button class="hamburger" id="hamburger">☰</button>
+<div class="overlay" id="overlay"></div>
+
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header" id="sidebar-home"><span class="ticker">🧠</span> <span id="side-title">The Turkish Invasion</span></div>
+  <div class="tree" id="tree"></div>
+</aside>
+
+<main class="main">
+  <div class="topbar">
+    <span class="app-title"><span>🧠</span><span id="top-title" title="The Turkish Invasion">The Turkish Invasion</span></span>
+    <span class="spacer"></span>
+    <div class="progress-track" title="Progress"><div class="progress-fill" id="progress-fill"></div></div>
+    <span class="score-chip" id="score-chip">⭐ Score: 0</span>
+    <button class="mute-btn" id="mute-btn" title="Toggle read-aloud (TTS)">🔊</button>
+  </div>
+  <div class="stage" id="stage"></div>
+</main>
+
+<script type="application/json" id="quiz-data">{"title": "The Turkish Invasion", "subtitle": "A Class-7 History quiz on Arabs, Mahmud of Ghazni, Muhammad Ghori and the Battles of Tarain.", "emoji": "🏇", "sections": [{"id": "mahmud-of-ghazni", "title": "Mahmud of Ghazni", "emoji": "👑", "questions": [{"id": "the-turkish-invasion-ocr-pdf-q1", "section": "Mahmud of Ghazni", "question": "Assertion (A): Mahmud of Ghazni was the first Turkish invader who invaded India from the north-western side. Reason (R): He was the ruler of Ghazni. Which option shows the correct relationship between (A) and (R)?", "options": ["(R) contradicts (A)", "(R) is the reason for (A)", "(A) is true but (R) is false", "(A) and (R) are independent of each other"], "correctIndex": 3, "explanation": "Both (A) and (R) are true, but being ruler of Ghazni is not why he invaded India.", "suggestImage": false, "image": null}, {"id": "the-turkish-invasion-ocr-pdf-q3", "section": "Mahmud of Ghazni", "question": "Namita is preparing a project on Alberuni. Which book would MOST LIKELY be part of her project?", "options": ["Rihla", "Shahnama", "Ain-i-Akbari", "Tahqiq-i-Hind"], "correctIndex": 3, "explanation": "Alberuni wrote Tahqiq-i-Hind about India, so it would be in her project.", "suggestImage": false, "image": null}, {"id": "the-turkish-invasion-ocr-pdf-q4", "section": "Mahmud of Ghazni", "question": "Statement I: From 1000 CE onwards, Indian rulers were threatened by repeated invasions from the north-western side. Statement II: The Turks became a powerful force after the decline of the Abbasids. Which answer is correct?", "options": ["Statement I is correct, Statement II is incorrect", "Statement I is incorrect, Statement II is correct", "Both statements are incorrect", "Both statements are correct"], "correctIndex": 3, "explanation": "The chapter says invasions came from the north-west and Turks rose after the Abbasids fell.", "suggestImage": false, "image": null}, {"id": "the-turkish-invasion-ocr-pdf-q7", "section": "Mahmud of Ghazni", "question": "The year CE 1025 is linked with which event?", "options": ["Mahmud of Ghazni plundered the Somnath temple", "Second Battle of Tarain", "Battle of Chandawar", "First Battle of Tarain"], "correctIndex": 0, "explanation": "In CE 1025 Mahmud of Ghazni plundered the Somnath Temple for its wealth.", "suggestImage": true, "imageNote": "photograph/illustration of the Somnath temple", "image": {"type": "svg", "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0MjAgMzAwIj4KICA8cmVjdCB4PSIwIiB5PSIwIiB3aWR0aD0iNDIwIiBoZWlnaHQ9IjMwMCIgcng9IjE4IiBmaWxsPSIjZmZlOWM5Ii8+CiAgPGNpcmNsZSBjeD0iMzYwIiBjeT0iNDYiIHI9IjI0IiBmaWxsPSIjZmZkOTNkIiBzdHJva2U9IiNlNmE4MDAiIHN0cm9rZS13aWR0aD0iMyIvPgogIDxwYXRoIGQ9Ik0wIDIwMCBRNjAgMTkwIDEyMCAyMDAgUTIwMCAyMTIgNDIwIDE5NiBMNDIwIDMwMCBMMCAzMDAgWiIgZmlsbD0iIzdlYzhlMyIgc3Ryb2tlPSIjNGZhM2M0IiBzdHJva2Utd2lkdGg9IjMiLz4KICA8Zz4KICAgIDxyZWN0IHg9IjE1MCIgeT0iMjQwIiB3aWR0aD0iMTIwIiBoZWlnaHQ9IjIyIiByeD0iNiIgZmlsbD0iI2Q5YTA2NiIgc3Ryb2tlPSIjYTg2YTJmIiBzdHJva2Utd2lkdGg9IjMiLz4KICAgIDxwYXRoIGQ9Ik0xNzAgMjQwIEwxNzAgMTUwIEwyNTAgMTUwIEwyNTAgMjQwIFoiIGZpbGw9IiNmMGM0OGEiIHN0cm9rZT0iI2E4NmEyZiIgc3Ryb2tlLXdpZHRoPSIzIi8+CiAgICA8cmVjdCB4PSIxNjAiIHk9IjEyOCIgd2lkdGg9IjEwMCIgaGVpZ2h0PSIyNiIgcng9IjYiIGZpbGw9IiNlODg1NWEiIHN0cm9rZT0iI2I0NWEzNCIgc3Ryb2tlLXdpZHRoPSIzIi8+CiAgICA8cGF0aCBkPSJNMjEwIDEyOCBMMjEwIDYwIEwyMjIgNjAgTDIyMiAxMjggWiIgZmlsbD0iI2VmOWE2YSIgc3Ryb2tlPSIjYTg2YTJmIiBzdHJva2Utd2lkdGg9IjMiLz4KICAgIDxyZWN0IHg9IjE3NiIgeT0iMzQiIHdpZHRoPSI2OCIgaGVpZ2h0PSIzMCIgcng9IjYiIGZpbGw9IiNmNWQwN2UiIHN0cm9rZT0iI2E4NmEyZiIgc3Ryb2tlLXdpZHRoPSIzIi8+CiAgICA8cGF0aCBkPSJNMTg3IDE2OCBRMTg3IDE4NiAxNjggMTg2IE0yMzMgMTY4IFEyMzMgMTg2IDI1MiAxODYiIHN0cm9rZT0iI2E4NmEyZiIgc3Ryb2tlLXdpZHRoPSI2IiBmaWxsPSJub25lIi8+CiAgICA8cGF0aCBkPSJNMjA1IDIzMiBMMjA1IDE5NiBMMjE1IDE5NiBMMjE1IDIzMiBaIiBmaWxsPSIjN2E0YTIyIi8+CiAgICA8cGF0aCBkPSJNMTY4IDE1MCBMMjUyIDE1MCBMMjEwIDEyMiBaIiBmaWxsPSIjZTA1ZDQ0IiBzdHJva2U9IiNiMzQwMmYiIHN0cm9rZS13aWR0aD0iMyIvPgogICAgPGxpbmUgeDE9IjIxMCIgeTE9IjM0IiB4Mj0iMjEwIiB5Mj0iOCIgc3Ryb2tlPSIjYTg2YTJmIiBzdHJva2Utd2lkdGg9IjQiLz4KICAgIDxwYXRoIGQ9Ik0yMDYgOCBoOCBsLTQgLTEyIFoiIGZpbGw9IiNlMDVkNDQiLz4KICA8L2c+CiAgPHRleHQgeD0iMjEwIiB5PSIzNiIgZm9udC1zaXplPSIxMyIgZmlsbD0iIzdhNGEyMiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9IkNvbWljIFNhbnMgTVMsIHNhbnMtc2VyaWYiIGZvbnQtd2VpZ2h0PSJib2xkIj5vPC90ZXh0PgogIDx0ZXh0IHg9IjIxMCIgeT0iMjg2IiBmb250LXNpemU9IjE3IiBmaWxsPSIjN2E0YTIyIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0iQ29taWMgU2FucyBNUywgc2Fucy1zZXJpZiIgZm9udC13ZWlnaHQ9ImJvbGQiPlNvbW5hdGggVGVtcGxlPC90ZXh0Pgo8L3N2Zz4=", "alt": "Somnath Temple", "caption": "Somnath Temple"}}, {"id": "the-turkish-invasion-ocr-pdf-q11", "section": "Mahmud of Ghazni", "question": "State whether this statement is True or False: Mahmud was interested in setting up an empire in India.", "options": ["True", "False", "He wanted to shift his capital to Delhi", "He ruled India for fifty years"], "correctIndex": 1, "explanation": "Mahmud of Ghazni only wanted wealth and plunder, not an empire in India.", "suggestImage": false, "image": null}, {"id": "the-turkish-invasion-ocr-pdf-q14", "section": "Mahmud of Ghazni", "question": "Alberuni's book Tahqiq-i-Hind contains themes based on which country?", "options": ["India", "Persia", "Turkey", "Afghanistan"], "correctIndex": 0, "explanation": "Tahqiq-i-Hind has descriptions of India and its various facets.", "suggestImage": false, "image": null}, {"id": "the-turkish-invasion-ocr-pdf-q15", "section": "Mahmud of Ghazni", "question": "To Mahmud of Ghazni, which country was 'a vast treasure state' that could be plundered to make which city powerful and rich?", "options": ["Turkey, Lahore", "Iran, Mecca", "India, Ghazni", "Iraq, Dubai"], "correctIndex": 2, "explanation": "Mahmud plundered India's wealth to make his capital Ghazni powerful and rich.", "suggestImage": false, "image": null}, {"id": "the-turkish-invasion-ocr-pdf-q16", "section": "Mahmud of Ghazni", "question": "Shahnama is written by whom?", "options": ["Mahmud of Ghazni", "Alberuni", "Prithviraj Chauhan", "Firdausi"], "correctIndex": 3, "explanation": "Firdausi, a famous Persian poet, wrote the great epic Shahnama.", "suggestImage": false, "image": null}, {"id": "the-turkish-invasion-ocr-pdf-q19", "section": "Mahmud of Ghazni", "question": "Between which years did Mahmud of Ghazni carry out his seventeen raids on India?", "options": ["CE 712 to 1025", "CE 900 to 1000", "CE 1173 to 1206", "CE 1001 to 1025"], "correctIndex": 3, "explanation": "Mahmud made seventeen raids on India between CE 1001 and 1025.", "suggestImage": true, "imageNote": "map showing the area overrun by Mahmud of Ghazni and his empire", "image": {"type": "svg", "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0MjAgMzAwIj4KICA8cmVjdCB4PSIwIiB5PSIwIiB3aWR0aD0iNDIwIiBoZWlnaHQ9IjMwMCIgcng9IjE4IiBmaWxsPSIjZGZmNGZmIi8+CiAgPGNpcmNsZSBjeD0iNDYiIGN5PSI0MCIgcj0iMTgiIGZpbGw9IiNmZmQ5M2QiIHN0cm9rZT0iI2U2YTgwMCIgc3Ryb2tlLXdpZHRoPSIyIi8+CiAgPHBhdGggZD0iTTYwIDIxMCBRNDAgMTIwIDk2IDg4IFExNTAgNjIgMTgwIDk2IFEyMTAgMTI4IDIzNiAxMTggUTI2OCAxMDggMjg4IDEzMgogICAgICAgICAgIFEzMDYgMTU2IDMzMCAxNTIgUTM2MCAxNDggMzgwIDE3NiBRMzk2IDIwMiA0MDggMjMwIEw0MDAgMzAwIEwwIDMwMCBaIgogICAgICAgIGZpbGw9IiNmNmUzYjQiIHN0cm9rZT0iI2M5YTIyNyIgc3Ryb2tlLXdpZHRoPSIzIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+CiAgPHBhdGggZD0iTTk2IDg4IFExNDAgNzAgMTgwIDk2IFEyMTAgMTI4IDIzNiAxMTggUTI2OCAxMDggMjg4IDEzMgogICAgICAgICAgIFEzMDYgMTU2IDMwMCAxODAgUTI1MCAxNjAgMjEwIDE3MiBRMTcwIDE4NiAxNTAgMTY4IFExMjYgMTQ4IDEwMCAxNjAKICAgICAgICAgICBRODAgMTcwIDcyIDE1MCBRNjQgMTMyIDk2IDg4IFoiCiAgICAgICAgZmlsbD0iI2ZmYjNhNyIgc3Ryb2tlPSIjZTA3YjZiIiBzdHJva2Utd2lkdGg9IjMiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIG9wYWNpdHk9IjAuODUiLz4KICA8Y2lyY2xlIGN4PSIxNTAiIGN5PSIxMzIiIHI9IjUiIGZpbGw9IiNlMDVkNDQiLz48dGV4dCB4PSIxNTAiIHk9IjEyMCIgZm9udC1zaXplPSIxMiIgZmlsbD0iIzhhM2EyZSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9IkNvbWljIFNhbnMgTVMsIHNhbnMtc2VyaWYiIGZvbnQtd2VpZ2h0PSJib2xkIj5HaGF6bmk8L3RleHQ+CiAgPGNpcmNsZSBjeD0iMTE4IiBjeT0iMTUwIiByPSI0IiBmaWxsPSIjZTA1ZDQ0Ii8+PHRleHQgeD0iMTE4IiB5PSIxNzIiIGZvbnQtc2l6ZT0iMTEiIGZpbGw9IiM4YTNhMmUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtZmFtaWx5PSJDb21pYyBTYW5zIE1TLCBzYW5zLXNlcmlmIj5LYWJ1bDwvdGV4dD4KICA8Y2lyY2xlIGN4PSIyODYiIGN5PSIxNTAiIHI9IjUiIGZpbGw9IiM0ZjlkZTgiLz48dGV4dCB4PSIyODYiIHk9IjE0MiIgZm9udC1zaXplPSIxMSIgZmlsbD0iIzJjNmJiMCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9IkNvbWljIFNhbnMgTVMsIHNhbnMtc2VyaWYiIGZvbnQtd2VpZ2h0PSJib2xkIj5EZWxoaTwvdGV4dD4KICA8Y2lyY2xlIGN4PSIyMzgiIGN5PSIxODYiIHI9IjQiIGZpbGw9IiNlMDVkNDQiLz48dGV4dCB4PSIyMzgiIHk9IjIwNCIgZm9udC1zaXplPSIxMCIgZmlsbD0iIzhhM2EyZSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9IkNvbWljIFNhbnMgTVMsIHNhbnMtc2VyaWYiPk11bHRhbjwvdGV4dD4KICA8ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgxOTYsMjM4KSI+CiAgICA8cGF0aCBkPSJNMCAwIEwxNCAyMiBRMjAgMzQgMjggMjIgTDQyIDAgWiIgZmlsbD0iI2ZmZDkzZCIgc3Ryb2tlPSIjZTZhODAwIiBzdHJva2Utd2lkdGg9IjIiLz4KICAgIDxjaXJjbGUgY3g9IjIxIiBjeT0iMCIgcj0iNiIgZmlsbD0iI2Y0YTlhOSIvPgogIDwvZz4KICA8dGV4dCB4PSIyNTQiIHk9IjI1OCIgZm9udC1zaXplPSIxMiIgZmlsbD0iIzhhM2EyZSIgZm9udC1mYW1pbHk9IkNvbWljIFNhbnMgTVMsIHNhbnMtc2VyaWYiIGZvbnQtd2VpZ2h0PSJib2xkIj5Tb21uYXRoPC90ZXh0PgogIDxyZWN0IHg9IjIwIiB5PSIyMzYiIHdpZHRoPSI4NCIgaGVpZ2h0PSI1MiIgcng9IjEwIiBmaWxsPSIjZmZmZmZmIiBzdHJva2U9IiNjOWEyMjciIHN0cm9rZS13aWR0aD0iMiIvPgogIDxyZWN0IHg9IjMwIiB5PSIyNTIiIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiIgcng9IjMiIGZpbGw9IiNmZjZiNmIiLz4KICA8dGV4dCB4PSI1MiIgeT0iMjY0IiBmb250LXNpemU9IjEwIiBmaWxsPSIjNWE0YTJhIiBmb250LWZhbWlseT0iQ29taWMgU2FucyBNUywgc2Fucy1zZXJpZiI+QXJlYSBvdmVycnVuPC90ZXh0PgogIDx0ZXh0IHg9IjUyIiB5PSIyNzgiIGZvbnQtc2l6ZT0iMTAiIGZpbGw9IiM1YTRhMmEiIGZvbnQtZmFtaWx5PSJDb21pYyBTYW5zIE1TLCBzYW5zLXNlcmlmIj5ieSBNYWhtdWQ8L3RleHQ+CiAgPHRleHQgeD0iMjEwIiB5PSIyNCIgZm9udC1zaXplPSIxNyIgZmlsbD0iIzJjNmJiMCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9IkNvbWljIFNhbnMgTVMsIHNhbnMtc2VyaWYiIGZvbnQtd2VpZ2h0PSJib2xkIj5FbXBpcmUgb2YgTWFobXVkIG9mIEdoYXpuaTwvdGV4dD4KPC9zdmc+", "alt": "Map of the Empire of Mahmud of Ghazni", "caption": "Empire of Mahmud of Ghazni"}}]}, {"id": "muhammad-ghori", "title": "Muhammad Ghori", "emoji": "🗡️", "questions": [{"id": "the-turkish-invasion-ocr-pdf-q2", "section": "Muhammad Ghori", "question": "Which facts about Muhammad Ghori are correct? P: He became ruler of Ghazni in CE 1173. Q: He became the first ruler of the Delhi Sultanate. R: He was defeated by Prithviraj in the First Battle of Tarain. S: He died in CE 1220.", "options": ["P and Q", "R and S", "P and R", "Q and S"], "correctIndex": 2, "explanation": "Ghori ruled Ghazni from CE 1173 and lost the First Battle of Tarain; Q and S are false.", "suggestImage": false, "image": null}, {"id": "the-turkish-invasion-ocr-pdf-q5", "section": "Muhammad Ghori", "question": "Which among the following statements is INCORRECT?", "options": ["The Turks established the two major kingdoms of Ghazni and Ghor", "Mahmud of Ghazni carried out seventeen raids on India", "In the Second Battle of Tarain, Muhammad Ghori was defeated by Prithviraj Chauhan", "The Rajputs were brave soldiers and skilled swordsmen"], "correctIndex": 2, "explanation": "Ghori WON the Second Battle of Tarain; Prithviraj only won the first battle.", "suggestImage": false, "image": null}, {"id": "the-turkish-invasion-ocr-pdf-q6", "section": "Muhammad Ghori", "question": "The year CE 1192 is linked with which event?", "options": ["First Battle of Tarain", "Second Battle of Tarain", "Plundering of the Somnath temple by Mahmud", "Battle of Chandawar"], "correctIndex": 1, "explanation": "Ghori won the Second Battle of Tarain against Prithviraj in CE 1192.", "suggestImage": true, "imageNote": "illustration of the Battles of Tarain", "image": {"type": "svg", "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0MjAgMzAwIj4KICA8cmVjdCB4PSIwIiB5PSIwIiB3aWR0aD0iNDIwIiBoZWlnaHQ9IjMwMCIgcng9IjE4IiBmaWxsPSIjZmRlY2VjIi8+CiAgPGVsbGlwc2UgY3g9IjIxMCIgY3k9IjI1MCIgcng9IjE5MCIgcnk9IjIyIiBmaWxsPSIjZThjZGMyIiBzdHJva2U9IiNjOWE4OGYiIHN0cm9rZS13aWR0aD0iMyIvPgogIDxnIHN0cm9rZT0iIzhhNWEyMCIgc3Ryb2tlLXdpZHRoPSI2IiBmaWxsPSJub25lIiBzdHJva2UtbGluZWNhcD0icm91bmQiPgogICAgPHBhdGggZD0iTTE1MCAyNTAgTDc2IDExOCBNMjIyIDI1MCBMMjk2IDExOCIvPgogIDwvZz4KICA8ZyBmaWxsPSIjYzljOWM5IiBzdHJva2U9IiM4YThhOGEiIHN0cm9rZS13aWR0aD0iMyI+CiAgICA8cGF0aCBkPSJNNzYgMTE4IEw1NiA2NiBMNzYgODYgTDk2IDY2IFoiLz4KICAgIDxwYXRoIGQ9Ik0yOTYgMTE4IEwyNzYgNjYgTDI5NiA4NiBMMzE2IDY2IFoiLz4KICA8L2c+CiAgPGNpcmNsZSBjeD0iNzYiIGN5PSI3MCIgcj0iOCIgZmlsbD0iI2Q5YTA2NiIgc3Ryb2tlPSIjYTg2YTJmIiBzdHJva2Utd2lkdGg9IjIiLz4KICA8Y2lyY2xlIGN4PSIyOTYiIGN5PSI3MCIgcj0iOCIgZmlsbD0iI2Q5YTA2NiIgc3Ryb2tlPSIjYTg2YTJmIiBzdHJva2Utd2lkdGg9IjIiLz4KICA8bGluZSB4MT0iNTYiIHkxPSI0MCIgeDI9IjY2IiB5Mj0iMjQwIiBzdHJva2U9IiM5Y2JmODciIHN0cm9rZS13aWR0aD0iMTQiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgogIDxsaW5lIHgxPSIzMTYiIHkxPSI0MCIgeDI9IjMwNiIgeTI9IjI0MCIgc3Ryb2tlPSIjOWNiZjg3IiBzdHJva2Utd2lkdGg9IjE0IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KICA8cGF0aCBkPSJNMjEwIDE1MCBMMjEwIDE5MCBNMTk2IDE3NSBMMjI0IDE3NSIgc3Ryb2tlPSIjZTA1ZDQ0IiBzdHJva2Utd2lkdGg9IjgiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgogIDx0ZXh0IHg9IjExOCIgeT0iMTg2IiBmb250LXNpemU9IjE0IiBmaWxsPSIjMmM2YjJjIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0iQ29taWMgU2FucyBNUywgc2Fucy1zZXJpZiIgZm9udC13ZWlnaHQ9ImJvbGQiPlByaXRodmlyYWo8L3RleHQ+CiAgPHRleHQgeD0iMzAyIiB5PSIxODYiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiMyZDRhNjQiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtZmFtaWx5PSJDb21pYyBTYW5zIE1TLCBzYW5zLXNlcmlmIiBmb250LXdlaWdodD0iYm9sZCI+R2hvcmk8L3RleHQ+CiAgPHRleHQgeD0iMjEwIiB5PSIyNCIgZm9udC1zaXplPSIxOCIgZmlsbD0iI2E4M2EyZSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9IkNvbWljIFNhbnMgTVMsIHNhbnMtc2VyaWYiIGZvbnQtd2VpZ2h0PSJib2xkIj5CYXR0bGVzIG9mIFRhcmFpbjwvdGV4dD4KICA8dGV4dCB4PSIyMTAiIHk9IjI4NCIgZm9udC1zaXplPSIxMyIgZmlsbD0iI2E4M2EyZSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9IkNvbWljIFNhbnMgTVMsIHNhbnMtc2VyaWYiPkNFIDExOTEgJiM4MjExOyBQcml0aHZpcmFqIHdvbiAmIzE4MzsgQ0UgMTE5MiAmIzgyMTE7IEdob3JpIHdvbjwvdGV4dD4KPC9zdmc+", "alt": "The Battles of Tarain", "caption": "Battles of Tarain"}}, {"id": "the-turkish-invasion-ocr-pdf-q8", "section": "Muhammad Ghori", "question": "The year CE 1194 is linked with which event?", "options": ["Second Battle of Tarain", "First Battle of Tarain", "Mahmud plundered the Somnath temple", "Ghori defeated Jaichandra of Kanauj"], "correctIndex": 3, "explanation": "In CE 1194 Ghori defeated and killed Jaichandra of Kanauj at Chandawar.", "suggestImage": false, "image": null}, {"id": "the-turkish-invasion-ocr-pdf-q9", "section": "Muhammad Ghori", "question": "The year CE 1191 is linked with which event?", "options": ["Battle of Chandawar", "First Battle of Tarain", "Plundering of the Somnath temple", "Second Battle of Tarain"], "correctIndex": 1, "explanation": "Prithviraj Chauhan defeated Ghori in the First Battle of Tarain, CE 1191.", "suggestImage": true, "imageNote": "portraits of Prithviraj Chauhan and Muhammad Ghori", "image": {"type": "svg", "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0MjAgMzAwIj4KICA8cmVjdCB4PSIwIiB5PSIwIiB3aWR0aD0iNDIwIiBoZWlnaHQ9IjMwMCIgcng9IjE4IiBmaWxsPSIjZThmN2U4Ii8+CiAgPGVsbGlwc2UgY3g9IjIxMCIgY3k9IjI2MiIgcng9IjE1MCIgcnk9IjIyIiBmaWxsPSIjY2ZlOGMwIiBzdHJva2U9IiM5Y2JmODciIHN0cm9rZS13aWR0aD0iMyIvPgogIDxjaXJjbGUgY3g9IjIxMCIgY3k9IjEyMCIgcj0iNTIiIGZpbGw9IiNmZmQ5YTgiIHN0cm9rZT0iI2M5OGQ1YSIgc3Ryb2tlLXdpZHRoPSIzIi8+CiAgPHBhdGggZD0iTTE3OCAxMjIgUTIxMCA5MiAyNDIgMTIyIFEyMzggOTIgMjEwIDg0IFExODIgOTIgMTc4IDEyMiBaIiBmaWxsPSIjNWEzYTIwIi8+CiAgPHBhdGggZD0iTTE2OCAxMDggUTIxMCA3NCAyNTIgMTA4IFEyNjIgNzAgMjM4IDQ4IFEyMTAgNjAgMTgyIDQ4IFExNTggNzAgMTY4IDEwOCBaIiBmaWxsPSIjZTA1ZDQ0IiBzdHJva2U9IiNiMzQwMmYiIHN0cm9rZS13aWR0aD0iMyIvPgogIDxjaXJjbGUgY3g9IjI1MiIgY3k9IjY0IiByPSIxMiIgZmlsbD0iI2ZmZDkzZCIgc3Ryb2tlPSIjZTZhODAwIiBzdHJva2Utd2lkdGg9IjMiLz4KICA8cGF0aCBkPSJNMTgwIDEwMCBRMTg0IDEyOCAxODAgMTM4IiBzdHJva2U9IiM1YTNhMjAiIHN0cm9rZS13aWR0aD0iNSIgZmlsbD0ibm9uZSIvPgogIDxwYXRoIGQ9Ik0yNDAgMTAwIFEyMzYgMTI4IDI0MCAxMzgiIHN0cm9rZT0iIzVhM2EyMCIgc3Ryb2tlLXdpZHRoPSI1IiBmaWxsPSJub25lIi8+CiAgPGNpcmNsZSBjeD0iMTk2IiBjeT0iMTMwIiByPSI0IiBmaWxsPSIjM2EyYTFhIi8+PGNpcmNsZSBjeD0iMjI0IiBjeT0iMTMwIiByPSI0IiBmaWxsPSIjM2EyYTFhIi8+CiAgPHBhdGggZD0iTTIwNiAxNDAgUTIxMCAxNDYgMjE0IDE0MCIgc3Ryb2tlPSIjYjM0MDJmIiBzdHJva2Utd2lkdGg9IjQiIGZpbGw9Im5vbmUiLz4KICA8cGF0aCBkPSJNMTU4IDE5MCBMMjYyIDE5MCBMMjUyIDI1MCBMMTY4IDI1MCBaIiBmaWxsPSIjNGY5ZGU4IiBzdHJva2U9IiMyYzZiYjAiIHN0cm9rZS13aWR0aD0iMyIvPgogIDxwYXRoIGQ9Ik0xNjggMjUwIEwxNTAgMjYyIEwxODYgMjYyIEwxOTYgMjUwIFoiIGZpbGw9IiNmZmQ5M2QiIHN0cm9rZT0iI2U2YTgwMCIgc3Ryb2tlLXdpZHRoPSIyIi8+CiAgPHBhdGggZD0iTTI2MiAyNTAgTDI3MCAyNjIgTDIzNCAyNjIgTDIyNCAyNTAgWiIgZmlsbD0iI2ZmZDkzZCIgc3Ryb2tlPSIjZTZhODAwIiBzdHJva2Utd2lkdGg9IjIiLz4KICA8cmVjdCB4PSIxMjgiIHk9IjE1MCIgd2lkdGg9IjI2IiBoZWlnaHQ9IjEwOCIgcng9IjYiIGZpbGw9IiM4YzZhM2YiIHN0cm9rZT0iIzVjNDUyNiIgc3Ryb2tlLXdpZHRoPSIzIi8+CiAgPHBhdGggZD0iTTEyOCAxNTAgTDE1NCAxNTAgTDE2NiAxNjQgTDExNiAxNjQgWiIgZmlsbD0iI2M5YTIyNyIgc3Ryb2tlPSIjOGM2YTNmIiBzdHJva2Utd2lkdGg9IjMiLz4KICA8dGV4dCB4PSIyMTAiIHk9IjIyIiBmb250LXNpemU9IjE4IiBmaWxsPSIjMmM2YjJjIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0iQ29taWMgU2FucyBNUywgc2Fucy1zZXJpZiIgZm9udC13ZWlnaHQ9ImJvbGQiPlByaXRodmlyYWogQ2hhdWhhbjwvdGV4dD4KPC9zdmc+", "alt": "Prithviraj Chauhan", "caption": "Prithviraj Chauhan"}}, {"id": "the-turkish-invasion-ocr-pdf-q10", "section": "Muhammad Ghori", "question": "State whether this statement is True or False: Muhammad Ghori established the Muslim rule in India.", "options": ["True", "False", "Only the Arabs ruled India", "Ghori never came to India"], "correctIndex": 0, "explanation": "Ghori became the founder of Turkish rule in India after beating the Rajputs.", "suggestImage": false, "image": null}, {"id": "the-turkish-invasion-ocr-pdf-q13", "section": "Muhammad Ghori", "question": "State whether this statement is True or False: Jaichandra defeated Muhammad Ghori.", "options": ["True", "False", "He defeated Mahmud of Ghazni", "He captured the city of Ghazni"], "correctIndex": 1, "explanation": "Ghori defeated and killed Jaichandra, so Jaichandra could not have beaten him.", "suggestImage": false, "image": null}, {"id": "the-turkish-invasion-ocr-pdf-q20", "section": "Muhammad Ghori", "question": "After defeating Jaichandra, Muhammad Ghori captured which region and became the founder of Turkish rule in India?", "options": ["Ganga-Yamuna Doab", "Sindh and Punjab", "Kashmir", "Gujarat"], "correctIndex": 0, "explanation": "After defeating Jaichandra, Ghori captured the Ganga-Yamuna Doab.", "suggestImage": false, "image": null}]}, {"id": "causes-of-the-turkish-success", "title": "Causes of the Turkish Success", "emoji": "🛡️", "questions": [{"id": "the-turkish-invasion-ocr-pdf-q12", "section": "Causes of the Turkish Success", "question": "State whether this statement is True or False: The Rajputs united to face the Turks.", "options": ["True", "False", "They always fought side by side", "Jaichandra and Prithviraj fought together"], "correctIndex": 1, "explanation": "The Rajput chiefs were jealous and disunited, so they never united against the Turks.", "suggestImage": false, "image": null}, {"id": "the-turkish-invasion-ocr-pdf-q21", "section": "Causes of the Turkish Success", "question": "Which of these was a cause of the Turkish success against the Rajputs?", "options": ["The Rajputs lacked political unity and fought among themselves", "The Rajputs had a huge standing army", "The Turks had no cavalry", "The Rajput chiefs always helped each other"], "correctIndex": 0, "explanation": "The Rajputs lacked unity and were too jealous to fight the Turks together.", "suggestImage": true, "imageNote": "picture of the swift Turkish cavalry", "image": {"type": "svg", "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0MjAgMzAwIj4KICA8cmVjdCB4PSIwIiB5PSIwIiB3aWR0aD0iNDIwIiBoZWlnaHQ9IjMwMCIgcng9IjE4IiBmaWxsPSIjZmZmNmUwIi8+CiAgPGVsbGlwc2UgY3g9IjIxMCIgY3k9IjI0OCIgcng9IjE5MCIgcnk9IjIwIiBmaWxsPSIjZjBkOWEwIiBzdHJva2U9IiNjOWEyMjciIHN0cm9rZS13aWR0aD0iMyIvPgogIDxnPgogICAgPHBhdGggZD0iTTkwIDE5MCBRNzAgMTUwIDk2IDEyOCBRMTIwIDEwOCAxNDggMTE4IFExNzYgMTI4IDE3OCAxNTIgUTE4NCAxMzAgMjA2IDEzOAogICAgICAgICAgICAgUTIyOCAxMzIgMjMyIDE1MCBRMjQwIDEzOCAyNTggMTQ2IFEyNzYgMTUwIDI2NCAxNzIgTDE3MCAxOTAgWiIKICAgICAgICAgIGZpbGw9IiNiMDcwM2MiIHN0cm9rZT0iIzdhNGEyMiIgc3Ryb2tlLXdpZHRoPSIzIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+CiAgICA8cGF0aCBkPSJNMTUwIDIxMiBMMTQyIDI0MCBNMTc2IDIxMCBMMTgyIDIzOCBNMjE0IDIwNiBMMjE2IDI0MCIgc3Ryb2tlPSIjN2E0YTIyIiBzdHJva2Utd2lkdGg9IjYiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgogICAgPGNpcmNsZSBjeD0iMTE4IiBjeT0iMTQ2IiByPSI3IiBmaWxsPSIjNWEzYTIwIi8+CiAgICA8cGF0aCBkPSJNMjM2IDE2OCBRMjUwIDEyMCAyNTAgOTIiIHN0cm9rZT0iIzhjNmEzZiIgc3Ryb2tlLXdpZHRoPSI4IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KICAgIDxwYXRoIGQ9Ik0yNTAgOTIgTDIzNCA4NCBNMjUwIDkyIEwyNjQgMTAwIiBzdHJva2U9IiM4YzZhM2YiIHN0cm9rZS13aWR0aD0iNCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+CiAgICA8Y2lyY2xlIGN4PSIyNDQiIGN5PSIxMDgiIHI9IjE1IiBmaWxsPSIjZmZkOWE4IiBzdHJva2U9IiNjOThkNWEiIHN0cm9rZS13aWR0aD0iMiIvPgogICAgPHBhdGggZD0iTTIzMiAxMDQgTDIzOCA5NiBMMjUyIDk0IEwyNTggMTAyIEwyNTAgMTEwIFoiIGZpbGw9IiNlMDVkNDQiIHN0cm9rZT0iI2IzNDAyZiIgc3Ryb2tlLXdpZHRoPSIyIi8+CiAgICA8cGF0aCBkPSJNMjM2IDExMiBMMjQ0IDExOCBMMjM0IDEyMCBaIiBmaWxsPSIjZTA1ZDQ0Ii8+CiAgICA8cGF0aCBkPSJNMTE4IDE0NiBMOTYgOTYgTDEyOCAxMTggWiIgZmlsbD0iI2E4YjhjOCIgc3Ryb2tlPSIjNmQ3YTgwIiBzdHJva2Utd2lkdGg9IjMiLz4KICA8L2c+CiAgPGcgb3BhY2l0eT0iMC43Ij4KICAgIDxjaXJjbGUgY3g9IjEyMCIgY3k9IjIyMCIgcj0iOCIgZmlsbD0iI2Q5YzlhMCIvPjxjaXJjbGUgY3g9IjE1MCIgY3k9IjIzMCIgcj0iMTAiIGZpbGw9IiNkOWM5YTAiLz48Y2lyY2xlIGN4PSIxODAiIGN5PSIyMjIiIHI9IjkiIGZpbGw9IiNkOWM5YTAiLz4KICA8L2c+CiAgPHRleHQgeD0iMjEwIiB5PSIyNiIgZm9udC1zaXplPSIxOCIgZmlsbD0iIzhhNWEyMCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9IkNvbWljIFNhbnMgTVMsIHNhbnMtc2VyaWYiIGZvbnQtd2VpZ2h0PSJib2xkIj5Td2lmdCBUdXJraWMgQ2F2YWxyeTwvdGV4dD4KPC9zdmc+", "alt": "Horseman with a lance", "caption": "Swift Turkic cavalry"}}]}, {"id": "arabs", "title": "Arabs", "emoji": "🕌", "questions": [{"id": "the-turkish-invasion-ocr-pdf-q17", "section": "Arabs", "question": "In CE 712, the Arabs attacked Sindh. Who was the Umayyad general who conquered Sindh and Punjab?", "options": ["Mahmud of Ghazni", "Muhammad-bin-Qasim", "Muhammad Ghori", "Prithviraj Chauhan"], "correctIndex": 1, "explanation": "Muhammad-bin-Qasim, an Umayyad general, conquered Sindh and Punjab.", "suggestImage": false, "image": null}, {"id": "the-turkish-invasion-ocr-pdf-q18", "section": "Arabs", "question": "Why could the Arabs NOT extend their rule in India?", "options": ["Their army was too small", "The Rajputs put up strong resistance", "They were afraid of the sea", "They wanted to go back to Baghdad"], "correctIndex": 1, "explanation": "The Rajputs put up strong resistance, so the Arabs could not extend their rule.", "suggestImage": false, "image": null}]}, {"id": "impact-of-these-invasions", "title": "Impact of These Invasions", "emoji": "🎨", "questions": [{"id": "the-turkish-invasion-ocr-pdf-q22", "section": "Impact of These Invasions", "question": "What emerged in India as a result of these invasions?", "options": ["A composite culture of art, architecture, food, dress, music and language", "The end of all trade with other countries", "India closed its borders to everyone", "The Turks left India forever"], "correctIndex": 0, "explanation": "The exchange of cultures created a composite culture in India.", "suggestImage": false, "image": null}]}]}</script>
+
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <linearGradient id="gradA" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4ecdc4"/><stop offset="100%" stop-color="#4f9de8"/>
+    </linearGradient>
+  </defs>
+</svg>
+
+<script>
+(() => {
+"use strict";
+/* ══════════════════════════════════════════════════════════════
+   html-quiz runtime — self-contained, no libraries, no network.
+   Question data is parsed from the #quiz-data script tag.
+   ══════════════════════════════════════════════════════════════ */
+
+// ── Data & config ─────────────────────────────────────────────
+const QUIZ = JSON.parse(document.getElementById('quiz-data').textContent.trim());
+const params = new URLSearchParams(location.search);
+const cfg = {
+  secs: clampInt(params.get('secs'), 30, 2, 60),   // seconds per question
+  max:  clampInt(params.get('max'), 25, 1, 100),   // (informational only; cap applied at build)
+  tts:  params.get('tts') !== 'off' && params.get('tts') !== '0'
+};
+function clampInt(v, d, lo, hi){ const n = parseInt(v,10); return Number.isFinite(n) ? Math.min(hi, Math.max(lo, n)) : d; }
+
+// Build a flat ordered question list across all sections.
+const FLAT = [];
+QUIZ.sections.forEach(s => {
+  s.questions.forEach(q => {
+    FLAT.push({ q, sectionId: s.id, sectionTitle: s.title });
+  });
+});
+const TOTAL = FLAT.length;
+
+// ── State machine ─────────────────────────────────────────────
+let state = {
+  mode: 'intro',        // intro | question | revealed | results
+  scope: null,          // null = all sections, else sectionId
+  list: [],             // ordered [{q, sectionId, sectionTitle}] for current scope
+  iq: 0,
+  answers: [],          // {qid, chosen(-1=timeout), status, pts}
+  score: 0,
+  runToken: 0,
+  transitioning: false
+};
+
+const elStage  = document.getElementById('stage');
+const elScore  = document.getElementById('score-chip');
+const elProg   = document.getElementById('progress-fill');
+const elTree   = document.getElementById('tree');
+const elSide   = document.getElementById('sidebar');
+const overlay  = document.getElementById('overlay');
+const elMute   = document.getElementById('mute-btn');
+let muted = false;
+
+// ── DOM helpers (NO innerHTML anywhere) ───────────────────────
+const h = (tag, cls, text) => {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (text !== undefined) e.textContent = text;   // untrusted text → textContent only
+  return e;
+};
+function clear(node){ while(node.firstChild) node.removeChild(node.firstChild); }
+
+// ── Sound (WebAudio, synthesised; lazy context for autoplay) ─
+let AC = null;
+function ensureAudio(){
+  if (!AC){ try{ AC = new (window.AudioContext || window.webkitAudioContext)(); }catch(e){ return null; } }
+  if (AC.state === 'suspended') AC.resume();
+  return AC;
+}
+function blip(freq, dur, type, delay, vol){
+  const ac = AC || ensureAudio();
+  if (!ac) return;
+  const t0 = ac.currentTime + (delay || 0);
+  const o = ac.createOscillator(), g = ac.createGain();
+  o.type = type || 'sine'; o.frequency.value = freq;
+  g.gain.setValueAtTime(vol || 0.14, t0);
+  g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+  o.connect(g); g.connect(ac.destination);
+  o.start(t0); o.stop(t0 + dur + 0.03);
+}
+const sTick   = () => blip(880, 0.06, 'square');
+const sCorrect= () => { blip(523,0.12,'sine',0); blip(659,0.12,'sine',0.11); blip(784,0.2,'sine',0.22); };
+const sWrong  = () => { blip(220,0.22,'triangle',0); blip(170,0.28,'triangle',0.14); };
+const sTimesUp= () => { blip(440,0.18,'triangle',0); blip(330,0.3,'triangle',0.16); };
+const sPop    = () => { blip(660,0.09,'sine',0,0.1); blip(880,0.1,'sine',0.07,0.08); };
+
+// ── TTS (Web Speech API) ──────────────────────────────────────
+function ttsAvailable(){ return 'speechSynthesis' in window; }
+function pickVoice(){
+  if (!ttsAvailable()) return null;
+  const vs = speechSynthesis.getVoices();
+  return vs.find(v => /^en/i.test(v.lang)) || vs[0] || null;
+}
+function speak(text, onEnd){
+  if (!cfg.tts || muted || !ttsAvailable() || !text) { if (onEnd) onEnd(); return; }
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.rate = 1; u.pitch = 1.05;
+  const v = pickVoice(); if (v) u.voice = v;
+  if (onEnd) u.onend = onEnd;
+  speechSynthesis.speak(u);
+}
+if ('speechSynthesis' in window){
+  speechSynthesis.onvoiceschanged = () => {};   // warm the voice list
+}
+
+// ── Timer ring ────────────────────────────────────────────────
+let rafId = 0;
+function stopTimer(){ if (rafId){ cancelAnimationFrame(rafId); rafId = 0; } }
+function startTimer(secs, token){
+  stopTimer();
+  const C = 2 * Math.PI * 30;                    // r=30 ring
+  const ring = document.getElementById('ring-fg');
+  const count = document.getElementById('t-count');
+  const wrap = document.getElementById('timer-wrap');
+  ring.setAttribute('stroke-dasharray', C);
+  ring.setAttribute('stroke-dashoffset', 0);
+  const deadline = performance.now() + secs * 1000;
+  let lastSec = Math.ceil(secs);
+  const loop = (now) => {
+    if (state.runToken !== token) return;        // stale — question changed
+    const remMs = deadline - now;
+    const remSec = Math.max(0, Math.ceil(remMs / 1000));
+    const frac = Math.max(0, Math.min(1, remMs / (secs * 1000)));
+    ring.setAttribute('stroke-dashoffset', String(C * (1 - frac)));   // SVG attr, not CSS
+    count.textContent = String(remSec);
+    wrap.classList.toggle('low', remSec <= 3);
+    if (remSec < lastSec){ lastSec = remSec; if (remSec > 0 && remSec <= 3 && state.mode === 'question') sTick(); }
+    if (remMs <= 0){ onTimeout(token); return; }
+    rafId = requestAnimationFrame(loop);
+  };
+  rafId = requestAnimationFrame(loop);
+}
+
+// ── Timer markup builder (returned to slot in question card) ──
+function timerMarkup(){
+  const wrap = h('div', 'timer-wrap'); wrap.id = 'timer-wrap';
+  const ns = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(ns, 'svg');
+  svg.setAttribute('viewBox', '0 0 74 74');
+  const bg = document.createElementNS(ns, 'circle');
+  bg.setAttribute('cx','37'); bg.setAttribute('cy','37'); bg.setAttribute('r','30'); bg.setAttribute('class','circle-bg');
+  const fg = document.createElementNS(ns, 'circle');
+  fg.setAttribute('cx','37'); fg.setAttribute('cy','37'); fg.setAttribute('r','30'); fg.setAttribute('class','circle-fg');
+  fg.id = 'ring-fg';
+  svg.appendChild(bg); svg.appendChild(fg);
+  const c = h('div', 't-count', String(cfg.secs)); c.id = 't-count';
+  wrap.appendChild(svg); wrap.appendChild(c);
+  return wrap;
+}
+
+// ── Confetti ──────────────────────────────────────────────────
+const CONF_COLORS = ['#ff6b6b','#ffd93d','#2ecc71','#4f9de8','#9b59b6','#ff9d2e'];
+function burstConfetti(n){
+  const layer = document.getElementById('confetti');
+  for (let i = 0; i < n; i++){
+    const c = h('div', 'confetti');
+    c.style.left = (Math.random() * 100) + 'vw';
+    c.style.background = CONF_COLORS[i % CONF_COLORS.length];
+    c.style.setProperty('--rx', (Math.random() * 540 - 270) + 'deg');
+    c.style.animationDuration = (1.6 + Math.random() * 1.6) + 's';
+    c.style.animationDelay = (Math.random() * 0.5) + 's';
+    c.style.width = (7 + Math.random() * 8) + 'px';
+    c.style.height = (7 + Math.random() * 8) + 'px';
+    c.addEventListener('animationend', () => c.remove());
+    layer.appendChild(c);
+  }
+}
+
+// ── Tree building ─────────────────────────────────────────────
+function renderTree(){
+  clear(elTree);
+  QUIZ.sections.forEach(sec => {
+    const node = h('div', 'tree-node');
+    node.setAttribute('data-sec', sec.id);
+    const arrow = h('span', 'arrow', '▶');
+    const dot = h('span', 'dot');
+    dot.style.background = sectionColor(sec.id);
+    const label = h('span', null, sec.emoji + ' ' + sec.title);
+    const badge = h('span', 'badge', String(sec.questions.length));
+    node.appendChild(arrow); node.appendChild(dot); node.appendChild(label); node.appendChild(badge);
+    node.addEventListener('click', () => {
+      arrow.classList.toggle('open');
+      const kids = document.getElementById('children-' + sec.id);
+      if (kids) kids.classList.toggle('open');
+    });
+    elTree.appendChild(node);
+
+    const kids = h('div', 'tree-children');
+    kids.id = 'children-' + sec.id;
+    sec.questions.forEach(q => {
+      const leaf = h('div', 'tree-node tree-leaf');
+      leaf.setAttribute('data-qid', q.id);
+      const qn = h('span', null, 'Q' + (FLAT.length ? '' : '') + q.id.split('-q')[1]);
+      const st = h('span', 'st');
+      leaf.appendChild(h('span', 'arrow', '•'));
+      leaf.appendChild(qn); leaf.appendChild(st);
+      leaf.addEventListener('click', () => startAtSection(sec.id, q.id));
+      kids.appendChild(leaf);
+    });
+    elTree.appendChild(kids);
+  });
+}
+function sectionColor(id){
+  const pal = ['#4ecdc4','#ffb300','#9b59b6','#4f9de8','#ff6b6b','#2ecc71','#e67e22','#e84393'];
+  let x = 0; for (const ch of id) x = (x + ch.charCodeAt(0)) % pal.length;
+  return pal[x];
+}
+function updateTreeStatus(){
+  const answered = new Map(state.answers.map(a => [a.qid, a.status]));
+  document.querySelectorAll('#tree .tree-leaf').forEach(leaf => {
+    const st = leaf.querySelector('.st');
+    const qid = leaf.getAttribute('data-qid');
+    const s = answered.get(qid);
+    st.textContent = '';
+    st.className = 'st';
+    if (s === 'correct'){ st.textContent = '✓'; st.classList.add('good'); }
+    else if (s === 'wrong'){ st.textContent = '✗'; st.classList.add('bad'); }
+    else if (s === 'timeout'){ st.textContent = '⏰'; st.classList.add('slow'); }
+  });
+  // highlight active section node
+  document.querySelectorAll('#tree .tree-node[data-sec]').forEach(n => {
+    n.classList.toggle('active', state.scope === null || n.getAttribute('data-sec') === state.scope);
+  });
+}
+
+// ── Scope / nav ───────────────────────────────────────────────
+function shuffle(arr){
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--){ const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+  return a;
+}
+function startScope(scopeId){
+  state.scope = scopeId || null;
+  if (state.scope) {
+    state.list = FLAT.filter(f => f.sectionId === state.scope);
+  } else {
+    // group by section, shuffle sections, keep questions in source order within each
+    const bySec = [];
+    const secOrder = [];
+    FLAT.forEach(f => { if (!secOrder.includes(f.sectionId)) secOrder.push(f.sectionId); });
+    secOrder.forEach(sid => bySec.push(FLAT.filter(f => f.sectionId === sid)));
+    state.list = shuffle(bySec).flat();
+  }
+  state.iq = 0; state.answers = []; state.score = 0; state.runToken++;
+  updateScore();
+  if (state.list.length === 0){ renderIntro(); return; }
+  renderQuestion();
+}
+function startAtSection(secId, qid){
+  state.scope = secId;
+  state.list = FLAT.filter(f => f.sectionId === secId);
+  const idx = state.list.findIndex(f => f.q.id === qid);
+  state.iq = idx >= 0 ? idx : 0;
+  state.answers = []; state.score = 0; state.runToken++;
+  updateScore();
+  closeDrawer();
+  renderQuestion();
+}
+function currentQ(){
+  const f = state.list[state.iq];
+  return f ? f.q : null;
+}
+
+// ── Views ─────────────────────────────────────────────────────
+function renderIntro(){
+  state.mode = 'intro';
+  clear(elStage);
+  const card = h('div', 'card intro card-in');
+  const big = h('div', 'big-emoji', QUIZ.emoji || '🧠');
+  const title = h('h1', null, QUIZ.title || 'The Turkish Invasion');
+  const sub = h('div', 'sub', QUIZ.subtitle || 'Test yourself & learn with fun quiz!');
+  const meta = h('div', 'meta-chip', '🎯 ' + TOTAL + ' questions · ⭐ up to ' + (TOTAL * 10) + ' points · ⏱️ ' + cfg.secs + 's each');
+  const start = h('button', 'big-btn', '▶ Start Quiz');
+  start.addEventListener('click', () => { ensureAudio(); state.runToken++; startScope(null); });
+  card.appendChild(big); card.appendChild(title); card.appendChild(sub);
+  const row = h('div', 'ghost-row');
+  const samp = h('button', 'big-btn ghost', '🔊 Hear me');
+  samp.addEventListener('click', () => { ensureAudio(); speak('Hello friend! Let’s play and learn together!'); });
+  const imgAll = h('div', 'hint-line', 'Open a section in the left menu to play a single topic.');
+  row.appendChild(samp);
+  card.appendChild(meta); card.appendChild(start); card.appendChild(row); card.appendChild(imgAll);
+  elStage.appendChild(card);
+  updateProgress(0);
+}
+function speakQuestion(q, onEnd){
+  const all = 'Question ' + q.question + '. Options: ' +
+    q.options.map((o, i) => String.fromCharCode(65 + i) + '. ' + o).join('. ') + '.';
+  speak(all, onEnd);
+}
+function renderQuestion(){
+  state.mode = 'question';
+  const q = currentQ();
+  if (!q){ renderResults(); return; }
+  const token = ++state.runToken;
+  stopTimer();
+  clear(elStage);
+  const card = h('div', 'card card-in');
+  const head = h('div', 'q-head');
+  head.appendChild(h('div', 'q-progress', 'Question ' + (state.iq + 1) + ' of ' + state.list.length));
+  head.appendChild(timerMarkup());
+  card.appendChild(head);
+
+  // question text
+  card.appendChild(h('div', 'q-text', q.question));
+
+  // optional image
+  if (q.image){
+    const iw = h('div', 'qimg-wrap');
+    if (q.image.type === 'emoji'){
+      iw.appendChild(h('div', 'emoji-big', q.image.src));
+    } else {
+      const img = h('img', 'qimg');
+      img.setAttribute('src', q.image.src);
+      img.setAttribute('alt', q.image.alt || '');
+      iw.appendChild(img);
+    }
+    if (q.image.caption) iw.appendChild(h('div', 'caption', q.image.caption));
+    card.appendChild(iw);
+  }
+
+  // options
+  const opts = h('div', 'options');
+  q.options.forEach((text, i) => {
+    const b = h('button', 'opt');
+    b.setAttribute('data-idx', String(i));
+    b.appendChild(h('span', 'key', String.fromCharCode(65 + i)));
+    b.appendChild(h('span', null, text));
+    b.appendChild(h('span', 'mark'));
+    b.addEventListener('click', () => { ensureAudio(); if (state.mode === 'question') answer(i); });
+    opts.appendChild(b);
+  });
+  card.appendChild(opts);
+
+  // speak button
+  const foot = h('div', 'q-foot');
+  const spk = h('button', 'speak-btn', '🔊 Read aloud');
+  spk.addEventListener('click', () => { ensureAudio(); speakQuestion(q); });
+  foot.appendChild(spk);
+  card.appendChild(foot);
+  elStage.appendChild(card);
+
+  updateProgress(state.iq / state.list.length);
+  speakQuestion(q, () => { if (state.runToken === token && state.mode === 'question') startTimer(cfg.secs, token); });
+}
+function reveal(q, status, chosen){
+  state.mode = 'revealed';
+  stopTimer();
+  state.answers.push({ qid: q.id, chosen, status, pts: status === 'correct' ? 10 : 0 });
+  if (status === 'correct') state.score += 10;
+  updateScore();
+  updateTreeStatus();
+  burstConfetti(status === 'correct' ? 60 : 0);
+
+  const card = document.querySelector('#stage .card');
+  // banner
+  const banner = h('div', 'reveal-banner ' + (status === 'correct' ? 'good' : status === 'wrong' ? 'bad' : 'slow'));
+  const icon = status === 'correct' ? '✅' : status === 'wrong' ? '❌' : '⏰';
+  const msg = status === 'correct' ? 'Correct! Great job!' : status === 'wrong' ? 'Oops! Not quite.' : "Time's up!";
+  banner.appendChild(h('span', null, icon + ' ' + msg));
+  card.appendChild(banner);
+  // explanation
+  const exp = h('div', 'reveal-exp');
+  const b = h('b', null, '💡 '); b.textContent = '💡 ' + q.options[q.correctIndex];
+  exp.appendChild(b);
+  exp.appendChild(h('div', null, q.explanation));
+  card.appendChild(exp);
+  // highlight options
+  const buttons = card.querySelectorAll('.opt');
+  buttons.forEach((btn, i) => {
+    btn.disabled = true;
+    const mark = btn.querySelector('.mark');
+    if (i === q.correctIndex){ btn.classList.add('correct'); mark.textContent = '✓'; }
+    else if (i === chosen){ btn.classList.add('wrong-chosen'); mark.textContent = '✗'; }
+    else btn.classList.add('dim');
+  });
+  // next row
+  const row = h('div', 'next-row');
+  const pts = h('div', 'pts-gain ' + (status === 'correct' ? 'gain' : 'none'),
+                status === 'correct' ? '+10 points' : '+0 points');
+  const nb = h('button', 'next-btn', state.iq + 1 >= state.list.length ? 'See results 🏆' : 'Next ➡️');
+  nb.addEventListener('click', () => { state.iq++; if (state.iq >= state.list.length) renderResults(); else renderQuestion(); });
+  row.appendChild(pts); row.appendChild(nb);
+  const head = card.querySelector('.q-head');
+  if (head) head.appendChild(row); else card.appendChild(row);
+  // duplicate next-row at bottom for easy access
+  const row2 = h('div', 'next-row');
+  row2.appendChild(h('div', 'pts-gain ' + (status === 'correct' ? 'gain' : 'none'),
+                status === 'correct' ? '+10 points' : '+0 points'));
+  const nb2 = h('button', 'next-btn', state.iq + 1 >= state.list.length ? 'See results 🏆' : 'Next ➡️');
+  nb2.addEventListener('click', () => { state.iq++; if (state.iq >= state.list.length) renderResults(); else renderQuestion(); });
+  row2.appendChild(nb2);
+  card.appendChild(row2);
+}
+function answer(i){
+  const q = currentQ();
+  ensureAudio();
+  if (i === q.correctIndex) sCorrect(); else sWrong();
+  reveal(q, i === q.correctIndex ? 'correct' : 'wrong', i);
+}
+function onTimeout(token){
+  if (state.runToken !== token) return;   // stale
+  const q = currentQ();
+  ensureAudio(); sTimesUp();
+  reveal(q, 'timeout', -1);
+  speak(q.explanation);
+}
+function renderResults(){
+  state.mode = 'results';
+  stopTimer();
+  clear(elStage);
+  const card = h('div', 'card results card-in');
+  const count = state.list.length;
+  const maxPts = count * 10;
+  const words = pctWord(state.score / maxPts);
+  card.appendChild(h('div', 'big-emoji', words.emoji));
+  card.appendChild(h('h2', null, words.title));
+  card.appendChild(h('div', 'sub', 'You scored ' + state.score + ' of ' + maxPts + ' points'));
+
+  // score ring
+  const rw = h('div', 'ring-wrap');
+  const ns = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(ns, 'svg');
+  svg.setAttribute('viewBox', '0 0 120 120');
+  const bg = document.createElementNS(ns, 'circle');
+  bg.setAttribute('cx','60'); bg.setAttribute('cy','60'); bg.setAttribute('r','45'); bg.setAttribute('class','rbg');
+  const fg = document.createElementNS(ns, 'circle');
+  fg.setAttribute('cx','60'); fg.setAttribute('cy','60'); fg.setAttribute('r','45'); fg.setAttribute('class','rfg');
+  fg.id = 'ring-fg-r';
+  svg.appendChild(bg); svg.appendChild(fg);
+  rw.appendChild(svg);
+  const rs = h('div', 'rscore');
+  const n = h('div', 'n', String(state.score)); n.id = 'rscore-n'; n.className = 'n rscore-n';
+  rs.appendChild(n); rs.appendChild(h('div', 'pts', 'points'));
+  rw.appendChild(rs);
+  card.appendChild(rw);
+
+  const stars = h('div', 'stars', '⭐'.repeat(words.stars) + '☆'.repeat(5 - words.stars));
+  card.appendChild(stars);
+
+  // review
+  const review = h('div', 'review');
+  state.answers.forEach((a, i) => {
+    const f = state.list[i];
+    const row = h('div', 'review-row');
+    row.appendChild(h('div', 'qi', 'Q' + (i + 1)));
+    const body = h('div', 'qbody');
+    body.appendChild(h('div', 'qq', f.q.question));
+    const your = a.chosen >= 0 ? f.q.options[a.chosen] : 'No answer';
+    body.appendChild(h('div', 'aa', 'Your answer: ' + your));
+    body.appendChild(h('div', 'aa', '✅ ' + f.q.options[f.q.correctIndex]));
+    row.appendChild(body);
+    row.appendChild(h('div', 'pts ' + (a.pts ? 'gain' : 'none'), (a.pts ? '+' : '') + a.pts));
+    review.appendChild(row);
+  });
+  card.appendChild(review);
+
+  if (QUIZ.truncated){
+    card.appendChild(h('div', 'hint-line', 'Showing ' + QUIZ.truncated.shown + ' of ' + QUIZ.truncated.total + ' questions.'));
+  }
+
+  const row2 = h('div', 'ghost-row');
+  const again = h('button', 'big-btn ghost', '🔄 Play again');
+  again.addEventListener('click', () => { burstConfetti(0); startScope(state.scope); });
+  const menu = h('button', 'big-btn ghost', '🏠 Menu');
+  menu.addEventListener('click', () => renderIntro());
+  row2.appendChild(again); row2.appendChild(menu);
+  card.appendChild(row2);
+  elStage.appendChild(card);
+
+  // deferred: animate ring + settle score number + confetti
+  setTimeout(() => {
+    const C = 283;
+    const fgR = document.getElementById('ring-fg-r');
+    fgR.setAttribute('stroke-dashoffset', String(C * (1 - (state.score / maxPts))));
+    const num = document.getElementById('rscore-n');
+    if (num) num.textContent = String(state.score);   // settle immediately so chip & ring always agree
+    burstConfetti(140);
+    sPop();
+  }, 60);
+}
+function pctWord(p){
+  if (p >= 0.9)  return { emoji:'🏆', title:'Amazing!', stars:5 };
+  if (p >= 0.7)  return { emoji:'🌟', title:'Great job!', stars:4 };
+  if (p >= 0.5)  return { emoji:'😄', title:'Good try!', stars:3 };
+  if (p >= 0.3)  return { emoji:'🙂', title:'Keep going!', stars:2 };
+  return { emoji:'💪', title:'Practice makes better!', stars:1 };
+}
+function updateScore(){ elScore.textContent = '⭐ Score: ' + state.score; }
+function updateProgress(p){
+  if (elProg) elProg.style.width = Math.round(Math.max(0, Math.min(1, p)) * 100) + '%';
+  // track is shared for all-scope run; on intro show 0
+}
+
+// ── Mobile drawer ─────────────────────────────────────────────
+function closeDrawer(){
+  elSide.classList.remove('open'); overlay.classList.remove('open');
+}
+document.getElementById('hamburger').addEventListener('click', () => {
+  elSide.classList.toggle('open'); overlay.classList.toggle('open');
+});
+overlay.addEventListener('click', closeDrawer);
+document.getElementById('sidebar-home').addEventListener('click', () => { closeDrawer(); renderIntro(); });
+elMute.addEventListener('click', () => {
+  muted = !muted;
+  elMute.textContent = muted ? '🔇' : '🔊';
+  if (muted && 'speechSynthesis' in window) speechSynthesis.cancel();
+});
+
+// ── Boot ──────────────────────────────────────────────────────
+renderTree();
+renderIntro();
+})();
+</script>
+</body>
+</html>
