@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Grade 3 All Topics Quiz — Quiz</title>
+<style>
+  /* ══════════════ KID-FRIENDLY PALETTE (bright daylight) ══════════════ */
+  :root {
+    --bg: linear-gradient(160deg, #fff8e1 0%, #e0f7fa 60%, #dff4ff 100%);
+    --panel: #ffffff;
+    --ink: #2d3436;
+    --ink-soft: #6b7a85;
+    --coral: #ff6b6b;
+    --sunny: #ffd93d;
+    --teal: #4ecdc4;
+    --sky: #4f9de8;
+    --violet: #9b59b6;
+    --green: #2ecc71;
+    --amber: #ffb300;
+    --red: #ff6b6b;
+    --sidebar-w: 264px;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { height:100%; }
+  body {
+    background: var(--bg); color: var(--ink); overflow:hidden;
+    font-family: 'Comic Sans MS','Chalkboard SE','Marker Felt','Segoe UI','Trebuchet MS',sans-serif;
+    display:flex;
+  }
+
+  /* ── Sidebar tree ── */
+  .sidebar {
+    width: var(--sidebar-w); min-width: var(--sidebar-w); height:100vh;
+    background: rgba(255,255,255,0.82); border-right:1px solid rgba(0,0,0,0.08);
+    display:flex; flex-direction:column; z-index:20; overflow-y:auto;
+    backdrop-filter: blur(4px);
+    transition: transform .3s ease;
+  }
+  .sidebar-header {
+    padding:1.1rem 1rem .8rem; border-bottom:1px solid rgba(0,0,0,0.08);
+    font-size:1.05rem; font-weight:bold; cursor:pointer; display:flex; gap:.4rem; align-items:center;
+    flex-shrink:0;
+  }
+  .sidebar-header .ticker { color:var(--sky); }
+  .tree { flex:1; padding:.5rem 0; overflow-y:auto; }
+  .tree-node {
+    padding:.5rem .8rem .5rem 1rem; cursor:pointer; display:flex; align-items:center; gap:.45rem;
+    font-size:.86rem; transition: background .15s; border-left:3px solid transparent;
+    user-select:none; color:var(--ink);
+  }
+  .tree-node:hover { background:rgba(79,157,232,0.1); }
+  .tree-node.active { border-left-color: var(--amber); background:rgba(255,217,61,0.14); }
+  .tree-node .arrow { font-size:.65rem; width:12px; text-align:center; flex-shrink:0; transition:transform .2s; color:var(--ink-soft); }
+  .tree-node .arrow.open { transform:rotate(90deg); }
+  .tree-node .dot { width:11px; height:11px; border-radius:50%; flex-shrink:0; }
+  .tree-node .badge {
+    margin-left:auto; font-size:.68rem; background:rgba(78,205,196,0.2); color:var(--teal);
+    border-radius:999px; padding:.05rem .5rem; flex-shrink:0;
+  }
+  .tree-children { overflow:hidden; max-height:0; transition:max-height .3s ease; }
+  .tree-children.open { max-height:600px; }
+  .tree-children .tree-node { padding-left:2.2rem; font-size:.8rem; }
+  .tree-leaf .st {
+    margin-left:auto; font-size:.72rem; width:1.1rem; text-align:center; flex-shrink:0;
+  }
+  .st.good { color:var(--green); }
+  .st.bad { color:var(--red); }
+  .st.slow { color:var(--amber); }
+
+  /* ── Main column ── */
+  .main { flex:1; display:flex; flex-direction:column; position:relative; z-index:5; min-width:0; }
+  .topbar {
+    padding:.6rem 1.1rem; display:flex; align-items:center; gap:.8rem; flex-shrink:0;
+    background:rgba(255,255,255,0.6); border-bottom:1px solid rgba(0,0,0,0.08);
+  }
+  .topbar .app-title { font-size:1.05rem; font-weight:bold; display:flex; gap:.4rem; align-items:center; }
+  .topbar .spacer { flex:1; }
+  .score-chip {
+    background:#fff; border:2px solid var(--sunny); color:var(--ink); border-radius:999px;
+    padding:.3rem .9rem; font-size:.9rem; font-weight:bold; box-shadow:0 2px 8px rgba(0,0,0,0.08);
+  }
+  .mute-btn {
+    background:#fff; border:2px solid rgba(0,0,0,0.12); border-radius:999px; cursor:pointer;
+    font-size:1rem; padding:.25rem .6rem; font-family:inherit;
+  }
+  .mute-btn:hover { border-color:var(--sky); }
+  .progress-track {
+    height:8px; border-radius:99px; background:rgba(0,0,0,0.08); overflow:hidden; flex:1; max-width:260px;
+  }
+  .progress-fill { height:100%; width:0%; background:linear-gradient(90deg,var(--teal),var(--sky)); border-radius:99px; transition:width .4s ease; }
+
+  /* ── Stage / views ── */
+  .stage { flex:1; display:flex; justify-content:center; align-content:center; padding:1.4rem; overflow:auto; min-height:0; }
+  .card {
+    background:var(--panel); border-radius:22px; box-shadow:0 14px 44px rgba(45,52,54,0.16);
+    width:100%; max-width:720px; padding:1.8rem 2rem 2rem; position:relative;
+    border:1px solid rgba(0,0,0,0.05); margin:auto;
+  }
+
+  /* Intro */
+  .intro { text-align:center; }
+  .intro .big-emoji { font-size:4rem; animation: bob 3s ease-in-out infinite; display:inline-block; }
+  .intro h1 { font-size:2rem; margin:.4rem 0 .3rem; background:linear-gradient(135deg,var(--sky),var(--violet)); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
+  .intro .sub { color:var(--ink-soft); margin-bottom:1.2rem; }
+  .intro .meta-chip { color:var(--ink-soft); font-size:.9rem; margin-bottom:1.4rem; }
+  .big-btn {
+    font-family:inherit; font-size:1.15rem; font-weight:bold; color:#fff; cursor:pointer;
+    background:linear-gradient(135deg,var(--green),#27ae60); border:none; border-radius:999px;
+    padding:.85rem 2.2rem; box-shadow:0 6px 18px rgba(46,204,113,0.4); transition:transform .15s, box-shadow .15s;
+  }
+  .big-btn:hover { transform:translateY(-2px); }
+  .big-btn.ghost { background:#fff; color:var(--ink); box-shadow:0 2px 8px rgba(0,0,0,0.1); border:2px solid rgba(0,0,0,0.1); margin-left:.7rem; }
+  .ghost-row { margin-top:1.1rem; display:flex; justify-content:center; gap:.4rem; flex-wrap:wrap; }
+  .hint-line { font-size:.82rem; color:var(--ink-soft); margin-top:1rem; }
+
+  /* Question */
+  .q-head { display:flex; justify-content:space-between; align-items:center; gap:.6rem; flex-wrap:wrap; }
+  .q-progress { font-size:.82rem; color:var(--ink-soft); font-weight:bold; padding:.2rem 0; }
+  .timer-wrap { position:relative; width:74px; height:74px; flex-shrink:0; }
+  .timer-wrap svg { width:74px; height:74px; transform:rotate(-90deg); }
+  .timer-wrap .circle-bg { fill:none; stroke:rgba(0,0,0,0.08); stroke-width:7; }
+  .timer-wrap .circle-fg { fill:none; stroke:var(--sky); stroke-width:7; stroke-linecap:round; }
+  .timer-wrap .t-count {
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    font-size:1.5rem; font-weight:bold; color:var(--ink);
+  }
+  .timer-wrap.low .circle-fg { stroke:var(--red); }
+  .timer-wrap.low .t-count { color:var(--red); }
+  .q-text { font-size:1.35rem; line-height:1.45; margin:.7rem 0 1rem; font-weight:bold; }
+  .qimg-wrap { text-align:center; margin:.2rem 0 1rem; }
+  .qimg-wrap img.qimg {
+    max-width:100%; max-height:240px; border-radius:14px; object-fit:contain;
+    border:1px solid rgba(0,0,0,0.08);
+  }
+  .qimg-wrap .emoji-big { font-size:4.2rem; animation: pop 0.5s ease; }
+  .qimg-wrap .caption { font-size:.78rem; color:var(--ink-soft); margin-top:.35rem; }
+
+  .options { display:flex; flex-direction:column; gap:.7rem; }
+  .opt {
+    display:flex; align-items:center; gap:.8rem; width:100%; text-align:left;
+    font-family:inherit; font-size:1.02rem; color:var(--ink); cursor:pointer;
+    background:#f7fbfc; border:2px solid rgba(0,0,0,0.08); border-radius:14px;
+    padding:.72rem 1rem; min-height:48px; transition:border-color .15s, background .15s, transform .1s;
+    position:relative; overflow:hidden;
+  }
+  .opt:hover { border-color:var(--sky); background:#eef6ff; transform:translateY(-1px); }
+  .opt .key {
+    width:30px; height:30px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center;
+    background:#fff; border:2px solid rgba(0,0,0,0.14); font-size:.9rem; font-weight:bold; color:var(--ink-soft);
+  }
+  .opt.correct { border-color:var(--green); background:#eafaf1; }
+  .opt.correct .key { border-color:var(--green); color:var(--green); background:#d5f5e3; }
+  .opt.wrong-chosen { border-color:var(--red); background:#fdecea; }
+  .opt.wrong-chosen .key { border-color:var(--red); color:var(--red); background:#fadbd8; }
+  .opt.dim { opacity:.55; }
+  .opt .mark { margin-left:auto; font-size:1.1rem; }
+
+  /* Reveal banner */
+  .reveal-banner {
+    margin-top:1rem; border-radius:14px; padding:.8rem 1rem; font-size:1.02rem; font-weight:bold;
+    display:flex; gap:.6rem; align-items:center; animation: slideUp .35s ease both;
+  }
+  .reveal-banner.good { background:#eafaf1; color:#1e8449; }
+  .reveal-banner.bad { background:#fdecea; color:#c0392b; }
+  .reveal-banner.slow { background:#fef5e7; color:#b9770e; }
+  .reveal-exp { margin-top:.6rem; background:#f4f8fa; border-radius:12px; padding:.8rem 1rem; font-size:.95rem; color:var(--ink-soft); line-height:1.5; }
+  .reveal-exp b { color:var(--ink); }
+  .next-row { display:flex; align-items:center; justify-content:space-between; gap:.6rem; }
+  .pts-gain { font-weight:bold; font-size:1rem; }
+  .pts-gain.gain { color:var(--green); }
+  .pts-gain.none { color:var(--ink-soft); }
+  .next-btn {
+    font-family:inherit; font-size:1.02rem; font-weight:bold; cursor:pointer; color:#fff;
+    background:linear-gradient(135deg,var(--sky),#2e86de); border:none; border-radius:999px;
+    padding:.7rem 1.7rem; box-shadow:0 4px 14px rgba(79,157,232,0.4); transition:transform .15s;
+  }
+  .next-btn:hover { transform:translateY(-2px); }
+
+  .q-foot { display:flex; justify-content:center; margin-top:1rem; }
+  .speak-btn {
+    font-family:inherit; font-size:.9rem; color:var(--ink-soft); cursor:pointer; background:none;
+    border:1px solid rgba(0,0,0,0.1); border-radius:999px; padding:.35rem 1rem;
+  }
+  .speak-btn:hover { border-color:var(--sky); color:var(--sky); }
+
+  /* Results */
+  .results { text-align:center; }
+  .results h2 { font-size:1.7rem; margin-bottom:.3rem; }
+  .results .sub { color:var(--ink-soft); margin-bottom:1rem; }
+  .ring-wrap { width:150px; height:150px; margin:0 auto .6rem; position:relative; }
+  .ring-wrap svg { width:150px; height:150px; transform:rotate(-90deg); }
+  .ring-wrap .rbg { fill:none; stroke:rgba(0,0,0,0.08); stroke-width:12; }
+  .ring-wrap .rfg { fill:none; stroke:url(#gradA); stroke-width:12; stroke-linecap:round;
+    stroke-dasharray:283; stroke-dashoffset:283; transition:stroke-dashoffset 1s ease; }
+  .ring-wrap .rscore {
+    position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
+  }
+  .ring-wrap .rscore .n { font-size:2rem; font-weight:bold; }
+  .ring-wrap .rscore .pts { font-size:.8rem; color:var(--ink-soft); }
+  .stars { font-size:1.9rem; letter-spacing:.15rem; margin:.2rem 0 .9rem; }
+  .review { text-align:left; margin:1rem 0; }
+  .review-row { display:flex; gap:.7rem; padding:.6rem .4rem; border-bottom:1px solid rgba(0,0,0,0.06); font-size:.86rem; align-items:flex-start; }
+  .review-row .qi { font-weight:bold; color:var(--ink-soft); min-width:1.6rem; }
+  .review-row .qbody { flex:1; }
+  .review-row .qbody .qq { font-weight:bold; margin-bottom:.15rem; }
+  .review-row .qbody .aa { color:var(--ink-soft); }
+  .review-row .pts { font-weight:bold; flex-shrink:0; }
+  .review-row .pts.gain { color:var(--green); }
+  .review-row .pts.none { color:var(--ink-soft); }
+
+  /* Confetti */
+  #confetti { position:fixed; inset:0; pointer-events:none; z-index:200; overflow:hidden; }
+  .confetti {
+    position:absolute; top:-3vh; width:12px; height:12px; border-radius:2px;
+    animation: confetti-fall linear forwards;
+  }
+
+  /* Hamburger / overlay (mobile) */
+  .hamburger { display:none; position:fixed; top:.7rem; left:.7rem; z-index:40;
+    background:#fff; border:1px solid rgba(0,0,0,0.15); border-radius:10px;
+    padding:.35rem .65rem; font-size:1.25rem; cursor:pointer; font-family:inherit; }
+  .overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:19; }
+  .overlay.open { display:block; }
+
+  /* Keyframes */
+  @keyframes bob { 0%,100%{ transform:translateY(0);} 50%{ transform:translateY(-8px);} }
+  @keyframes pop { 0%{ transform:scale(0.4); opacity:0;} 100%{ transform:scale(1); opacity:1;} }
+  @keyframes slideUp { from{ opacity:0; transform:translateY(14px);} to{ opacity:1; transform:translateY(0);} }
+  @keyframes cardIn { from{ opacity:0; transform:translateY(20px) scale(0.97);} to{ opacity:1; transform:none;} }
+  @keyframes confetti-fall { to { transform:translateY(108vh) rotate(var(--rx,180deg)); opacity:.9; } }
+  .card-in { animation:cardIn .35s ease both; }
+
+  @media (max-width:768px) {
+    .sidebar { position:fixed; left:0; top:0; bottom:0; transform:translateX(-100%); z-index:100; box-shadow:0 0 40px rgba(0,0,0,0.2); }
+    .sidebar.open { transform:translateX(0); }
+    .hamburger { display:block; }
+    .card { padding:1.4rem 1.2rem 1.6rem; }
+    .q-text { font-size:1.15rem; }
+  }
+</style>
+</head>
+<body>
+
+<div id="confetti"></div>
+
+<button class="hamburger" id="hamburger">☰</button>
+<div class="overlay" id="overlay"></div>
+
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header" id="sidebar-home"><span class="ticker">🧠</span> <span id="side-title">Grade 3 All Topics Quiz</span></div>
+  <div class="tree" id="tree"></div>
+</aside>
+
+<main class="main">
+  <div class="topbar">
+    <span class="app-title"><span>🧠</span><span id="top-title" title="Grade 3 All Topics Quiz">Grade 3 All Topics Quiz</span></span>
+    <span class="spacer"></span>
+    <div class="progress-track" title="Progress"><div class="progress-fill" id="progress-fill"></div></div>
+    <span class="score-chip" id="score-chip">⭐ Score: 0</span>
+    <button class="mute-btn" id="mute-btn" title="Toggle read-aloud (TTS)">🔊</button>
+  </div>
+  <div class="stage" id="stage"></div>
+</main>
+
+<script type="application/json" id="quiz-data">{"title": "Grade 3 All Topics Quiz", "subtitle": "Environment, kindness & knowing yourself — 10 fun topics!", "emoji": "🧠", "sections": [{"id": "water-scarcity-bangalore", "title": "Water Scarcity in Bangalore", "emoji": "💧", "questions": [{"id": "water-scarcity-bangalore-q1", "section": "Water Scarcity in Bangalore", "question": "Where does most of the tap water in Bengaluru come from?", "options": ["The Cauvery River, about 100 km away", "Rain that falls on the city rooftops", "Water kept in big tanks on top of houses", "The sea, sent up through underground pipes"], "correctIndex": 0, "explanation": "Bengaluru pumps water from the KRS dam on the Cauvery river, far uphill from the city.", "suggestImage": false}, {"id": "water-scarcity-bangalore-q2", "section": "Water Scarcity in Bangalore", "question": "Why are Bengaluru's lakes and wells low in the summer?", "options": ["Rain falls mostly in the short monsoon season, so the long dry months leave little water", "The hot sun drinks up the lake water every afternoon", "Bangalore gets no rain at all, in any month of the year", "Fish and ducks in the lakes drink all the water"], "correctIndex": 0, "explanation": "Most of the year's rain falls in a few monsoon months, so summer is naturally a dry, low-water time.", "suggestImage": false}, {"id": "water-scarcity-bangalore-q3", "section": "Water Scarcity in Bangalore", "question": "Bengaluru's population has grown to more than 13 million. What makes water short?", "options": ["Many more people need water every day, and the water supply has not grown as fast", "More people make the groundwater dirty and slow to refill", "More people drink the rainwater before it reaches the ground", "More people mean the KRS dam is farther away from the city"], "correctIndex": 0, "explanation": "The city grew faster than its new water sources, so the same water must serve many more people.", "suggestImage": false}, {"id": "water-scarcity-bangalore-q4", "section": "Water Scarcity in Bangalore", "question": "Bengaluru was once called the 'city of lakes'. What happened to most of its lakes?", "options": ["They were filled up or built over, and only about 80 are left today", "They were all cleaned, so now they hold even more water", "They were joined together to make one very big lake", "They were dug deeper so that boats could sail in them"], "correctIndex": 0, "explanation": "Over 1,400 lakes once filled this land, but buildings covered most of them.", "suggestImage": true, "imageNote": "A dry city lake with cracked mud and stones where water should be, with apartment buildings close by.", "image": {"type": "img", "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0MDAgMzAwIj4KPHJlY3Qgd2lkdGg9IjQwMCIgaGVpZ2h0PSIzMDAiIGZpbGw9IiNmZmVmYzIiLz4KPGNpcmNsZSBjeD0iMzMwIiBjeT0iNTUiIHI9IjM4IiBmaWxsPSIjZmZkOTNkIi8+CjxnIHN0cm9rZT0iI2ZmZDkzZCIgc3Ryb2tlLXdpZHRoPSI2IiBzdHJva2UtbGluZWNhcD0icm91bmQiPjxsaW5lIHgxPSIzMzAiIHkxPSI0IiB4Mj0iMzMwIiB5Mj0iMTQiLz48bGluZSB4MT0iMzMwIiB5MT0iOTYiIHgyPSIzMzAiIHkyPSIxMDYiLz48bGluZSB4MT0iMjc5IiB5MT0iNTUiIHgyPSIyODkiIHkyPSI1NSIvPjxsaW5lIHgxPSIzNzEiIHkxPSI1NSIgeDI9IjM4MSIgeTI9IjU1Ii8+PGxpbmUgeDE9IjI5MyIgeTE9IjE4IiB4Mj0iMzAwIiB5Mj0iMjUiLz48bGluZSB4MT0iMzYwIiB5MT0iODUiIHgyPSIzNjciIHkyPSI5MiIvPjxsaW5lIHgxPSIzNjAiIHkxPSIyNSIgeDI9IjM2NyIgeTI9IjMyIi8+PGxpbmUgeDE9IjI5MyIgeTE9IjkyIiB4Mj0iMzAwIiB5Mj0iODUiLz48L2c+CjxlbGxpcHNlIGN4PSIyMDAiIGN5PSIxNzUiIHJ4PSIxNTUiIHJ5PSI4NSIgZmlsbD0iI2VjZDlhMCIvPgo8ZWxsaXBzZSBjeD0iMjAwIiBjeT0iMTcyIiByeD0iMTQwIiByeT0iNzQiIGZpbGw9IiNlNGQxOTYiLz4KPGcgc3Ryb2tlPSIjYTg3ZDNmIiBzdHJva2Utd2lkdGg9IjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgZmlsbD0ibm9uZSI+CjxwYXRoIGQ9Ik0xMjAgMTUwIEwxNTIgMTcwIEwxOTQgMTYwIi8+CjxwYXRoIGQ9Ik0xNTIgMTcwIEwxNjMgMjAyIEwxODYgMjI0Ii8+CjxwYXRoIGQ9Ik0yMTQgMTUyIEwyNDYgMTc4IEwyODggMTcwIi8+CjxwYXRoIGQ9Ik0yNDYgMTc4IEwyNjggMjEwIi8+CjxwYXRoIGQ9Ik0xMzAgMjAwIEwxNjIgMjE0Ii8+CjxwYXRoIGQ9Ik0yODQgMTUyIEwzMDYgMTQwIi8+CjxwYXRoIGQ9Ik0xMDAgMTY4IEwxMTggMTc4Ii8+CjwvZz4KPHJlY3QgeD0iMjQ4IiB5PSIyMTUiIHdpZHRoPSI5IiBoZWlnaHQ9IjI2IiBmaWxsPSIjOGQ2ZTQzIiByeD0iNCIvPgo8cGF0aCBkPSJNMjQ4IDIxNiBxLTEgLTE4IC01OCAtMjIgbDIgLTE2IHE3MiAxMCA2NCAzOCIgZmlsbD0iIzliN2I0ZCIvPgo8Y2lyY2xlIGN4PSIxNzAiIGN5PSIxMjAiIHI9IjkiIGZpbGw9IiNjOWE4NmEiLz4KPGNpcmNsZSBjeD0iMTUwIiBjeT0iMTQwIiByPSI2IiBmaWxsPSIjYzlhODZhIi8+Cjwvc3ZnPg==", "alt": "A dry city lake with cracked mud and stones where water should be, with apartment buildings close by.", "caption": ""}}, {"id": "water-scarcity-bangalore-q5", "section": "Water Scarcity in Bangalore", "question": "Why do wide roads and big buildings make the water shortage worse?", "options": ["Rain cannot soak into concrete, so less water goes back into the ground", "Concrete roads pull water out of the ground like a sponge", "Concrete gives water back to the ground and fills wells faster", "Concrete keeps the rain warm, so the clouds hold on to it longer"], "correctIndex": 0, "explanation": "Hard surfaces stop rain from sinking into the soil, so the underground water is not refilled.", "suggestImage": false}, {"id": "water-scarcity-bangalore-q6", "section": "Water Scarcity in Bangalore", "question": "A 2026 study called 60 wards in Bengaluru 'critical' for groundwater. What does that mean?", "options": ["People there take out more water than the ground can give back", "There is far too much groundwater under those areas", "The rain under those areas never soaks into the ground", "Those wards get free drinking water from the government"], "correctIndex": 0, "explanation": "Groundwater there is used faster than rain can refill it, so borewells may go dry.", "suggestImage": false}, {"id": "water-scarcity-bangalore-q7", "section": "Water Scarcity in Bangalore", "question": "What should you do if a tap at home keeps dripping?", "options": ["Tell an adult and get the dripping tap fixed right away", "Keep a towel under the tap to catch the drops", "Nothing, one slow drip is too little to matter", "Turn the tap handle a little harder next time"], "correctIndex": 0, "explanation": "One litre lost every minute is about 1,440 litres a day, so every leak must be fixed fast.", "suggestImage": false}, {"id": "water-scarcity-bangalore-q8", "section": "Water Scarcity in Bangalore", "question": "What small fitting can cut the water wasted from a tap by up to 75%?", "options": ["An aerator, or flow restrictor, fixed inside the tap", "A bigger pipe joined to the tap", "A thick rubber ring around the tap handle", "A clock that tells the time on the wall"], "correctIndex": 0, "explanation": "Aerators add air to the stream, so a thinner, slower flow still feels like enough water.", "suggestImage": false}, {"id": "water-scarcity-bangalore-q9", "section": "Water Scarcity in Bangalore", "question": "How does rainwater harvesting help a city like Bengaluru?", "options": ["Rain from the roof is saved and sent down into the ground", "It makes the clouds bring more rain to the city", "It sends the extra rain away to other states", "It stops people from digging deep borewells"], "correctIndex": 0, "explanation": "Saving roof rain fills tanks and recharge wells, adding water back to the groundwater below.", "suggestImage": true, "imageNote": "A house with pipes carrying rain from its roof into a storage tank and a recharge well in the ground.", "image": {"type": "img", "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0MDAgMzAwIj4KPHJlY3Qgd2lkdGg9IjQwMCIgaGVpZ2h0PSIzMDAiIGZpbGw9IiNkZmYwZmYiLz4KPGcgZmlsbD0iIzllYzllZiI+PGVsbGlwc2UgY3g9IjEyMCIgY3k9Ijc4IiByeD0iNjIiIHJ5PSIyOCIvPjxlbGxpcHNlIGN4PSI3MCIgY3k9IjkyIiByeD0iMzYiIHJ5PSIyMSIvPjxlbGxpcHNlIGN4PSIxNzIiIGN5PSI5MiIgcng9IjMwIiByeT0iMTkiLz48L2c+CjxnIHN0cm9rZT0iIzVhYTdlOCIgc3Ryb2tlLXdpZHRoPSI0IiBzdHJva2UtbGluZWNhcD0icm91bmQiPjxsaW5lIHgxPSI2MiIgeTE9IjExMiIgeDI9IjU3IiB5Mj0iMTI4Ii8+PGxpbmUgeDE9IjkyIiB5MT0iMTE2IiB4Mj0iODgiIHkyPSIxMzIiLz48bGluZSB4MT0iMTIyIiB5MT0iMTE0IiB4Mj0iMTIyIiB5Mj0iMTMwIi8+PGxpbmUgeDE9IjE1MiIgeTE9IjExMiIgeDI9IjE1NiIgeTI9IjEyOCIvPjwvZz4KPHJlY3QgeD0iMTUwIiB5PSIxMzAiIHdpZHRoPSIyMTAiIGhlaWdodD0iMTQwIiBmaWxsPSIjZjdjOThhIiByeD0iNiIvPgo8cG9seWdvbiBwb2ludHM9IjEzMCwxMzAgMjU1LDYwIDM4MCwxMzAiIGZpbGw9IiNjMDM5MmIiLz4KPHJlY3QgeD0iMjMwIiB5PSIyMDAiIHdpZHRoPSI1NSIgaGVpZ2h0PSI3MCIgZmlsbD0iI2I1NjUxZCIgcng9IjQiLz4KPHJlY3QgeD0iMjQyIiB5PSIyMDAiIHdpZHRoPSIzNiIgaGVpZ2h0PSI0OCIgZmlsbD0iIzhmZDNmNCIgcng9IjMiLz4KPHJlY3QgeD0iMTgyIiB5PSIxNjgiIHdpZHRoPSIzNiIgaGVpZ2h0PSIzMCIgZmlsbD0iIzhmZDNmNCIgcng9IjMiLz4KPHJlY3QgeD0iMzQ4IiB5PSIxMzAiIHdpZHRoPSIxMiIgaGVpZ2h0PSI3OCIgZmlsbD0iIzZiNGYyYSIvPgo8cmVjdCB4PSIzMTYiIHk9IjIwNSIgd2lkdGg9IjYyIiBoZWlnaHQ9IjU1IiBmaWxsPSIjNGY5ZGU4IiByeD0iOCIvPgo8cmVjdCB4PSIzMTIiIHk9IjE5OCIgd2lkdGg9IjcwIiBoZWlnaHQ9IjEwIiBmaWxsPSIjM2I3ZmM0IiByeD0iNSIvPgo8ZyBzdHJva2U9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iNCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIj48bGluZSB4MT0iMzI4IiB5MT0iMjI4IiB4Mj0iMzI4IiB5Mj0iMjQyIi8+PGxpbmUgeDE9IjM0MiIgeTE9IjIyOCIgeDI9IjM0MiIgeTI9IjI0MiIvPjxsaW5lIHgxPSIzNTYiIHkxPSIyMjgiIHgyPSIzNTYiIHkyPSIyNDIiLz48L2c+Cjwvc3ZnPg==", "alt": "A house with pipes carrying rain from its roof into a storage tank and a recharge well in the ground.", "caption": ""}}, {"id": "water-scarcity-bangalore-q10", "section": "Water Scarcity in Bangalore", "question": "Which used water from your home can be cleaned and used again?", "options": ["Water from showers, washing machines and kitchen sinks, called greywater", "Rainwater that fell on the roof last night", "Fresh water left over in the drinking water tank", "Water that came out of the drinking tap this morning"], "correctIndex": 0, "explanation": "Greywater can be cleaned and used again for mopping floors and flushing toilets.", "suggestImage": false}]}, {"id": "dust-pollution-3rs-zero-waste", "title": "Dust Pollution, 3 R's, Zero Waste", "emoji": "🌫️", "questions": [{"id": "dust-pollution-3rs-zero-waste-q1", "section": "Dust Pollution, 3 R's, Zero Waste", "question": "What does dust pollution mean?", "options": ["Tiny bits of dirt and smoke in the air that make it dirty", "Water that falls from the sky when the air cools", "The warm heat that comes from the sun", "The smoke that a pan makes while cooking"], "correctIndex": 0, "explanation": "Dust pollution is tiny particles floating in the air, and breathing them can harm our lungs.", "suggestImage": false}, {"id": "dust-pollution-3rs-zero-waste-q2", "section": "Dust Pollution, 3 R's, Zero Waste", "question": "Where does a lot of the dust in a city come from?", "options": ["Building sites, dusty roads, cars and trucks", "Rain clouds floating high in the sky", "The flowers and grass in the park", "The moon shining at night"], "correctIndex": 0, "explanation": "Building work, unpaved roads and vehicle exhausts all kick up dust that blows into our air.", "suggestImage": false}, {"id": "dust-pollution-3rs-zero-waste-q3", "section": "Dust Pollution, 3 R's, Zero Waste", "question": "What can happen to your body if you breathe in a lot of dust?", "options": ["Your eyes water and you may cough or find it hard to breathe", "Your hair grows much faster", "You feel very hungry", "Your shoes get dusty"], "correctIndex": 0, "explanation": "Dust can irritate your eyes and nose and make you cough, wheeze or feel short of breath.", "suggestImage": false}, {"id": "dust-pollution-3rs-zero-waste-q4", "section": "Dust Pollution, 3 R's, Zero Waste", "question": "The air outside is very dusty today. What should you do?", "options": ["Go out and play a long game of football", "Stay inside with the windows closed, and wear a good mask if you must go out", "Open all the doors and windows wide", "Burn some old paper to make the air move"], "correctIndex": 1, "explanation": "Experts say to stay inside with closed windows, and to wear a good mask if you must go out.", "suggestImage": false}, {"id": "dust-pollution-3rs-zero-waste-q5", "section": "Dust Pollution, 3 R's, Zero Waste", "question": "What does \"Reduce\" mean in the 3 R's?", "options": ["To throw away more things", "To use less, so less rubbish is made", "To use a thing a second time", "To make new things from old glass and paper"], "correctIndex": 1, "explanation": "Reduce means using less paper, water and bottles so we do not make so much waste.", "suggestImage": false}, {"id": "dust-pollution-3rs-zero-waste-q6", "section": "Dust Pollution, 3 R's, Zero Waste", "question": "Which of these is an example of reusing?", "options": ["Throwing your old shirt in the bin", "Filling the same water bottle again and again", "Buying a new paper cup every morning", "Burning dry leaves to get rid of them"], "correctIndex": 1, "explanation": "Reuse means using the same thing many times instead of throwing it away after one use.", "suggestImage": false}, {"id": "dust-pollution-3rs-zero-waste-q7", "section": "Dust Pollution, 3 R's, Zero Waste", "question": "The recycling symbol has three arrows chasing each other in a loop. What does it tell us?", "options": ["Paper, glass and plastic can be sorted and made into new things", "Food scraps are good to eat", "The sun gives us warmth every day", "We should never buy anything again"], "correctIndex": 0, "explanation": "The three arrows show collecting, making and buying again, which is how recycling keeps going.", "suggestImage": true, "imageNote": "Three green chasing arrows forming a triangle loop, the recycling symbol, shown on a recycling bin.", "image": {"type": "emoji", "src": "♻️", "alt": "Recycling symbol with three arrows", "caption": "Recycling symbol with three arrows"}}, {"id": "dust-pollution-3rs-zero-waste-q8", "section": "Dust Pollution, 3 R's, Zero Waste", "question": "You are at a shop. Which choice makes the least rubbish?", "options": ["Ask for a plastic bag and use it once", "Bring your own cloth bag and say no to plastic ones", "Buy a new bottle of water on every trip", "Take two extra bags just in case"], "correctIndex": 1, "explanation": "Your own cloth bag can be used again and again, so it saves many plastic bags.", "suggestImage": true, "imageNote": "A child holding a reusable cotton cloth shopping bag beside a small pile of thin plastic bags.", "image": {"type": "emoji", "src": "🛍️🧺", "alt": "Carry a cloth bag to make less rubbish", "caption": "Carry a cloth bag to make less rubbish"}}, {"id": "dust-pollution-3rs-zero-waste-q9", "section": "Dust Pollution, 3 R's, Zero Waste", "question": "What is good to put in a compost bin?", "options": ["Banana peels and vegetable scraps", "Plastic wrappers and sweet wrappers", "Old batteries", "Broken glass"], "correctIndex": 0, "explanation": "Compost turns fruit and vegetable peels into rich soil that helps plants grow.", "suggestImage": false}, {"id": "dust-pollution-3rs-zero-waste-q10", "section": "Dust Pollution, 3 R's, Zero Waste", "question": "Which habit helps our air and also makes less rubbish?", "options": ["Compost food scraps instead of burning them", "Burn fallen leaves to clear the garden", "Put every bit of rubbish in one big bin", "Use a fresh paper towel for every hand wash"], "correctIndex": 0, "explanation": "Composting makes soil, not smoke, so it cuts rubbish and keeps dirty smoke out of our air.", "suggestImage": false}]}, {"id": "climate-change-bangalore", "title": "Change in Climate in Bangalore", "emoji": "🌦️", "questions": [{"id": "climate-change-bangalore-q1", "section": "Change in Climate in Bangalore", "question": "What is happening to the average temperature in Bangalore?", "options": ["It is slowly going up", "It is slowly going down", "It stays exactly the same", "It always changes in the same way every year"], "correctIndex": 0, "explanation": "Bangalore's average temperature has gone up by nearly 1 degree in the last 42 years.", "suggestImage": false}, {"id": "climate-change-bangalore-q2", "section": "Change in Climate in Bangalore", "question": "On 1 May 2024, how hot was it in Bangalore?", "options": ["About 38°C — the hottest May Day in 40 years", "About 28°C", "About 18°C", "About 8°C"], "correctIndex": 0, "explanation": "It reached 38.1°C, and that April also had 20 very hot days above 37°C.", "suggestImage": false}, {"id": "climate-change-bangalore-q3", "section": "Change in Climate in Bangalore", "question": "Why do Bangalore nights feel hot too, and not just the days?", "options": ["Roads and buildings store heat in the day and give it back at night", "The Sun keeps shining in the city all night", "The stars make the air hot", "There is no wind in the city at night"], "correctIndex": 0, "explanation": "Concrete and tar soak up sunlight all day, then release that heat at night.", "suggestImage": false}, {"id": "climate-change-bangalore-q4", "section": "Change in Climate in Bangalore", "question": "A survey counted 837 lakes in the Bengaluru area. How many had homes and shops built on them?", "options": ["About 730", "About 80", "About 8", "None of them"], "correctIndex": 0, "explanation": "Most lakes are surrounded by buildings, so they cannot hold flood water any more.", "suggestImage": false}, {"id": "climate-change-bangalore-q5", "section": "Change in Climate in Bangalore", "question": "Why do Bangalore streets fill with water during heavy rain?", "options": ["Rain cannot soak into the ground, and the drains are blocked and narrow", "The rain is falling from very high up in the sky", "Too many fish swim into the drains", "The city has too many computers"], "correctIndex": 0, "explanation": "Most ground is covered in concrete, so water rushes into drains that cannot hold it.", "suggestImage": true, "imageNote": "A Bengaluru street during heavy rain, with water covering the road and cars moving slowly through it.", "image": {"type": "img", "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0MDAgMzAwIj4KPHJlY3Qgd2lkdGg9IjQwMCIgaGVpZ2h0PSIzMDAiIGZpbGw9IiNlZWY0ZmIiLz4KPGcgZmlsbD0iIzllYzllZiI+PGVsbGlwc2UgY3g9IjIwMCIgY3k9IjcwIiByeD0iMTUwIiByeT0iNDAiLz48ZWxsaXBzZSBjeD0iODAiIGN5PSI4OCIgcng9IjYwIiByeT0iMjQiLz48ZWxsaXBzZSBjeD0iMzIwIiBjeT0iOTAiIHJ4PSI1NSIgcnk9IjIyIi8+PC9nPgo8ZyBzdHJva2U9IiM2ZmIwZTYiIHN0cm9rZS13aWR0aD0iNCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIj48bGluZSB4MT0iMTUwIiB5MT0iMTA1IiB4Mj0iMTQ1IiB5Mj0iMTIyIi8+PGxpbmUgeDE9IjIwMCIgeTE9IjEwOCIgeDI9IjIwMCIgeTI9IjEyNiIvPjxsaW5lIHgxPSIyNTAiIHkxPSIxMDUiIHgyPSIyNTUiIHkyPSIxMjMiLz48bGluZSB4MT0iMTEwIiB5MT0iMTEyIiB4Mj0iMTA2IiB5Mj0iMTI4Ii8+PC9nPgo8cmVjdCB4PSIzMCIgeT0iMTQwIiB3aWR0aD0iMTEwIiBoZWlnaHQ9IjEyMCIgZmlsbD0iI2Y3Yzk4YSIgcng9IjQiLz4KPHBvbHlnb24gcG9pbnRzPSIyNSwxNDAgODUsOTAgMTQ1LDE0MCIgZmlsbD0iI2MwMzkyYiIvPgo8cmVjdCB4PSI2MCIgeT0iMTg1IiB3aWR0aD0iNDUiIGhlaWdodD0iNzUiIGZpbGw9IiM4ZmQzZjQiIHJ4PSIzIi8+CjxyZWN0IHg9IjI1MCIgeT0iMTUwIiB3aWR0aD0iMTIwIiBoZWlnaHQ9IjExMCIgZmlsbD0iI2YyZTNjNiIgcng9IjQiLz4KPHBvbHlnb24gcG9pbnRzPSIyNDUsMTUwIDMxMCwxMDAgMzc1LDE1MCIgZmlsbD0iIzhkNmU0MyIvPgo8cmVjdCB4PSIyODMiIHk9IjE5NSIgd2lkdGg9IjUwIiBoZWlnaHQ9IjY1IiBmaWxsPSIjY2JlOWY3IiByeD0iMyIvPgo8cGF0aCBkPSJNMCAyNDAgTDcwIDIyNSBMMTMwIDIzNSBMMjAwIDIyOCBMMjcwIDIzOCBMMzQwIDIyNiBMNDAwIDIzNSBMNDAwIDMwMCBMMCAzMDAgWiIgZmlsbD0iIzVhYTdlOCIvPgo8cGF0aCBkPSJNMCAyNTggTDgwIDI0NiBMMTYwIDI1OCBMMjQwIDI0OCBMMzMwIDI2MCBMNDAwIDI1MCBMNDAwIDMwMCBMMCAzMDAgWiIgZmlsbD0iIzRhOTNkNCIvPgo8ZyBmaWxsPSIjZmZmZmZmIj48Y2lyY2xlIGN4PSI5MCIgY3k9IjI1MCIgcj0iNyIvPjxjaXJjbGUgY3g9IjE4MCIgY3k9IjI2MiIgcj0iNSIvPjxjaXJjbGUgY3g9IjMwMCIgY3k9IjI1MiIgcj0iNiIvPjwvZz4KPHJlY3QgeD0iMTU1IiB5PSIxMjAiIHdpZHRoPSIxMiIgaGVpZ2h0PSI5MCIgZmlsbD0iIzZiNGYyYSIvPgo8L3N2Zz4=", "alt": "A Bengaluru street during heavy rain, with water covering the road and cars moving slowly through it.", "caption": ""}}, {"id": "climate-change-bangalore-q6", "section": "Change in Climate in Bangalore", "question": "Why do some families in Bangalore get drinking water from tankers in summer?", "options": ["Rain comes too little or too late, so their borewells have dried up", "Their taps are painted a different colour", "The city lakes are too full of fish", "Their houses are too small to hold water"], "correctIndex": 0, "explanation": "About 6,900 of the city's borewells ran dry after a poor monsoon.", "suggestImage": false}, {"id": "climate-change-bangalore-q7", "section": "Change in Climate in Bangalore", "question": "What do greenhouse gases do in the air around Earth?", "options": ["They work like a blanket and stop heat from escaping", "They push the clouds far away", "They make the ground colder every night", "They turn sunlight into cool wind"], "correctIndex": 0, "explanation": "Greenhouse gases trap heat near Earth, and too much of it warms the planet.", "suggestImage": false}, {"id": "climate-change-bangalore-q8", "section": "Change in Climate in Bangalore", "question": "Where does the extra carbon dioxide in the air come from?", "options": ["Burning coal, oil and gas for cars, factories and electricity", "From the oceans of the Moon", "From clouds that break into pieces", "From cold snow on the mountains"], "correctIndex": 0, "explanation": "Burning fuel for cars, factories and power plants adds extra carbon dioxide to the air.", "suggestImage": false}, {"id": "climate-change-bangalore-q9", "section": "Change in Climate in Bangalore", "question": "How does planting a tree help Bangalore's climate?", "options": ["The tree takes in carbon dioxide and its cool shade helps the ground", "The tree makes the road grow longer", "The tree stops the Sun from shining at all", "The tree gives extra water to borewells"], "correctIndex": 0, "explanation": "Trees soak up carbon dioxide, give out oxygen and cool hot streets with their shade.", "suggestImage": true, "imageNote": "A big green tree casting cool shade on a hot, sunny Bengaluru street.", "image": {"type": "emoji", "src": "🌳", "alt": "A shady tree helps cool the city", "caption": "A shady tree helps cool the city"}}, {"id": "climate-change-bangalore-q10", "section": "Change in Climate in Bangalore", "question": "You need to travel 2 km to school in Bangalore. How can you help the climate?", "options": ["Walk or cycle instead of going in a car", "Wait for a friend to drive you there faster", "Keep the car engine running while you walk", "Ask your parents for a bigger car"], "correctIndex": 0, "explanation": "Walking and cycling burn no fuel, so they add no carbon dioxide to the air.", "suggestImage": false}]}, {"id": "living-gifting-composting", "title": "Living & Gifting, Learning to Compost", "emoji": "🪴", "questions": [{"id": "living-gifting-composting-q1", "section": "Living & Gifting, Learning to Compost", "question": "What is compost?", "options": ["A shiny bottle made from melted plastic", "A dark, crumbly soil-like food made from old plants and food scraps", "A sweet candy made from fruit and sugar", "A cold pile of ice and snow"], "correctIndex": 1, "explanation": "Compost is decayed plant and food material, so it looks dark, crumbly, and smells like earth.", "suggestImage": true, "imageNote": "A wooden bin of dark, crumbly compost with fruit peels and dry leaves going in", "image": {"type": "img", "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0MDAgMzAwIj4KPHJlY3Qgd2lkdGg9IjQwMCIgaGVpZ2h0PSIzMDAiIGZpbGw9IiNlYWZhZjEiLz4KPHJlY3QgeD0iMTA1IiB5PSIxNTAiIHdpZHRoPSIxOTAiIGhlaWdodD0iMTIwIiBmaWxsPSIjYjU2NTFkIiByeD0iMTAiLz4KPHJlY3QgeD0iOTAiIHk9IjE2NSIgd2lkdGg9IjIyMCIgaGVpZ2h0PSIxNCIgZmlsbD0iIzhhNGIxZCIgcng9IjciLz4KPHJlY3QgeD0iOTAiIHk9IjI1MCIgd2lkdGg9IjIyMCIgaGVpZ2h0PSIxMiIgZmlsbD0iIzhhNGIxZCIgcng9IjYiLz4KPGcgc3Ryb2tlPSIjNmIzZDE0IiBzdHJva2Utd2lkdGg9IjQiPjxsaW5lIHgxPSIxMjAiIHkxPSIxODUiIHgyPSIxMjAiIHkyPSIyNDUiLz48bGluZSB4MT0iMTUwIiB5MT0iMTg1IiB4Mj0iMTUwIiB5Mj0iMjQ1Ii8+PGxpbmUgeDE9IjE4MCIgeTE9IjE4NSIgeDI9IjE4MCIgeTI9IjI0NSIvPjxsaW5lIHgxPSIyMTAiIHkxPSIxODUiIHgyPSIyMTAiIHkyPSIyNDUiLz48bGluZSB4MT0iMjQwIiB5MT0iMTg1IiB4Mj0iMjQwIiB5Mj0iMjQ1Ii8+PGxpbmUgeDE9IjI3MCIgeTE9IjE4NSIgeDI9IjI3MCIgeTI9IjI0NSIvPjwvZz4KPHJlY3QgeD0iMTEwIiB5PSIxODUiIHdpZHRoPSIxODAiIGhlaWdodD0iNTgiIGZpbGw9IiM1ZDQwMzciIHJ4PSI2Ii8+CjxwYXRoIGQ9Ik0xNDAgMjEwIHExNCAtMTIgMjggMCBxMTQgMTIgMjggMCIgc3Ryb2tlPSIjN2I1YzQ4IiBzdHJva2Utd2lkdGg9IjUiIGZpbGw9Im5vbmUiLz4KPGVsbGlwc2UgY3g9IjE1MCIgY3k9IjIwMCIgcng9IjEyIiByeT0iNyIgZmlsbD0iI2ZmZDkzZCIvPgo8ZWxsaXBzZSBjeD0iMTYwIiBjeT0iMjA2IiByeD0iOSIgcnk9IjYiIGZpbGw9IiNmZmQ5M2QiLz4KPGNpcmNsZSBjeD0iMjE1IiBjeT0iMjAwIiByPSIxMCIgZmlsbD0iI2U3NGMzYyIvPgo8cGF0aCBkPSJNMjE1IDE5MCBhMTAgMTAgMCAwIDAgLTEwIDEwIiBzdHJva2U9IiNjMDM5MmIiIHN0cm9rZS13aWR0aD0iMiIgZmlsbD0ibm9uZSIvPgo8cGF0aCBkPSJNMjA1IDE5NiBsLTEyIC0yMiIgc3Ryb2tlPSIjNGNhZjUwIiBzdHJva2Utd2lkdGg9IjMiIGZpbGw9Im5vbmUiLz4KPHBhdGggZD0iTTIyNSAxOTYgbDEyIC0yMiIgc3Ryb2tlPSIjNGNhZjUwIiBzdHJva2Utd2lkdGg9IjMiIGZpbGw9Im5vbmUiLz4KPHBhdGggZD0iTTI0MiAyMzUgcTE0IC0xNiAzMCAtNiIgc3Ryb2tlPSIjM2ZhMDRmIiBzdHJva2Utd2lkdGg9IjYiIGZpbGw9Im5vbmUiLz4KPHBhdGggZD0iTTE1MCAxNTAgcTIwIC0yNiAzNCAtNCIgc3Ryb2tlPSIjM2ZhMDRmIiBzdHJva2Utd2lkdGg9IjciIGZpbGw9Im5vbmUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgo8Y2lyY2xlIGN4PSIxNzgiIGN5PSIyMzgiIHI9IjkiIGZpbGw9IiNlOGEwYTAiLz4KPGNpcmNsZSBjeD0iMTYiIGN5PSIyMzgiIHI9IjUiIGZpbGw9IiNlOGEwYTAiLz4KPC9zdmc+", "alt": "A wooden bin of dark, crumbly compost with fruit peels and dry leaves going in", "caption": ""}}, {"id": "living-gifting-composting-q2", "section": "Living & Gifting, Learning to Compost", "question": "Which of these can you put in a home compost bin?", "options": ["A plastic bag", "A glass bottle", "A banana peel", "A metal food can"], "correctIndex": 2, "explanation": "Fruit peels are plant food, so worms and microbes can break them down into compost.", "suggestImage": false}, {"id": "living-gifting-composting-q3", "section": "Living & Gifting, Learning to Compost", "question": "What do red worms do in a compost bin?", "options": ["They eat food scraps and leave behind rich worm castings", "They turn plastic into new bags", "They make the compost pile freeze", "They eat only eggshells and nothing else"], "correctIndex": 0, "explanation": "Worms digest the scraps, and their castings become rich compost for plants.", "suggestImage": true, "imageNote": "Friendly cartoon red wiggler worms eating a banana peel in a bedding-filled worm bin", "image": {"type": "emoji", "src": "🪱", "alt": "Red worms help make compost", "caption": "Red worms help make compost"}}, {"id": "living-gifting-composting-q4", "section": "Living & Gifting, Learning to Compost", "question": "Why do families compost their food scraps?", "options": ["It makes the trash smell sweet", "It makes more plastic bottles", "It keeps food waste out of the dump and feeds the soil", "It fills up the school yard faster"], "correctIndex": 2, "explanation": "Composting is nature's recycling, so less food waste goes to the dump.", "suggestImage": false}, {"id": "living-gifting-composting-q5", "section": "Living & Gifting, Learning to Compost", "question": "Which of these should stay OUT of a home compost bin?", "options": ["Dry fallen leaves", "A plastic bag", "Crushed eggshells", "Vegetable peels"], "correctIndex": 1, "explanation": "Plastic never breaks down in a home bin, so it should go in the trash.", "suggestImage": false}, {"id": "living-gifting-composting-q6", "section": "Living & Gifting, Learning to Compost", "question": "Why should meat and dairy stay out of a home compost bin?", "options": ["They make the pile smell bad and can attract pests", "They make the compost turn blue", "They make the worms grow too big", "They stop the bin from getting any air"], "correctIndex": 0, "explanation": "Meat and dairy rot and smell, and they bring mice and flies to the bin.", "suggestImage": false}, {"id": "living-gifting-composting-q7", "section": "Living & Gifting, Learning to Compost", "question": "Why is a plant a lovely gift?", "options": ["It turns into plastic after one day", "It needs no water at all", "It keeps growing and giving beauty for years", "It gets smaller every single day"], "correctIndex": 2, "explanation": "A living plant grows more beautiful with time, so the fun lasts for years.", "suggestImage": false}, {"id": "living-gifting-composting-q8", "section": "Living & Gifting, Learning to Compost", "question": "Which of these is a living gift you could give a friend?", "options": ["A bag of potato chips", "A young plant or tree sapling to grow together", "A candy bar", "A plastic toy truck"], "correctIndex": 1, "explanation": "A sapling is alive, so you and your friend can watch it grow together.", "suggestImage": false}, {"id": "living-gifting-composting-q9", "section": "Living & Gifting, Learning to Compost", "question": "Your friend just moved to a new home. Why is a plant a good gift?", "options": ["It makes a new home feel warm and friendly", "It keeps all the rooms cold", "It stops all the noise outside", "It needs no sunlight at all"], "correctIndex": 0, "explanation": "Houseplants are living decorations that make any room feel cozy and welcoming.", "suggestImage": false}, {"id": "living-gifting-composting-q10", "section": "Living & Gifting, Learning to Compost", "question": "How can compost help a gift plant grow strong?", "options": ["Mix some finished compost into the pot's soil to feed it", "Cover the soil in plastic so it stays wet", "Pour cooking oil on the soil", "Put the pot in the trash"], "correctIndex": 0, "explanation": "Compost is food for soil, so it gives plants the nutrients they need to grow.", "suggestImage": false}]}, {"id": "accepting-differences", "title": "Same but Different — Accepting Differences", "emoji": "🌈", "questions": [{"id": "accepting-differences-q1", "section": "Same but Different — Accepting Differences", "question": "Why do some of your friends look different from you?", "options": ["They are from different families and places, so each one is special in their own way", "They are not really human like you", "Someone made them look different on purpose", "They look different because they are better than you"], "correctIndex": 0, "explanation": "People are born different, and that is good — it makes every single person special.", "suggestImage": true, "imageNote": "A cheerful row of diverse smiling children with different skin tones, hair colours, hair textures and heights, standing side by side as friends.", "image": {"type": "emoji", "src": "👧🏽🧒🏿👦🏻👧🏻", "alt": "Happy friends who look different", "caption": "Happy friends who look different"}}, {"id": "accepting-differences-q2", "section": "Same but Different — Accepting Differences", "question": "About how many languages do people speak in the world today?", "options": ["About 7,000 languages", "About 70 languages", "About 700 languages", "Only one language, English"], "correctIndex": 0, "explanation": "About 7,000 languages are spoken around the world today, so many friends talk differently.", "suggestImage": false}, {"id": "accepting-differences-q3", "section": "Same but Different — Accepting Differences", "question": "Is it okay to like different food from the food your friends like?", "options": ["Yes, everyone likes different food and that is completely fine", "No, you must eat the same food as everybody else", "No, you should only eat what your family eats", "Yes, but you should laugh at the food other kids bring"], "correctIndex": 0, "explanation": "Everyone likes different food, and liking your own food is not better than liking someone else's.", "suggestImage": false}, {"id": "accepting-differences-q4", "section": "Same but Different — Accepting Differences", "question": "A classmate speaks a language you do not know. What is a kind thing to do?", "options": ["Smile, use simple words, and try to learn a few of their words", "Laugh at them because you cannot understand them", "Walk away and never talk to them again", "Pretend they are not in the room"], "correctIndex": 0, "explanation": "Being patient and friendly helps, and learning a few words shows that you care.", "suggestImage": false}, {"id": "accepting-differences-q5", "section": "Same but Different — Accepting Differences", "question": "A friend invites you to celebrate Diwali. What might you see?", "options": ["Little oil lamps called diyas lighting up homes, and colourful rangoli patterns", "A huge pile of snow and people throwing snowballs", "People dressed as ghosts going door to door", "Only the sea, with nobody celebrating anything"], "correctIndex": 0, "explanation": "Diwali is the Festival of Lights, and families light little oil lamps called diyas.", "suggestImage": true, "imageNote": "Rows of small lit clay oil lamps glowing on a floor beside a bright colourful rangoli pattern made of coloured powder, with happy children nearby.", "image": {"type": "emoji", "src": "🪔🪔", "alt": "Rows of oil lamps for Diwali", "caption": "Rows of oil lamps for Diwali"}}, {"id": "accepting-differences-q6", "section": "Same but Different — Accepting Differences", "question": "Two kids laugh at a classmate because of the way he talks. What should you do?", "options": ["Say the teasing must stop, and stay beside your friend", "Laugh too, so you fit in with the group", "Join in and ask them to talk even louder", "Say nothing, because it is none of your business"], "correctIndex": 0, "explanation": "Teasing someone for their voice is unkind, and friends should stand up and say stop.", "suggestImage": false}, {"id": "accepting-differences-q7", "section": "Same but Different — Accepting Differences", "question": "What is the best way to be a good friend to someone who is different from you?", "options": ["Accept them just the way they are", "Ask them to change so they can be more like you", "Only play with them when other people are watching", "Copy their voice and the way they dress"], "correctIndex": 0, "explanation": "A good friend accepts people just the way they are, without asking them to change.", "suggestImage": false}, {"id": "accepting-differences-q8", "section": "Same but Different — Accepting Differences", "question": "There is a new and very quiet child in your class. What can you do?", "options": ["Smile and invite them to sit and play with your group", "Point at them and tell everyone how quiet they are", "Wait for them to come to you, because it is their job", "Give them your books and walk away"], "correctIndex": 0, "explanation": "New friends feel happy when someone smiles and invites them to join in.", "suggestImage": false}, {"id": "accepting-differences-q9", "section": "Same but Different — Accepting Differences", "question": "You and your new friend both love playing cricket. What does this show?", "options": ["Even very different people can have lots of things in common", "That everybody in the world likes the same game", "That you must look the same to be friends", "That people who like cricket never need new friends"], "correctIndex": 0, "explanation": "Even very different people can share the same hobbies, games and feelings.", "suggestImage": false}, {"id": "accepting-differences-q10", "section": "Same but Different — Accepting Differences", "question": "You notice a classmate looks different from you. What is the best thing to do?", "options": ["Be curious and kind, and treat them like your other friends", "Laugh at them so you feel part of the group", "Tell everyone their difference is strange", "Decide in your head that they are not your type of friend"], "correctIndex": 0, "explanation": "It is fine to notice how people look, but it is wrong to laugh at them or judge them.", "suggestImage": false}]}, {"id": "disabilities-empathy", "title": "Disabilities & Empathy", "emoji": "🤝", "questions": [{"id": "disabilities-empathy-q1", "section": "Disabilities & Empathy", "question": "Some people cannot see. What helps them feel their way and find things in their path as they walk?", "options": ["A white cane", "A hearing aid", "A pair of sunglasses", "A bicycle helmet"], "correctIndex": 0, "explanation": "A white cane helps a person who is blind find steps and things in their path.", "suggestImage": true, "imageNote": "A cartoon of a child walking with a white cane, sweeping it side to side along the sidewalk", "image": {"type": "emoji", "src": "🦯", "alt": "A white cane helps a blind person feel the way", "caption": "A white cane helps a blind person feel the way"}}, {"id": "disabilities-empathy-q2", "section": "Disabilities & Empathy", "question": "Books for blind people have raised dots you can feel with your fingers. What is this way of reading called?", "options": ["Stickers", "Pictures", "Braille", "Puzzles"], "correctIndex": 2, "explanation": "Braille uses raised dots so people who cannot see can read with their fingers.", "suggestImage": false}, {"id": "disabilities-empathy-q3", "section": "Disabilities & Empathy", "question": "Some people cannot hear well. What small device can they wear to make sounds louder?", "options": ["A white cane", "A hearing aid", "A wrist watch", "A pair of gloves"], "correctIndex": 1, "explanation": "A hearing aid makes sounds louder so people who cannot hear well can hear better.", "suggestImage": false}, {"id": "disabilities-empathy-q4", "section": "Disabilities & Empathy", "question": "A friend uses a wheelchair and is trying to reach a book on a shelf. What is the kind thing to do?", "options": ["Grab the wheelchair and push it fast", "Take the book away from them", "Laugh and walk away", "Ask, \"Do you need help?\" then wait for the answer"], "correctIndex": 3, "explanation": "Ask before helping so your friend can decide what help they really want.", "suggestImage": true, "imageNote": "A friendly child talking to a classmate sitting in a wheelchair near a bookshelf", "image": {"type": "emoji", "src": "🧑🦽", "alt": "A friend using a wheelchair", "caption": "A friend using a wheelchair"}}, {"id": "disabilities-empathy-q5", "section": "Disabilities & Empathy", "question": "A new classmate has Down syndrome and likes dinosaurs just like you. Which is true?", "options": ["Kids with Down syndrome have no feelings", "Kids with Down syndrome cannot go to school", "You can be good friends and have fun together", "You should never be friends with them"], "correctIndex": 2, "explanation": "Kids with Down syndrome like fun and friends just like you.", "suggestImage": false}, {"id": "disabilities-empathy-q6", "section": "Disabilities & Empathy", "question": "Your classmate with autism gets upset by loud noise at a birthday party. What can you do?", "options": ["Make even more noise", "Tell them to stop being silly", "Be patient and find a quiet spot together", "Go away and never play with them again"], "correctIndex": 2, "explanation": "Autistic friends feel better when we are calm, patient, and kind.", "suggestImage": false}, {"id": "disabilities-empathy-q7", "section": "Disabilities & Empathy", "question": "A classmate has a learning difficulty and needs more time to read. What should you remember?", "options": ["They can never be good at anything", "They should not be in your class", "It is okay to make fun of them", "They are valuable friends with their own talents"], "correctIndex": 3, "explanation": "With time and patience, people with learning difficulties learn and show their talents.", "suggestImage": false}, {"id": "disabilities-empathy-q8", "section": "Disabilities & Empathy", "question": "You see a person who looks different using a wheelchair. Is it okay to stare at them?", "options": ["No, staring can make people feel hurt and sad", "Yes, stare as long as you want", "Yes, and point at them too", "Only stare if other people are also staring"], "correctIndex": 0, "explanation": "Staring can make a person feel sad, so look and talk kindly instead.", "suggestImage": false}, {"id": "disabilities-empathy-q9", "section": "Disabilities & Empathy", "question": "Some kids are calling a classmate a mean name because he has a disability. What should you do?", "options": ["Call him a mean name too", "Tell them to stop and be kind instead", "Laugh along with the others", "Pretend you did not hear anything"], "correctIndex": 1, "explanation": "Mean names hurt feelings, so stand up kindly for your classmate.", "suggestImage": false}, {"id": "disabilities-empathy-q10", "section": "Disabilities & Empathy", "question": "Your friend with a disability wants to join your game of catch. What is the kind thing to say?", "options": ["\"No, you cannot play\"", "\"Only if you go last every time\"", "Just ignore your friend", "\"Come join us, everyone can play!\""], "correctIndex": 3, "explanation": "Everyone deserves to play and feel included in games with friends.", "suggestImage": false}]}, {"id": "who-am-i-inside", "title": "Who Am I On the Inside?", "emoji": "💛", "questions": [{"id": "who-am-i-inside-q1", "section": "Who Am I On the Inside?", "question": "What makes you YOU?", "options": ["How tall you are", "Your feelings, thoughts, and the things you love to do", "The shoes you wear", "The color of your hair"], "correctIndex": 1, "explanation": "Who you are on the inside — your feelings, thoughts and favorites — is what makes you special.", "suggestImage": false}, {"id": "who-am-i-inside-q2", "section": "Who Am I On the Inside?", "question": "Which of these is a feeling?", "options": ["A tall building", "Happy", "A blue bicycle", "A school bag"], "correctIndex": 1, "explanation": "Happy is a feeling we have inside us, just like sad, angry or excited.", "suggestImage": true, "imageNote": "A simple smiling child face emoji to show the feeling 'happy'.", "image": {"type": "emoji", "src": "😊", "alt": "A happy feeling", "caption": "A happy feeling"}}, {"id": "who-am-i-inside-q3", "section": "Who Am I On the Inside?", "question": "Which matters more — how someone looks or how kind they are?", "options": ["How tall they are", "How fast they run", "How kind they are", "What clothes they wear"], "correctIndex": 2, "explanation": "Kindness is who someone is inside, and it lasts longer than how they look.", "suggestImage": false}, {"id": "who-am-i-inside-q4", "section": "Who Am I On the Inside?", "question": "You look different from your best friend. Does that make one of you better?", "options": ["Yes, the taller one is better", "No, you are both special inside", "Yes, the one with nicer clothes is better", "Yes, the one with longer hair is better"], "correctIndex": 1, "explanation": "Everyone is different on the outside and inside, and nobody is better or worse.", "suggestImage": false}, {"id": "who-am-i-inside-q5", "section": "Who Am I On the Inside?", "question": "How can you find out what you are good at?", "options": ["Watch what the other kids do", "Try new things and notice what you enjoy", "Wait until you are older", "Ask which one looks coolest"], "correctIndex": 1, "explanation": "Trying new things helps you see which skills you enjoy and are good at.", "suggestImage": false}, {"id": "who-am-i-inside-q6", "section": "Who Am I On the Inside?", "question": "If you looked in a mirror, would you see your feelings?", "options": ["Yes, all of them", "No, feelings stay inside you", "Only the happy ones", "Only when you smile"], "correctIndex": 1, "explanation": "A mirror shows your face, but your feelings and thoughts are inside you and cannot be seen.", "suggestImage": true, "imageNote": "A simple mirror with a small heart hiding behind the glass, showing that feelings stay inside.", "image": {"type": "emoji", "src": "🪞💛", "alt": "Feelings are inside you — not in the mirror", "caption": "Feelings are inside you — not in the mirror"}}, {"id": "who-am-i-inside-q7", "section": "Who Am I On the Inside?", "question": "A new kid in class is very shy. What is a kind thing to do?", "options": ["Ignore them", "Laugh at them", "Smile, talk to them, and include them", "Tell them to leave"], "correctIndex": 2, "explanation": "Being kind and including a shy friend helps them feel welcome, and kindness shows who you are.", "suggestImage": false}, {"id": "who-am-i-inside-q8", "section": "Who Am I On the Inside?", "question": "Which of these is on the INSIDE of a person?", "options": ["Their shoes", "Their thoughts and feelings", "Their hair", "Their height"], "correctIndex": 1, "explanation": "Thoughts, feelings and values are inside us, while shoes, hair and height are outside.", "suggestImage": false}, {"id": "who-am-i-inside-q9", "section": "Who Am I On the Inside?", "question": "Why is every person different from every other person?", "options": ["They have different feelings, talents, likes, and dreams", "They must all look the same", "They were all born on the same day", "They all like the same games"], "correctIndex": 0, "explanation": "Everyone has their own feelings, talents and likes, which is what makes each person unique.", "suggestImage": false}, {"id": "who-am-i-inside-q10", "section": "Who Am I On the Inside?", "question": "Which question helps you get to know yourself best?", "options": ["Do I have the biggest feet?", "What do I love to do?", "Who is the tallest one here?", "Do I have longer hair than my friend?"], "correctIndex": 1, "explanation": "Asking what you love to do shows the hobbies and talents that are inside you.", "suggestImage": false}]}, {"id": "accepting-self-others", "title": "Accepting Myself & Those Around Me", "emoji": "🪞", "questions": [{"id": "accepting-self-others-q1", "section": "Accepting Myself & Those Around Me", "question": "If you make a mistake, what should you do?", "options": ["Give up and stop trying", "Keep trying and learn from it", "Hide the mistake", "Blame someone else"], "correctIndex": 1, "explanation": "Everyone makes mistakes; trying again is how you learn.", "suggestImage": false}, {"id": "accepting-self-others-q2", "section": "Accepting Myself & Those Around Me", "question": "How do you talk to yourself when you try something hard?", "options": ["Say kind words like, 'I can do my best!'", "Call yourself silly names", "Tell yourself you will never get it", "Give up right away"], "correctIndex": 0, "explanation": "Talking to yourself kindly, like a good friend, helps you keep going.", "suggestImage": false}, {"id": "accepting-self-others-q3", "section": "Accepting Myself & Those Around Me", "question": "Nobody is perfect. Everyone has some things they are good at and some things they find hard. What are these called?", "options": ["Strengths and weaknesses", "Only strengths", "Only weaknesses", "Nothing at all"], "correctIndex": 0, "explanation": "Everyone has strengths and weaknesses, and that is okay.", "suggestImage": false}, {"id": "accepting-self-others-q4", "section": "Accepting Myself & Those Around Me", "question": "Which is a kind thing to say to yourself after a mistake?", "options": ["I always mess up", "Mistakes help me learn", "I can't do anything right", "I should give up"], "correctIndex": 1, "explanation": "Kind self-talk like this helps you feel better and try again.", "suggestImage": false}, {"id": "accepting-self-others-q5", "section": "Accepting Myself & Those Around Me", "question": "Your hair, your laugh, and your skills make you special. How should you feel about them?", "options": ["Ashamed and sad", "Proud of who you are", "Wanting to be someone else", "Angry"], "correctIndex": 1, "explanation": "Being proud of what makes you special is part of accepting yourself.", "suggestImage": true, "imageNote": "A happy child smiling at their reflection in a mirror.", "image": {"type": "emoji", "src": "🪞😊", "alt": "Love what makes you special", "caption": "Love what makes you special"}}, {"id": "accepting-self-others-q6", "section": "Accepting Myself & Those Around Me", "question": "What if your friend likes different games than you?", "options": ["Tell them their games are silly", "Only play your game, never theirs", "Take turns playing each other's games", "Stop being friends"], "correctIndex": 2, "explanation": "Friends can like different things and still be good friends.", "suggestImage": false}, {"id": "accepting-self-others-q7", "section": "Accepting Myself & Those Around Me", "question": "A new classmate wants to join your game at recess. What should you do?", "options": ["Say no and walk away", "Tell them to go away", "Ignore them", "Smile and say yes, come play!"], "correctIndex": 3, "explanation": "Including others makes everyone feel they belong.", "suggestImage": true, "imageNote": "Children holding hands in a circle playing together.", "image": {"type": "emoji", "src": "🤝", "alt": "Invite a new classmate to play", "caption": "Invite a new classmate to play"}}, {"id": "accepting-self-others-q8", "section": "Accepting Myself & Those Around Me", "question": "You bumped into your friend by accident. What is the right thing to do?", "options": ["Say it was their fault", "Say sorry and check if they are okay", "Run away", "Pretend nothing happened"], "correctIndex": 1, "explanation": "Saying sorry when you are wrong shows you care.", "suggestImage": false}, {"id": "accepting-self-others-q9", "section": "Accepting Myself & Those Around Me", "question": "A classmate is struggling with a hard problem. What can you do?", "options": ["Laugh at them", "Tell them it is easy and walk away", "Offer to help them figure it out", "Do it for them without asking"], "correctIndex": 2, "explanation": "Helping a classmate who is struggling is a kind thing to do.", "suggestImage": false}, {"id": "accepting-self-others-q10", "section": "Accepting Myself & Those Around Me", "question": "Your friend made you upset, but you still care about them. What is a good choice?", "options": ["Forgive them and give them another chance", "Stay angry forever", "Never talk to them again", "Do something mean back"], "correctIndex": 0, "explanation": "Forgiving and being patient helps keep your friendship strong.", "suggestImage": false}]}, {"id": "resilience-smart-goals", "title": "Resilience & SMART Goals", "emoji": "🎯", "questions": [{"id": "resilience-smart-goals-q1", "section": "Resilience & SMART Goals", "question": "What does it mean to be resilient?", "options": ["To give up when things get hard", "To bounce back and try again after tough times", "To never make any mistakes", "To be the strongest person in the room"], "correctIndex": 1, "explanation": "Resilient people bounce back, like a rubber ball that bounces up after it is dropped.", "suggestImage": true, "imageNote": "A rubber ball bouncing back up after being dropped, or a child climbing a hill.", "image": {"type": "img", "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0MDAgMzAwIj4KPHJlY3Qgd2lkdGg9IjQwMCIgaGVpZ2h0PSIzMDAiIGZpbGw9IiNmZmY4ZTEiLz4KPGcgc3Ryb2tlPSIjZDhkY2UyIiBzdHJva2Utd2lkdGg9IjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgZmlsbD0ibm9uZSI+CjxwYXRoIGQ9Ik0xMjggMjUyIHE3MCAtMTMwIDEzMiAtMzAgcTM0IC00NCA3OCAtMjYiLz4KPC9nPgo8ZyBzdHJva2U9IiNmZmIzMDAiIHN0cm9rZS13aWR0aD0iNiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIj4KPGxpbmUgeDE9IjMzMCIgeTE9IjE1MCIgeDI9IjMyMiIgeTI9IjEyMCIvPjxsaW5lIHgxPSIzMzAiIHkxPSIxNTAiIHgyPSIzNDgiIHkyPSIxMjQiLz4KPGxpbmUgeDE9IjE4MCIgeTE9IjIwNSIgeDI9IjE3MCIgeTI9IjE3OCIvPjxsaW5lIHgxPSIxODAiIHkxPSIyMDUiIHgyPSIxOTYiIHkyPSIxODMiLz4KPC9nPgo8Y2lyY2xlIGN4PSIxMjgiIGN5PSIyNTIiIHI9IjMwIiBmaWxsPSIjZmY2YjZiIi8+CjxwYXRoIGQ9Ik0xMTggMjQ0IGExNSA4IDAgMCAxIDIyIC0yIiBzdHJva2U9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iNSIgZmlsbD0ibm9uZSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+CjxjaXJjbGUgY3g9IjI3MiIgY3k9IjE3OCIgcj0iMjQiIGZpbGw9IiMyZWNjNzEiLz4KPHJlY3QgeD0iMCIgeT0iMjg0IiB3aWR0aD0iNDAwIiBoZWlnaHQ9IjE2IiBmaWxsPSIjYjU2NTFkIi8+CjxyZWN0IHg9IjAiIHk9IjI4NCIgd2lkdGg9IjQwMCIgaGVpZ2h0PSI2IiBmaWxsPSIjOGE0YjFkIi8+Cjwvc3ZnPg==", "alt": "A rubber ball bouncing back up after being dropped, or a child climbing a hill.", "caption": ""}}, {"id": "resilience-smart-goals-q2", "section": "Resilience & SMART Goals", "question": "When you fall off your bike, what does a resilient kid do?", "options": ["Gets back on and tries again", "Cries and never rides again", "Blames the bike", "Gives the bike away"], "correctIndex": 0, "explanation": "Falling is normal; resilient kids get back on and keep trying.", "suggestImage": false}, {"id": "resilience-smart-goals-q3", "section": "Resilience & SMART Goals", "question": "What should you say when something feels too hard?", "options": ["I can't do it.", "I'm not good at anything.", "I can't do it yet.", "This is impossible."], "correctIndex": 2, "explanation": "Adding \"yet\" means your brain is still learning and will get better.", "suggestImage": false}, {"id": "resilience-smart-goals-q4", "section": "Resilience & SMART Goals", "question": "When you make a mistake, what does a growth mindset tell you?", "options": ["Mistakes are bad and you should quit.", "You can learn from the mistake and try again.", "Mistakes mean you are not smart.", "Hide the mistake and forget it."], "correctIndex": 1, "explanation": "Learning from mistakes makes you stronger and smarter.", "suggestImage": false}, {"id": "resilience-smart-goals-q5", "section": "Resilience & SMART Goals", "question": "When you keep trying again after tough times, what happens?", "options": ["You get weaker.", "You grow stronger and better at things.", "You never learn anything.", "You have to give up."], "correctIndex": 1, "explanation": "Each try builds your strength, just like muscles after exercise.", "suggestImage": false}, {"id": "resilience-smart-goals-q6", "section": "Resilience & SMART Goals", "question": "Which goal is a SMART goal?", "options": ["I will read 10 pages every day for one month.", "I might read sometimes.", "I want to be great at everything.", "I will think about reading."], "correctIndex": 0, "explanation": "A SMART goal is Specific, Measurable, Achievable, Relevant, and Time-bound.", "suggestImage": true, "imageNote": "A big target or bullseye with an arrow in the middle.", "image": {"type": "emoji", "src": "🎯", "alt": "A SMART goal is like hitting a target", "caption": "A SMART goal is like hitting a target"}}, {"id": "resilience-smart-goals-q7", "section": "Resilience & SMART Goals", "question": "In SMART, what does S mean?", "options": ["Silly", "Strong", "Specific", "Sleepy"], "correctIndex": 2, "explanation": "Specific means your goal is clear and exact, not fuzzy.", "suggestImage": false}, {"id": "resilience-smart-goals-q8", "section": "Resilience & SMART Goals", "question": "In SMART, what does M mean?", "options": ["Messy", "Measurable", "Musical", "Mysterious"], "correctIndex": 1, "explanation": "Measurable means you can count your progress, like pages read.", "suggestImage": false}, {"id": "resilience-smart-goals-q9", "section": "Resilience & SMART Goals", "question": "In SMART, what does A mean?", "options": ["Angry", "Achievable", "Always", "Amazing"], "correctIndex": 1, "explanation": "Achievable means it is possible — you can really do it.", "suggestImage": false}, {"id": "resilience-smart-goals-q10", "section": "Resilience & SMART Goals", "question": "In SMART, what does T mean?", "options": ["Tall", "Tired", "Time-bound", "Tiny"], "correctIndex": 2, "explanation": "Time-bound means your goal has a finish time, like one week.", "suggestImage": false}]}, {"id": "johari-window-failure", "title": "Johari Window & Learning from Failure", "emoji": "🪟", "questions": [{"id": "johari-window-failure-q1", "section": "Johari Window & Learning from Failure", "question": "In the Johari Window, what does the open part mean?", "options": ["Things you know about yourself and others can see too", "Things only you know, and you keep them secret", "Things others know but you do not know", "Things nobody knows yet"], "correctIndex": 0, "explanation": "The open window holds what you know about yourself and what others can see too.", "suggestImage": true, "imageNote": "A simple window split into four colored panes labeled Open, Blind, Hidden and Unknown, with a smiling child standing in the Open pane.", "image": {"type": "img", "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0MDAgMzAwIj4KPHJlY3Qgd2lkdGg9IjQwMCIgaGVpZ2h0PSIzMDAiIGZpbGw9IiNlYWY0ZmIiLz4KPHJlY3QgeD0iNTUiIHk9IjQ1IiB3aWR0aD0iMjkwIiBoZWlnaHQ9IjIxMCIgcng9IjE2IiBmaWxsPSIjZmZmZmZmIiBzdHJva2U9IiM5ZGI0YzgiIHN0cm9rZS13aWR0aD0iNCIvPgo8bGluZSB4MT0iMjAwIiB5MT0iNDUiIHgyPSIyMDAiIHkyPSIyNTUiIHN0cm9rZT0iIzlkYjRjOCIgc3Ryb2tlLXdpZHRoPSI0Ii8+CjxsaW5lIHgxPSI1NSIgeTE9IjE1MCIgeDI9IjM0NSIgeTI9IjE1MCIgc3Ryb2tlPSIjOWRiNGM4IiBzdHJva2Utd2lkdGg9IjQiLz4KPHJlY3QgeD0iNTgiIHk9IjQ4IiB3aWR0aD0iMTM5IiBoZWlnaHQ9Ijk5IiByeD0iMTIiIGZpbGw9IiNhOGU2Y2YiLz4KPHJlY3QgeD0iMjAzIiB5PSI0OCIgd2lkdGg9IjEzOSIgaGVpZ2h0PSI5OSIgcng9IjEyIiBmaWxsPSIjZmZkM2I2Ii8+CjxyZWN0IHg9IjU4IiB5PSIxNTMiIHdpZHRoPSIxMzkiIGhlaWdodD0iOTkiIHJ4PSIxMiIgZmlsbD0iI2ZmYWFhNSIvPgo8cmVjdCB4PSIyMDMiIHk9IjE1MyIgd2lkdGg9IjEzOSIgaGVpZ2h0PSI5OSIgcng9IjEyIiBmaWxsPSIjYzNiZWYwIi8+Cjx0ZXh0IHg9IjEyNyIgeT0iOTUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtZmFtaWx5PSJDb21pYyBTYW5zIE1TLCBzYW5zLXNlcmlmIiBmb250LXdlaWdodD0iYm9sZCIgZm9udC1zaXplPSIxNyIgZmlsbD0iIzFlODQ0OSI+T3BlbjwvdGV4dD4KPHRleHQgeD0iMjcyIiB5PSI5NSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9IkNvbWljIFNhbnMgTVMsIHNhbnMtc2VyaWYiIGZvbnQtd2VpZ2h0PSJib2xkIiBmb250LXNpemU9IjE3IiBmaWxsPSIjYjk3NzBlIj5CbGluZCBzcG90PC90ZXh0Pgo8dGV4dCB4PSIxMjciIHk9IjIwMCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9IkNvbWljIFNhbnMgTVMsIHNhbnMtc2VyaWYiIGZvbnQtd2VpZ2h0PSJib2xkIiBmb250LXNpemU9IjE3IiBmaWxsPSIjYzAzOTJiIj5IaWRkZW48L3RleHQ+Cjx0ZXh0IHg9IjI3MiIgeT0iMjAwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0iQ29taWMgU2FucyBNUywgc2Fucy1zZXJpZiIgZm9udC13ZWlnaHQ9ImJvbGQiIGZvbnQtc2l6ZT0iMTciIGZpbGw9IiM2YzVjZTciPlVua25vd248L3RleHQ+Cjx0ZXh0IHg9IjEyNyIgeT0iMTIyIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0iQ29taWMgU2FucyBNUywgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMiIgZmlsbD0iIzJlNmI0ZiI+a25vd24gYnkgbWU8L3RleHQ+Cjx0ZXh0IHg9IjI3MiIgeT0iMTIyIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0iQ29taWMgU2FucyBNUywgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMiIgZmlsbD0iIzdhNTUxMiI+a25vd24gYnkgb3RoZXJzPC90ZXh0Pgo8L3N2Zz4=", "alt": "A simple window split into four colored panes labeled Open, Blind, Hidden and Unknown, with a smiling child standing in the Open pane.", "caption": ""}}, {"id": "johari-window-failure-q2", "section": "Johari Window & Learning from Failure", "question": "A friend says you talk very fast when you are excited. You had not noticed. What is this?", "options": ["Your open window", "Your blind spot", "Your hidden part", "Your unknown part"], "correctIndex": 1, "explanation": "Other people see it but you did not, so it stays in your blind spot until someone tells you.", "suggestImage": false}, {"id": "johari-window-failure-q3", "section": "Johari Window & Learning from Failure", "question": "You love drawing, but you never tell anyone. Which part of the window is that?", "options": ["Open, because you know it", "Blind, because others see it", "Hidden, because only you know it", "Unknown, because nobody knows it"], "correctIndex": 2, "explanation": "You know you love drawing, but nobody else knows, so it is in the hidden part.", "suggestImage": false}, {"id": "johari-window-failure-q4", "section": "Johari Window & Learning from Failure", "question": "You have never tried skateboarding. Nobody knows how good you would be. This is the ? part.", "options": ["Open", "Blind", "Hidden", "Unknown"], "correctIndex": 3, "explanation": "Nobody knows it yet, not even you, so it sits in the unknown part.", "suggestImage": false}, {"id": "johari-window-failure-q5", "section": "Johari Window & Learning from Failure", "question": "How do you make your open window bigger?", "options": ["Share about yourself, and listen when friends share with you", "Keep all your feelings to yourself forever", "Say nothing about yourself ever again", "Only talk about the weather"], "correctIndex": 0, "explanation": "Sharing and listening move blind spots into the open, so you know yourself better.", "suggestImage": false}, {"id": "johari-window-failure-q6", "section": "Johari Window & Learning from Failure", "question": "You did not pass a test. What is the best thing to do next?", "options": ["Look at what went wrong and try a new way", "Hide the test paper deep in your bag", "Say the test was unfair", "Decide to stop trying this subject"], "correctIndex": 0, "explanation": "A mistake is a step to get better, so look at what went wrong and try a new way.", "suggestImage": true, "imageNote": "A cheerful child looking at a marked test paper, then trying the same question again with a pencil and a light bulb above the head.", "image": {"type": "emoji", "src": "📝💪", "alt": "Learn from a test and try again", "caption": "Learn from a test and try again"}}, {"id": "johari-window-failure-q7", "section": "Johari Window & Learning from Failure", "question": "Which thought helps you keep learning when something is hard?", "options": ["I am not good at this yet", "I will never be good at this", "Smart people do not need to practise", "This subject is not for me"], "correctIndex": 0, "explanation": "Adding the word yet tells you the skill can still grow with more practice.", "suggestImage": false}, {"id": "johari-window-failure-q8", "section": "Johari Window & Learning from Failure", "question": "A friend's tower of blocks falls down. What is the kindest and smartest reply?", "options": ["Let's build it again in a new way", "Ha ha, that was so funny", "You are just bad at building", "Do not ever build blocks again"], "correctIndex": 0, "explanation": "Falling down is just the first try, and a new plan can make the next one better.", "suggestImage": false}, {"id": "johari-window-failure-q9", "section": "Johari Window & Learning from Failure", "question": "You worked hard on a hard project. Which praise helps you most?", "options": ["You tried a smart new way and kept going", "You are a genius", "You are the smartest kid here", "You always win everything"], "correctIndex": 0, "explanation": "Praise for effort and strategy keeps you learning longer than praise for being smart.", "suggestImage": false}, {"id": "johari-window-failure-q10", "section": "Johari Window & Learning from Failure", "question": "What happens in your brain when you practise something new and hard?", "options": ["It forms new connections, so you get better", "Nothing inside changes at all", "You forget the things you already knew", "It only works for grown-ups"], "correctIndex": 0, "explanation": "Every time you try hard and learn, your brain forms new connections that make you smarter.", "suggestImage": false}]}]}</script>
+
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <linearGradient id="gradA" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4ecdc4"/><stop offset="100%" stop-color="#4f9de8"/>
+    </linearGradient>
+  </defs>
+</svg>
+
+<script>
+(() => {
+"use strict";
+/* ══════════════════════════════════════════════════════════════
+   html-quiz runtime — self-contained, no libraries, no network.
+   Question data is parsed from the #quiz-data script tag.
+   ══════════════════════════════════════════════════════════════ */
+
+// ── Data & config ─────────────────────────────────────────────
+const QUIZ = JSON.parse(document.getElementById('quiz-data').textContent.trim());
+const params = new URLSearchParams(location.search);
+const cfg = {
+  secs: parseTimerSecs(),                 // 0 = no timer (unlimited); ?secs=N (2-60) restores a timer
+  max:  clampInt(params.get('max'), 25, 1, 100),   // (informational only; cap applied at build)
+  tts:  params.get('tts') !== 'off' && params.get('tts') !== '0'
+};
+function clampInt(v, d, lo, hi){ const n = parseInt(v,10); return Number.isFinite(n) ? Math.min(hi, Math.max(lo, n)) : d; }
+function parseTimerSecs(){
+  const raw = params.get('secs');
+  if (raw === null || raw === '' || raw === '0') return 0;   // default: unlimited time
+  const n = parseInt(raw, 10);
+  return Number.isFinite(n) ? Math.min(60, Math.max(2, n)) : 0;
+}
+
+// Build a flat ordered question list across all sections.
+const FLAT = [];
+QUIZ.sections.forEach(s => {
+  s.questions.forEach(q => {
+    FLAT.push({ q, sectionId: s.id, sectionTitle: s.title });
+  });
+});
+const TOTAL = FLAT.length;
+
+// ── State machine ─────────────────────────────────────────────
+let state = {
+  mode: 'intro',        // intro | question | revealed | results
+  scope: null,          // null = all sections, else sectionId
+  list: [],             // ordered [{q, sectionId, sectionTitle}] for current scope
+  iq: 0,
+  answers: [],          // {qid, chosen(-1=timeout), status, pts}
+  score: 0,
+  runToken: 0,
+  transitioning: false
+};
+
+const elStage  = document.getElementById('stage');
+const elScore  = document.getElementById('score-chip');
+const elProg   = document.getElementById('progress-fill');
+const elTree   = document.getElementById('tree');
+const elSide   = document.getElementById('sidebar');
+const overlay  = document.getElementById('overlay');
+const elMute   = document.getElementById('mute-btn');
+let muted = false;
+
+// ── DOM helpers (NO innerHTML anywhere) ───────────────────────
+const h = (tag, cls, text) => {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (text !== undefined) e.textContent = text;   // untrusted text → textContent only
+  return e;
+};
+function clear(node){ while(node.firstChild) node.removeChild(node.firstChild); }
+
+// ── Sound (WebAudio, synthesised; lazy context for autoplay) ─
+let AC = null;
+function ensureAudio(){
+  if (!AC){ try{ AC = new (window.AudioContext || window.webkitAudioContext)(); }catch(e){ return null; } }
+  if (AC.state === 'suspended') AC.resume();
+  return AC;
+}
+function blip(freq, dur, type, delay, vol){
+  const ac = AC || ensureAudio();
+  if (!ac) return;
+  const t0 = ac.currentTime + (delay || 0);
+  const o = ac.createOscillator(), g = ac.createGain();
+  o.type = type || 'sine'; o.frequency.value = freq;
+  g.gain.setValueAtTime(vol || 0.14, t0);
+  g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+  o.connect(g); g.connect(ac.destination);
+  o.start(t0); o.stop(t0 + dur + 0.03);
+}
+const sTick   = () => blip(880, 0.06, 'square');
+const sCorrect= () => { blip(523,0.12,'sine',0); blip(659,0.12,'sine',0.11); blip(784,0.2,'sine',0.22); };
+const sWrong  = () => { blip(220,0.22,'triangle',0); blip(170,0.28,'triangle',0.14); };
+const sTimesUp= () => { blip(440,0.18,'triangle',0); blip(330,0.3,'triangle',0.16); };
+const sPop    = () => { blip(660,0.09,'sine',0,0.1); blip(880,0.1,'sine',0.07,0.08); };
+
+// ── TTS (Web Speech API) ──────────────────────────────────────
+function ttsAvailable(){ return 'speechSynthesis' in window; }
+function pickVoice(){
+  if (!ttsAvailable()) return null;
+  const vs = speechSynthesis.getVoices();
+  return vs.find(v => /^en/i.test(v.lang)) || vs[0] || null;
+}
+function speak(text, onEnd){
+  if (!cfg.tts || muted || !ttsAvailable() || !text) { if (onEnd) onEnd(); return; }
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.rate = 1; u.pitch = 1.05;
+  const v = pickVoice(); if (v) u.voice = v;
+  if (onEnd) u.onend = onEnd;
+  speechSynthesis.speak(u);
+}
+if ('speechSynthesis' in window){
+  speechSynthesis.onvoiceschanged = () => {};   // warm the voice list
+}
+
+// ── Timer ring ────────────────────────────────────────────────
+let rafId = 0;
+function stopTimer(){ if (rafId){ cancelAnimationFrame(rafId); rafId = 0; } }
+function startTimer(secs, token){
+  stopTimer();
+  const C = 2 * Math.PI * 30;                    // r=30 ring
+  const ring = document.getElementById('ring-fg');
+  const count = document.getElementById('t-count');
+  const wrap = document.getElementById('timer-wrap');
+  ring.setAttribute('stroke-dasharray', C);
+  ring.setAttribute('stroke-dashoffset', 0);
+  const deadline = performance.now() + secs * 1000;
+  let lastSec = Math.ceil(secs);
+  const loop = (now) => {
+    if (state.runToken !== token) return;        // stale — question changed
+    const remMs = deadline - now;
+    const remSec = Math.max(0, Math.ceil(remMs / 1000));
+    const frac = Math.max(0, Math.min(1, remMs / (secs * 1000)));
+    ring.setAttribute('stroke-dashoffset', String(C * (1 - frac)));   // SVG attr, not CSS
+    count.textContent = String(remSec);
+    wrap.classList.toggle('low', remSec <= 3);
+    if (remSec < lastSec){ lastSec = remSec; if (remSec > 0 && remSec <= 3 && state.mode === 'question') sTick(); }
+    if (remMs <= 0){ onTimeout(token); return; }
+    rafId = requestAnimationFrame(loop);
+  };
+  rafId = requestAnimationFrame(loop);
+}
+
+// ── Timer markup builder (returned to slot in question card) ──
+function timerMarkup(){
+  if (cfg.secs <= 0) return null;          // no-timer mode: no ring, no countdown
+  const wrap = h('div', 'timer-wrap'); wrap.id = 'timer-wrap';
+  const ns = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(ns, 'svg');
+  svg.setAttribute('viewBox', '0 0 74 74');
+  const bg = document.createElementNS(ns, 'circle');
+  bg.setAttribute('cx','37'); bg.setAttribute('cy','37'); bg.setAttribute('r','30'); bg.setAttribute('class','circle-bg');
+  const fg = document.createElementNS(ns, 'circle');
+  fg.setAttribute('cx','37'); fg.setAttribute('cy','37'); fg.setAttribute('r','30'); fg.setAttribute('class','circle-fg');
+  fg.id = 'ring-fg';
+  svg.appendChild(bg); svg.appendChild(fg);
+  const c = h('div', 't-count', String(cfg.secs)); c.id = 't-count';
+  wrap.appendChild(svg); wrap.appendChild(c);
+  return wrap;
+}
+
+// ── Confetti ──────────────────────────────────────────────────
+const CONF_COLORS = ['#ff6b6b','#ffd93d','#2ecc71','#4f9de8','#9b59b6','#ff9d2e'];
+function burstConfetti(n){
+  const layer = document.getElementById('confetti');
+  for (let i = 0; i < n; i++){
+    const c = h('div', 'confetti');
+    c.style.left = (Math.random() * 100) + 'vw';
+    c.style.background = CONF_COLORS[i % CONF_COLORS.length];
+    c.style.setProperty('--rx', (Math.random() * 540 - 270) + 'deg');
+    c.style.animationDuration = (1.6 + Math.random() * 1.6) + 's';
+    c.style.animationDelay = (Math.random() * 0.5) + 's';
+    c.style.width = (7 + Math.random() * 8) + 'px';
+    c.style.height = (7 + Math.random() * 8) + 'px';
+    c.addEventListener('animationend', () => c.remove());
+    layer.appendChild(c);
+  }
+}
+
+// ── Tree building ─────────────────────────────────────────────
+function renderTree(){
+  clear(elTree);
+  QUIZ.sections.forEach(sec => {
+    const node = h('div', 'tree-node');
+    node.setAttribute('data-sec', sec.id);
+    const arrow = h('span', 'arrow', '▶');
+    const dot = h('span', 'dot');
+    dot.style.background = sectionColor(sec.id);
+    const label = h('span', null, sec.emoji + ' ' + sec.title);
+    const badge = h('span', 'badge', String(sec.questions.length));
+    node.appendChild(arrow); node.appendChild(dot); node.appendChild(label); node.appendChild(badge);
+    node.addEventListener('click', () => {
+      arrow.classList.toggle('open');
+      const kids = document.getElementById('children-' + sec.id);
+      if (kids) kids.classList.toggle('open');
+    });
+    elTree.appendChild(node);
+
+    const kids = h('div', 'tree-children');
+    kids.id = 'children-' + sec.id;
+    sec.questions.forEach(q => {
+      const leaf = h('div', 'tree-node tree-leaf');
+      leaf.setAttribute('data-qid', q.id);
+      const qn = h('span', null, 'Q' + (FLAT.length ? '' : '') + q.id.split('-q')[1]);
+      const st = h('span', 'st');
+      leaf.appendChild(h('span', 'arrow', '•'));
+      leaf.appendChild(qn); leaf.appendChild(st);
+      leaf.addEventListener('click', () => startAtSection(sec.id, q.id));
+      kids.appendChild(leaf);
+    });
+    elTree.appendChild(kids);
+  });
+}
+function sectionColor(id){
+  const pal = ['#4ecdc4','#ffb300','#9b59b6','#4f9de8','#ff6b6b','#2ecc71','#e67e22','#e84393'];
+  let x = 0; for (const ch of id) x = (x + ch.charCodeAt(0)) % pal.length;
+  return pal[x];
+}
+function updateTreeStatus(){
+  const answered = new Map(state.answers.map(a => [a.qid, a.status]));
+  document.querySelectorAll('#tree .tree-leaf').forEach(leaf => {
+    const st = leaf.querySelector('.st');
+    const qid = leaf.getAttribute('data-qid');
+    const s = answered.get(qid);
+    st.textContent = '';
+    st.className = 'st';
+    if (s === 'correct'){ st.textContent = '✓'; st.classList.add('good'); }
+    else if (s === 'wrong'){ st.textContent = '✗'; st.classList.add('bad'); }
+    else if (s === 'timeout'){ st.textContent = '⏰'; st.classList.add('slow'); }
+  });
+  // highlight active section node
+  document.querySelectorAll('#tree .tree-node[data-sec]').forEach(n => {
+    n.classList.toggle('active', state.scope === null || n.getAttribute('data-sec') === state.scope);
+  });
+}
+
+// ── Scope / nav ───────────────────────────────────────────────
+function shuffle(arr){
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--){ const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+  return a;
+}
+function startScope(scopeId){
+  state.scope = scopeId || null;
+  if (state.scope) {
+    state.list = FLAT.filter(f => f.sectionId === state.scope);
+  } else {
+    // group by section, shuffle sections, keep questions in source order within each
+    const bySec = [];
+    const secOrder = [];
+    FLAT.forEach(f => { if (!secOrder.includes(f.sectionId)) secOrder.push(f.sectionId); });
+    secOrder.forEach(sid => bySec.push(FLAT.filter(f => f.sectionId === sid)));
+    state.list = shuffle(bySec).flat();
+  }
+  state.iq = 0; state.answers = []; state.score = 0; state.runToken++;
+  updateScore();
+  if (state.list.length === 0){ renderIntro(); return; }
+  renderQuestion();
+}
+function startAtSection(secId, qid){
+  state.scope = secId;
+  state.list = FLAT.filter(f => f.sectionId === secId);
+  const idx = state.list.findIndex(f => f.q.id === qid);
+  state.iq = idx >= 0 ? idx : 0;
+  state.answers = []; state.score = 0; state.runToken++;
+  updateScore();
+  closeDrawer();
+  renderQuestion();
+}
+function currentQ(){
+  const f = state.list[state.iq];
+  return f ? f.q : null;
+}
+
+// ── Views ─────────────────────────────────────────────────────
+function renderIntro(){
+  state.mode = 'intro';
+  clear(elStage);
+  const card = h('div', 'card intro card-in');
+  const big = h('div', 'big-emoji', QUIZ.emoji || '🧠');
+  const title = h('h1', null, QUIZ.title || 'Grade 3 All Topics Quiz');
+  const sub = h('div', 'sub', QUIZ.subtitle || 'Test yourself & learn with fun quiz!');
+  const meta = h('div', 'meta-chip', '🎯 ' + TOTAL + ' questions · ⭐ up to ' + (TOTAL * 10) + ' points · ' + (cfg.secs > 0 ? '⏱️ ' + cfg.secs + 's each' : '⏱️ no time limit'));
+  const start = h('button', 'big-btn', '▶ Start Quiz');
+  start.addEventListener('click', () => { ensureAudio(); state.runToken++; startScope(null); });
+  card.appendChild(big); card.appendChild(title); card.appendChild(sub);
+  const row = h('div', 'ghost-row');
+  const samp = h('button', 'big-btn ghost', '🔊 Hear me');
+  samp.addEventListener('click', () => { ensureAudio(); speak('Hello friend! Let’s play and learn together!'); });
+  const imgAll = h('div', 'hint-line', 'Open a section in the left menu to play a single topic.');
+  row.appendChild(samp);
+  card.appendChild(meta); card.appendChild(start); card.appendChild(row); card.appendChild(imgAll);
+  elStage.appendChild(card);
+  updateProgress(0);
+}
+function speakQuestion(q, onEnd){
+  const all = 'Question ' + q.question + '. Options: ' +
+    q.options.map((o, i) => String.fromCharCode(65 + i) + '. ' + o).join('. ') + '.';
+  speak(all, onEnd);
+}
+function renderQuestion(){
+  state.mode = 'question';
+  const q = currentQ();
+  if (!q){ renderResults(); return; }
+  const token = ++state.runToken;
+  stopTimer();
+  clear(elStage);
+  const card = h('div', 'card card-in');
+  const head = h('div', 'q-head');
+  head.appendChild(h('div', 'q-progress', 'Question ' + (state.iq + 1) + ' of ' + state.list.length));
+  const tm = timerMarkup();
+  if (tm) head.appendChild(tm);
+  card.appendChild(head);
+
+  // question text
+  card.appendChild(h('div', 'q-text', q.question));
+
+  // optional image
+  if (q.image){
+    const iw = h('div', 'qimg-wrap');
+    if (q.image.type === 'emoji'){
+      iw.appendChild(h('div', 'emoji-big', q.image.src));
+    } else {
+      const img = h('img', 'qimg');
+      img.setAttribute('src', q.image.src);
+      img.setAttribute('alt', q.image.alt || '');
+      iw.appendChild(img);
+    }
+    if (q.image.caption) iw.appendChild(h('div', 'caption', q.image.caption));
+    card.appendChild(iw);
+  }
+
+  // options
+  const opts = h('div', 'options');
+  q.options.forEach((text, i) => {
+    const b = h('button', 'opt');
+    b.setAttribute('data-idx', String(i));
+    b.appendChild(h('span', 'key', String.fromCharCode(65 + i)));
+    b.appendChild(h('span', null, text));
+    b.appendChild(h('span', 'mark'));
+    b.addEventListener('click', () => { ensureAudio(); if (state.mode === 'question') answer(i); });
+    opts.appendChild(b);
+  });
+  card.appendChild(opts);
+
+  // speak button
+  const foot = h('div', 'q-foot');
+  const spk = h('button', 'speak-btn', '🔊 Read aloud');
+  spk.addEventListener('click', () => { ensureAudio(); speakQuestion(q); });
+  foot.appendChild(spk);
+  card.appendChild(foot);
+  elStage.appendChild(card);
+
+  updateProgress(state.iq / state.list.length);
+  speakQuestion(q, () => {
+    if (state.runToken === token && state.mode === 'question' && cfg.secs > 0) startTimer(cfg.secs, token);
+  });
+}
+function reveal(q, status, chosen){
+  state.mode = 'revealed';
+  stopTimer();
+  state.answers.push({ qid: q.id, chosen, status, pts: status === 'correct' ? 10 : 0 });
+  if (status === 'correct') state.score += 10;
+  updateScore();
+  updateTreeStatus();
+  burstConfetti(status === 'correct' ? 60 : 0);
+
+  const card = document.querySelector('#stage .card');
+  // banner
+  const banner = h('div', 'reveal-banner ' + (status === 'correct' ? 'good' : status === 'wrong' ? 'bad' : 'slow'));
+  const icon = status === 'correct' ? '✅' : status === 'wrong' ? '❌' : '⏰';
+  const msg = status === 'correct' ? 'Correct! Great job!' : status === 'wrong' ? 'Oops! Not quite.' : "Time's up!";
+  banner.appendChild(h('span', null, icon + ' ' + msg));
+  card.appendChild(banner);
+  // explanation
+  const exp = h('div', 'reveal-exp');
+  const b = h('b', null, '💡 '); b.textContent = '💡 ' + q.options[q.correctIndex];
+  exp.appendChild(b);
+  exp.appendChild(h('div', null, q.explanation));
+  card.appendChild(exp);
+  // highlight options
+  const buttons = card.querySelectorAll('.opt');
+  buttons.forEach((btn, i) => {
+    btn.disabled = true;
+    const mark = btn.querySelector('.mark');
+    if (i === q.correctIndex){ btn.classList.add('correct'); mark.textContent = '✓'; }
+    else if (i === chosen){ btn.classList.add('wrong-chosen'); mark.textContent = '✗'; }
+    else btn.classList.add('dim');
+  });
+  // next row
+  const row = h('div', 'next-row');
+  const pts = h('div', 'pts-gain ' + (status === 'correct' ? 'gain' : 'none'),
+                status === 'correct' ? '+10 points' : '+0 points');
+  const nb = h('button', 'next-btn', state.iq + 1 >= state.list.length ? 'See results 🏆' : 'Next ➡️');
+  nb.addEventListener('click', () => { state.iq++; if (state.iq >= state.list.length) renderResults(); else renderQuestion(); });
+  row.appendChild(pts); row.appendChild(nb);
+  const head = card.querySelector('.q-head');
+  if (head) head.appendChild(row); else card.appendChild(row);
+  // duplicate next-row at bottom for easy access
+  const row2 = h('div', 'next-row');
+  row2.appendChild(h('div', 'pts-gain ' + (status === 'correct' ? 'gain' : 'none'),
+                status === 'correct' ? '+10 points' : '+0 points'));
+  const nb2 = h('button', 'next-btn', state.iq + 1 >= state.list.length ? 'See results 🏆' : 'Next ➡️');
+  nb2.addEventListener('click', () => { state.iq++; if (state.iq >= state.list.length) renderResults(); else renderQuestion(); });
+  row2.appendChild(nb2);
+  card.appendChild(row2);
+}
+function answer(i){
+  const q = currentQ();
+  ensureAudio();
+  if (i === q.correctIndex) sCorrect(); else sWrong();
+  reveal(q, i === q.correctIndex ? 'correct' : 'wrong', i);
+}
+function onTimeout(token){
+  if (state.runToken !== token) return;   // stale
+  const q = currentQ();
+  ensureAudio(); sTimesUp();
+  reveal(q, 'timeout', -1);
+  speak(q.explanation);
+}
+function renderResults(){
+  state.mode = 'results';
+  stopTimer();
+  clear(elStage);
+  const card = h('div', 'card results card-in');
+  const count = state.list.length;
+  const maxPts = count * 10;
+  const words = pctWord(state.score / maxPts);
+  card.appendChild(h('div', 'big-emoji', words.emoji));
+  card.appendChild(h('h2', null, words.title));
+  card.appendChild(h('div', 'sub', 'You scored ' + state.score + ' of ' + maxPts + ' points'));
+
+  // score ring
+  const rw = h('div', 'ring-wrap');
+  const ns = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(ns, 'svg');
+  svg.setAttribute('viewBox', '0 0 120 120');
+  const bg = document.createElementNS(ns, 'circle');
+  bg.setAttribute('cx','60'); bg.setAttribute('cy','60'); bg.setAttribute('r','45'); bg.setAttribute('class','rbg');
+  const fg = document.createElementNS(ns, 'circle');
+  fg.setAttribute('cx','60'); fg.setAttribute('cy','60'); fg.setAttribute('r','45'); fg.setAttribute('class','rfg');
+  fg.id = 'ring-fg-r';
+  svg.appendChild(bg); svg.appendChild(fg);
+  rw.appendChild(svg);
+  const rs = h('div', 'rscore');
+  const n = h('div', 'n', String(state.score)); n.id = 'rscore-n'; n.className = 'n rscore-n';
+  rs.appendChild(n); rs.appendChild(h('div', 'pts', 'points'));
+  rw.appendChild(rs);
+  card.appendChild(rw);
+
+  const stars = h('div', 'stars', '⭐'.repeat(words.stars) + '☆'.repeat(5 - words.stars));
+  card.appendChild(stars);
+
+  // review
+  const review = h('div', 'review');
+  state.answers.forEach((a, i) => {
+    const f = state.list[i];
+    const row = h('div', 'review-row');
+    row.appendChild(h('div', 'qi', 'Q' + (i + 1)));
+    const body = h('div', 'qbody');
+    body.appendChild(h('div', 'qq', f.q.question));
+    const your = a.chosen >= 0 ? f.q.options[a.chosen] : 'No answer';
+    body.appendChild(h('div', 'aa', 'Your answer: ' + your));
+    body.appendChild(h('div', 'aa', '✅ ' + f.q.options[f.q.correctIndex]));
+    row.appendChild(body);
+    row.appendChild(h('div', 'pts ' + (a.pts ? 'gain' : 'none'), (a.pts ? '+' : '') + a.pts));
+    review.appendChild(row);
+  });
+  card.appendChild(review);
+
+  if (QUIZ.truncated){
+    card.appendChild(h('div', 'hint-line', 'Showing ' + QUIZ.truncated.shown + ' of ' + QUIZ.truncated.total + ' questions.'));
+  }
+
+  const row2 = h('div', 'ghost-row');
+  const again = h('button', 'big-btn ghost', '🔄 Play again');
+  again.addEventListener('click', () => { burstConfetti(0); startScope(state.scope); });
+  const menu = h('button', 'big-btn ghost', '🏠 Menu');
+  menu.addEventListener('click', () => renderIntro());
+  row2.appendChild(again); row2.appendChild(menu);
+  card.appendChild(row2);
+  elStage.appendChild(card);
+
+  // deferred: animate ring + settle score number + confetti
+  setTimeout(() => {
+    const C = 283;
+    const fgR = document.getElementById('ring-fg-r');
+    fgR.setAttribute('stroke-dashoffset', String(C * (1 - (state.score / maxPts))));
+    const num = document.getElementById('rscore-n');
+    if (num) num.textContent = String(state.score);   // settle immediately so chip & ring always agree
+    burstConfetti(140);
+    sPop();
+  }, 60);
+}
+function pctWord(p){
+  if (p >= 0.9)  return { emoji:'🏆', title:'Amazing!', stars:5 };
+  if (p >= 0.7)  return { emoji:'🌟', title:'Great job!', stars:4 };
+  if (p >= 0.5)  return { emoji:'😄', title:'Good try!', stars:3 };
+  if (p >= 0.3)  return { emoji:'🙂', title:'Keep going!', stars:2 };
+  return { emoji:'💪', title:'Practice makes better!', stars:1 };
+}
+function updateScore(){ elScore.textContent = '⭐ Score: ' + state.score; }
+function updateProgress(p){
+  if (elProg) elProg.style.width = Math.round(Math.max(0, Math.min(1, p)) * 100) + '%';
+  // track is shared for all-scope run; on intro show 0
+}
+
+// ── Mobile drawer ─────────────────────────────────────────────
+function closeDrawer(){
+  elSide.classList.remove('open'); overlay.classList.remove('open');
+}
+document.getElementById('hamburger').addEventListener('click', () => {
+  elSide.classList.toggle('open'); overlay.classList.toggle('open');
+});
+overlay.addEventListener('click', closeDrawer);
+document.getElementById('sidebar-home').addEventListener('click', () => { closeDrawer(); renderIntro(); });
+elMute.addEventListener('click', () => {
+  muted = !muted;
+  elMute.textContent = muted ? '🔇' : '🔊';
+  if (muted && 'speechSynthesis' in window) speechSynthesis.cancel();
+});
+
+// ── Boot ──────────────────────────────────────────────────────
+renderTree();
+renderIntro();
+})();
+</script>
+</body>
+</html>
