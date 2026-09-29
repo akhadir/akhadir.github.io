@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Industries — Class 7 Geography — Quiz</title>
+<style>
+  /* ══════════════ KID-FRIENDLY PALETTE (bright daylight) ══════════════ */
+  :root {
+    --bg: linear-gradient(160deg, #fff8e1 0%, #e0f7fa 60%, #dff4ff 100%);
+    --panel: #ffffff;
+    --ink: #2d3436;
+    --ink-soft: #6b7a85;
+    --coral: #ff6b6b;
+    --sunny: #ffd93d;
+    --teal: #4ecdc4;
+    --sky: #4f9de8;
+    --violet: #9b59b6;
+    --green: #2ecc71;
+    --amber: #ffb300;
+    --red: #ff6b6b;
+    --sidebar-w: 264px;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { height:100%; }
+  body {
+    background: var(--bg); color: var(--ink); overflow:hidden;
+    font-family: 'Comic Sans MS','Chalkboard SE','Marker Felt','Segoe UI','Trebuchet MS',sans-serif;
+    display:flex;
+  }
+
+  /* ── Sidebar tree ── */
+  .sidebar {
+    width: var(--sidebar-w); min-width: var(--sidebar-w); height:100vh;
+    background: rgba(255,255,255,0.82); border-right:1px solid rgba(0,0,0,0.08);
+    display:flex; flex-direction:column; z-index:20; overflow-y:auto;
+    backdrop-filter: blur(4px);
+    transition: transform .3s ease;
+  }
+  .sidebar-header {
+    padding:1.1rem 1rem .8rem; border-bottom:1px solid rgba(0,0,0,0.08);
+    font-size:1.05rem; font-weight:bold; cursor:pointer; display:flex; gap:.4rem; align-items:center;
+    flex-shrink:0;
+  }
+  .sidebar-header .ticker { color:var(--sky); }
+  .tree { flex:1; padding:.5rem 0; overflow-y:auto; }
+  .tree-node {
+    padding:.5rem .8rem .5rem 1rem; cursor:pointer; display:flex; align-items:center; gap:.45rem;
+    font-size:.86rem; transition: background .15s; border-left:3px solid transparent;
+    user-select:none; color:var(--ink);
+  }
+  .tree-node:hover { background:rgba(79,157,232,0.1); }
+  .tree-node.active { border-left-color: var(--amber); background:rgba(255,217,61,0.14); }
+  .tree-node .arrow { font-size:.65rem; width:12px; text-align:center; flex-shrink:0; transition:transform .2s; color:var(--ink-soft); }
+  .tree-node .arrow.open { transform:rotate(90deg); }
+  .tree-node .dot { width:11px; height:11px; border-radius:50%; flex-shrink:0; }
+  .tree-node .badge {
+    margin-left:auto; font-size:.68rem; background:rgba(78,205,196,0.2); color:var(--teal);
+    border-radius:999px; padding:.05rem .5rem; flex-shrink:0;
+  }
+  .tree-children { overflow:hidden; max-height:0; transition:max-height .3s ease; }
+  .tree-children.open { max-height:600px; }
+  .tree-children .tree-node { padding-left:2.2rem; font-size:.8rem; }
+  .tree-leaf .st {
+    margin-left:auto; font-size:.72rem; width:1.1rem; text-align:center; flex-shrink:0;
+  }
+  .st.good { color:var(--green); }
+  .st.bad { color:var(--red); }
+  .st.slow { color:var(--amber); }
+
+  /* ── Main column ── */
+  .main { flex:1; display:flex; flex-direction:column; position:relative; z-index:5; min-width:0; }
+  .topbar {
+    padding:.6rem 1.1rem; display:flex; align-items:center; gap:.8rem; flex-shrink:0;
+    background:rgba(255,255,255,0.6); border-bottom:1px solid rgba(0,0,0,0.08);
+  }
+  .topbar .app-title { font-size:1.05rem; font-weight:bold; display:flex; gap:.4rem; align-items:center; }
+  .topbar .spacer { flex:1; }
+  .score-chip {
+    background:#fff; border:2px solid var(--sunny); color:var(--ink); border-radius:999px;
+    padding:.3rem .9rem; font-size:.9rem; font-weight:bold; box-shadow:0 2px 8px rgba(0,0,0,0.08);
+  }
+  .mute-btn {
+    background:#fff; border:2px solid rgba(0,0,0,0.12); border-radius:999px; cursor:pointer;
+    font-size:1rem; padding:.25rem .6rem; font-family:inherit;
+  }
+  .mute-btn:hover { border-color:var(--sky); }
+  .progress-track {
+    height:8px; border-radius:99px; background:rgba(0,0,0,0.08); overflow:hidden; flex:1; max-width:260px;
+  }
+  .progress-fill { height:100%; width:0%; background:linear-gradient(90deg,var(--teal),var(--sky)); border-radius:99px; transition:width .4s ease; }
+
+  /* ── Stage / views ── */
+  .stage { flex:1; display:flex; justify-content:center; align-content:center; padding:1.4rem; overflow:auto; min-height:0; }
+  .card {
+    background:var(--panel); border-radius:22px; box-shadow:0 14px 44px rgba(45,52,54,0.16);
+    width:100%; max-width:720px; padding:1.8rem 2rem 2rem; position:relative;
+    border:1px solid rgba(0,0,0,0.05); margin:auto;
+  }
+
+  /* Intro */
+  .intro { text-align:center; }
+  .intro .big-emoji { font-size:4rem; animation: bob 3s ease-in-out infinite; display:inline-block; }
+  .intro h1 { font-size:2rem; margin:.4rem 0 .3rem; background:linear-gradient(135deg,var(--sky),var(--violet)); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
+  .intro .sub { color:var(--ink-soft); margin-bottom:1.2rem; }
+  .intro .meta-chip { color:var(--ink-soft); font-size:.9rem; margin-bottom:1.4rem; }
+  .big-btn {
+    font-family:inherit; font-size:1.15rem; font-weight:bold; color:#fff; cursor:pointer;
+    background:linear-gradient(135deg,var(--green),#27ae60); border:none; border-radius:999px;
+    padding:.85rem 2.2rem; box-shadow:0 6px 18px rgba(46,204,113,0.4); transition:transform .15s, box-shadow .15s;
+  }
+  .big-btn:hover { transform:translateY(-2px); }
+  .big-btn.ghost { background:#fff; color:var(--ink); box-shadow:0 2px 8px rgba(0,0,0,0.1); border:2px solid rgba(0,0,0,0.1); margin-left:.7rem; }
+  .ghost-row { margin-top:1.1rem; display:flex; justify-content:center; gap:.4rem; flex-wrap:wrap; }
+  .hint-line { font-size:.82rem; color:var(--ink-soft); margin-top:1rem; }
+
+  /* Question */
+  .q-head { display:flex; justify-content:space-between; align-items:center; gap:.6rem; flex-wrap:wrap; }
+  .q-progress { font-size:.82rem; color:var(--ink-soft); font-weight:bold; padding:.2rem 0; }
+  .timer-wrap { position:relative; width:74px; height:74px; flex-shrink:0; }
+  .timer-wrap svg { width:74px; height:74px; transform:rotate(-90deg); }
+  .timer-wrap .circle-bg { fill:none; stroke:rgba(0,0,0,0.08); stroke-width:7; }
+  .timer-wrap .circle-fg { fill:none; stroke:var(--sky); stroke-width:7; stroke-linecap:round; }
+  .timer-wrap .t-count {
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    font-size:1.5rem; font-weight:bold; color:var(--ink);
+  }
+  .timer-wrap.low .circle-fg { stroke:var(--red); }
+  .timer-wrap.low .t-count { color:var(--red); }
+  .q-text { font-size:1.35rem; line-height:1.45; margin:.7rem 0 1rem; font-weight:bold; }
+  .qimg-wrap { text-align:center; margin:.2rem 0 1rem; }
+  .qimg-wrap img.qimg {
+    max-width:100%; max-height:240px; border-radius:14px; object-fit:contain;
+    border:1px solid rgba(0,0,0,0.08);
+  }
+  .qimg-wrap .emoji-big { font-size:4.2rem; animation: pop 0.5s ease; }
+  .qimg-wrap .caption { font-size:.78rem; color:var(--ink-soft); margin-top:.35rem; }
+
+  .options { display:flex; flex-direction:column; gap:.7rem; }
+  .opt {
+    display:flex; align-items:center; gap:.8rem; width:100%; text-align:left;
+    font-family:inherit; font-size:1.02rem; color:var(--ink); cursor:pointer;
+    background:#f7fbfc; border:2px solid rgba(0,0,0,0.08); border-radius:14px;
+    padding:.72rem 1rem; min-height:48px; transition:border-color .15s, background .15s, transform .1s;
+    position:relative; overflow:hidden;
+  }
+  .opt:hover { border-color:var(--sky); background:#eef6ff; transform:translateY(-1px); }
+  .opt .key {
+    width:30px; height:30px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center;
+    background:#fff; border:2px solid rgba(0,0,0,0.14); font-size:.9rem; font-weight:bold; color:var(--ink-soft);
+  }
+  .opt.correct { border-color:var(--green); background:#eafaf1; }
+  .opt.correct .key { border-color:var(--green); color:var(--green); background:#d5f5e3; }
+  .opt.wrong-chosen { border-color:var(--red); background:#fdecea; }
+  .opt.wrong-chosen .key { border-color:var(--red); color:var(--red); background:#fadbd8; }
+  .opt.dim { opacity:.55; }
+  .opt .mark { margin-left:auto; font-size:1.1rem; }
+
+  /* Reveal banner */
+  .reveal-banner {
+    margin-top:1rem; border-radius:14px; padding:.8rem 1rem; font-size:1.02rem; font-weight:bold;
+    display:flex; gap:.6rem; align-items:center; animation: slideUp .35s ease both;
+  }
+  .reveal-banner.good { background:#eafaf1; color:#1e8449; }
+  .reveal-banner.bad { background:#fdecea; color:#c0392b; }
+  .reveal-banner.slow { background:#fef5e7; color:#b9770e; }
+  .reveal-exp { margin-top:.6rem; background:#f4f8fa; border-radius:12px; padding:.8rem 1rem; font-size:.95rem; color:var(--ink-soft); line-height:1.5; }
+  .reveal-exp b { color:var(--ink); }
+  .next-row { display:flex; align-items:center; justify-content:space-between; gap:.6rem; }
+  .pts-gain { font-weight:bold; font-size:1rem; }
+  .pts-gain.gain { color:var(--green); }
+  .pts-gain.none { color:var(--ink-soft); }
+  .next-btn {
+    font-family:inherit; font-size:1.02rem; font-weight:bold; cursor:pointer; color:#fff;
+    background:linear-gradient(135deg,var(--sky),#2e86de); border:none; border-radius:999px;
+    padding:.7rem 1.7rem; box-shadow:0 4px 14px rgba(79,157,232,0.4); transition:transform .15s;
+  }
+  .next-btn:hover { transform:translateY(-2px); }
+
+  .q-foot { display:flex; justify-content:center; margin-top:1rem; }
+  .speak-btn {
+    font-family:inherit; font-size:.9rem; color:var(--ink-soft); cursor:pointer; background:none;
+    border:1px solid rgba(0,0,0,0.1); border-radius:999px; padding:.35rem 1rem;
+  }
+  .speak-btn:hover { border-color:var(--sky); color:var(--sky); }
+
+  /* Results */
+  .results { text-align:center; }
+  .results h2 { font-size:1.7rem; margin-bottom:.3rem; }
+  .results .sub { color:var(--ink-soft); margin-bottom:1rem; }
+  .ring-wrap { width:150px; height:150px; margin:0 auto .6rem; position:relative; }
+  .ring-wrap svg { width:150px; height:150px; transform:rotate(-90deg); }
+  .ring-wrap .rbg { fill:none; stroke:rgba(0,0,0,0.08); stroke-width:12; }
+  .ring-wrap .rfg { fill:none; stroke:url(#gradA); stroke-width:12; stroke-linecap:round;
+    stroke-dasharray:283; stroke-dashoffset:283; transition:stroke-dashoffset 1s ease; }
+  .ring-wrap .rscore {
+    position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
+  }
+  .ring-wrap .rscore .n { font-size:2rem; font-weight:bold; }
+  .ring-wrap .rscore .pts { font-size:.8rem; color:var(--ink-soft); }
+  .stars { font-size:1.9rem; letter-spacing:.15rem; margin:.2rem 0 .9rem; }
+  .review { text-align:left; margin:1rem 0; }
+  .review-row { display:flex; gap:.7rem; padding:.6rem .4rem; border-bottom:1px solid rgba(0,0,0,0.06); font-size:.86rem; align-items:flex-start; }
+  .review-row .qi { font-weight:bold; color:var(--ink-soft); min-width:1.6rem; }
+  .review-row .qbody { flex:1; }
+  .review-row .qbody .qq { font-weight:bold; margin-bottom:.15rem; }
+  .review-row .qbody .aa { color:var(--ink-soft); }
+  .review-row .pts { font-weight:bold; flex-shrink:0; }
+  .review-row .pts.gain { color:var(--green); }
+  .review-row .pts.none { color:var(--ink-soft); }
+
+  /* Confetti */
+  #confetti { position:fixed; inset:0; pointer-events:none; z-index:200; overflow:hidden; }
+  .confetti {
+    position:absolute; top:-3vh; width:12px; height:12px; border-radius:2px;
+    animation: confetti-fall linear forwards;
+  }
+
+  /* Hamburger / overlay (mobile) */
+  .hamburger { display:none; position:fixed; top:.7rem; left:.7rem; z-index:40;
+    background:#fff; border:1px solid rgba(0,0,0,0.15); border-radius:10px;
+    padding:.35rem .65rem; font-size:1.25rem; cursor:pointer; font-family:inherit; }
+  .overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:19; }
+  .overlay.open { display:block; }
+
+  /* Keyframes */
+  @keyframes bob { 0%,100%{ transform:translateY(0);} 50%{ transform:translateY(-8px);} }
+  @keyframes pop { 0%{ transform:scale(0.4); opacity:0;} 100%{ transform:scale(1); opacity:1;} }
+  @keyframes slideUp { from{ opacity:0; transform:translateY(14px);} to{ opacity:1; transform:translateY(0);} }
+  @keyframes cardIn { from{ opacity:0; transform:translateY(20px) scale(0.97);} to{ opacity:1; transform:none;} }
+  @keyframes confetti-fall { to { transform:translateY(108vh) rotate(var(--rx,180deg)); opacity:.9; } }
+  .card-in { animation:cardIn .35s ease both; }
+
+  @media (max-width:768px) {
+    .sidebar { position:fixed; left:0; top:0; bottom:0; transform:translateX(-100%); z-index:100; box-shadow:0 0 40px rgba(0,0,0,0.2); }
+    .sidebar.open { transform:translateX(0); }
+    .hamburger { display:block; }
+    .card { padding:1.4rem 1.2rem 1.6rem; }
+    .q-text { font-size:1.15rem; }
+  }
+</style>
+</head>
+<body>
+
+<div id="confetti"></div>
+
+<button class="hamburger" id="hamburger">☰</button>
+<div class="overlay" id="overlay"></div>
+
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header" id="sidebar-home"><span class="ticker">🧠</span> <span id="side-title">Industries — Class 7 Geography</span></div>
+  <div class="tree" id="tree"></div>
+</aside>
+
+<main class="main">
+  <div class="topbar">
+    <span class="app-title"><span>🧠</span><span id="top-title" title="Industries — Class 7 Geography">Industries — Class 7 Geography</span></span>
+    <span class="spacer"></span>
+    <div class="progress-track" title="Progress"><div class="progress-fill" id="progress-fill"></div></div>
+    <span class="score-chip" id="score-chip">⭐ Score: 0</span>
+    <button class="mute-btn" id="mute-btn" title="Toggle read-aloud (TTS)">🔊</button>
+  </div>
+  <div class="stage" id="stage"></div>
+</main>
+
+<script type="application/json" id="quiz-data">{"title": "Industries — Class 7 Geography", "sections": [{"id": "chapter-outline-1", "title": "Chapter Outline", "emoji": "📖", "questions": [{"id": "industries-chapter-5-part-1-q1", "section": "Chapter Outline", "question": "Which of these topics is NOT written in this chapter's outline?", "options": ["Fishing", "Rainfall and monsoon", "Shipbuilding", "Sugar"], "correctIndex": 1, "explanation": "The outline lists industries like fishing, shipbuilding and sugar, but not rainfall and monsoon.", "suggestImage": false, "imageNote": "", "image": null}]}, {"id": "introduction-2", "title": "Introduction", "emoji": "🏦", "questions": [{"id": "industries-chapter-5-part-1-q2", "section": "Introduction", "question": "What is manufacturing?", "options": ["Changing raw materials into finished goods with the help of machinery", "Growing crops on a farm", "Digging minerals out of the ground", "Carrying goods from one place to another"], "correctIndex": 0, "explanation": "Manufacturing means turning raw material into finished products using machinery and human effort.", "suggestImage": true, "imageNote": "Simple flow diagram: raw material (cotton, ore, wheat) -> factory with machines -> finished product (cloth, steel, flour)", "image": {"type": "svg", "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2MDAgMjUwIiB3aWR0aD0iNjAwIiBoZWlnaHQ9IjI1MCIgZm9udC1mYW1pbHk9IkNvbWljIFNhbnMgTVMsIENoYWxrYm9hcmQgU0UsIE1hcmtlciBGZWx0LCBTZWdvZSBVSSwgc2Fucy1zZXJpZiI+PHJlY3Qgd2lkdGg9IjYwMCIgaGVpZ2h0PSIyNTAiIHJ4PSIxOCIgZmlsbD0iI2ZmZjhlMSIvPjxkZWZzPjxtYXJrZXIgaWQ9ImFoIiBtYXJrZXJXaWR0aD0iOSIgbWFya2VySGVpZ2h0PSI5IiByZWZYPSI3IiByZWZZPSI0LjUiIG9yaWVudD0iYXV0byI+PHBhdGggZD0iTTAsMCBMOSw0LjUgTDAsOSB6IiBmaWxsPSIjMmQzNDM2Ii8+PC9tYXJrZXI+PC9kZWZzPjx0ZXh0IHg9IjMwMCIgeT0iMzAiIGZvbnQtc2l6ZT0iMTkiIGZpbGw9IiMyZDM0MzYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtd2VpZ2h0PSJib2xkIj5Ib3cgbWFudWZhY3R1cmluZyB3b3JrczwvdGV4dD48cmVjdCB4PSIzNiIgeT0iNjAiIHdpZHRoPSIxNTAiIGhlaWdodD0iOTYiIHJ4PSIxMiIgZmlsbD0iI2ZmZDkzZCIgc3Ryb2tlPSIjMmQzNDM2IiBzdHJva2Utd2lkdGg9IjIuNSIvPjx0ZXh0IHg9IjExMSIgeT0iODQiIGZvbnQtc2l6ZT0iMTUiIGZpbGw9IiMyZDM0MzYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtd2VpZ2h0PSJib2xkIj5SYXcgbWF0ZXJpYWw8L3RleHQ+PHRleHQgeD0iMTExIiB5PSIxMTgiIGZvbnQtc2l6ZT0iMTMiIGZpbGw9IiMyZDM0MzYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtd2VpZ2h0PSJub3JtYWwiPmNvdHRvbiDCtyBvcmU8L3RleHQ+PHRleHQgeD0iMTExIiB5PSIxMzgiIGZvbnQtc2l6ZT0iMTMiIGZpbGw9IiMyZDM0MzYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtd2VpZ2h0PSJub3JtYWwiPndoZWF0IMK3IHRpbWJlcjwvdGV4dD48bGluZSB4MT0iMTkwIiB5MT0iMTA4IiB4Mj0iMjI2IiB5Mj0iMTA4IiBzdHJva2U9IiMyZDM0MzYiIHN0cm9rZS13aWR0aD0iNCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBtYXJrZXItZW5kPSJ1cmwoI2FoKSIvPjxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDIzOCw2MCkgc2NhbGUoMC45NSkiPjxyZWN0IHg9IjAiIHk9IjIwIiB3aWR0aD0iMTEwIiBoZWlnaHQ9IjUwIiByeD0iNiIgZmlsbD0iI2IyYmVjMyIgc3Ryb2tlPSIjMmQzNDM2IiBzdHJva2Utd2lkdGg9IjIuNSIvPjxwYXRoIGQ9Ik0tNiwyMCBMNTUsLTYgTDExNiwyMCB6IiBmaWxsPSIjMmQzNDM2IiBzdHJva2U9IiMyZDM0MzYiIHN0cm9rZS13aWR0aD0iMi41IiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PHJlY3QgeD0iMTYiIHk9Ii0yNiIgd2lkdGg9IjE2IiBoZWlnaHQ9IjQ4IiByeD0iNCIgZmlsbD0iI2IyYmVjMyIgc3Ryb2tlPSIjMmQzNDM2IiBzdHJva2Utd2lkdGg9IjIuNSIvPjxyZWN0IHg9IjY0IiB5PSItMjAiIHdpZHRoPSIxNCIgaGVpZ2h0PSI0MiIgcng9IjQiIGZpbGw9IiNiMmJlYzMiIHN0cm9rZT0iIzJkMzQzNiIgc3Ryb2tlLXdpZHRoPSIyLjUiLz48cmVjdCB4PSIyNiIgeT0iMzgiIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNCIgcng9IjMiIGZpbGw9IiNmZjZiNmIiLz48cmVjdCB4PSI1NCIgeT0iMzgiIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNCIgcng9IjMiIGZpbGw9IiNmZjZiNmIiLz48cmVjdCB4PSI4MiIgeT0iMzgiIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNCIgcng9IjMiIGZpbGw9IiNmZjZiNmIiLz48L2c+PHRleHQgeD0iMjkxIiB5PSIxODAiIGZvbnQtc2l6ZT0iMTMiIGZpbGw9IiMyZDM0MzYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtd2VpZ2h0PSJub3JtYWwiPm1hY2hpbmVyeSArPC90ZXh0Pjx0ZXh0IHg9IjI5MSIgeT0iMTk4IiBmb250LXNpemU9IjEzIiBmaWxsPSIjMmQzNDM2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXdlaWdodD0ibm9ybWFsIj5odW1hbiBlZmZvcnQ8L3RleHQ+PGxpbmUgeDE9IjM1MiIgeTE9IjEwOCIgeDI9IjM4OCIgeTI9IjEwOCIgc3Ryb2tlPSIjMmQzNDM2IiBzdHJva2Utd2lkdGg9IjQiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgbWFya2VyLWVuZD0idXJsKCNhaCkiLz48cmVjdCB4PSIzOTYiIHk9IjYwIiB3aWR0aD0iMTY4IiBoZWlnaHQ9Ijk2IiByeD0iMTIiIGZpbGw9IiM0ZWNkYzQiIHN0cm9rZT0iIzJkMzQzNiIgc3Ryb2tlLXdpZHRoPSIyLjUiLz48dGV4dCB4PSI0ODAiIHk9Ijg0IiBmb250LXNpemU9IjE1IiBmaWxsPSIjMmQzNDM2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXdlaWdodD0iYm9sZCI+RmluaXNoZWQgcHJvZHVjdDwvdGV4dD48dGV4dCB4PSI0ODAiIHk9IjExOCIgZm9udC1zaXplPSIxMyIgZmlsbD0iIzJkMzQzNiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC13ZWlnaHQ9Im5vcm1hbCI+Y2xvdGggwrcgc3RlZWw8L3RleHQ+PHRleHQgeD0iNDgwIiB5PSIxMzgiIGZvbnQtc2l6ZT0iMTMiIGZpbGw9IiMyZDM0MzYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtd2VpZ2h0PSJub3JtYWwiPmZsb3VyIMK3IHNob2VzPC90ZXh0Pjx0ZXh0IHg9IjMwMCIgeT0iMjMyIiBmb250LXNpemU9IjE0IiBmaWxsPSIjMmQzNDM2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXdlaWdodD0iYm9sZCI+UmF3IG1hdGVyaWFsIGlzIGNvbnZlcnRlZCBpbnRvIGZpbmlzaGVkIGdvb2RzPC90ZXh0Pjwvc3ZnPg==", "alt": "Simple flow diagram: raw material (cotton, ore, wheat) -> factory with machines -> finished product (cloth, steel, flour"}}, {"id": "industries-chapter-5-part-1-q3", "section": "Introduction", "question": "Cotton cannot be used directly. What must be done to it before people can wear it?", "options": ["It must be ginned, spun and woven", "It must be boiled, dried and packed", "It must be painted and cut into pieces", "It must be frozen and loaded on a truck"], "correctIndex": 0, "explanation": "The book says cotton must be ginned, spun and woven before it becomes useful to us.", "suggestImage": true, "imageNote": "Three small pictures in a row: cotton plant with fluffy bolls, cotton yarn on a spindle, woven cloth", "image": {"type": "svg", "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2MDAgMjYyIiB3aWR0aD0iNjAwIiBoZWlnaHQ9IjI2MiIgZm9udC1mYW1pbHk9IkNvbWljIFNhbnMgTVMsIENoYWxrYm9hcmQgU0UsIE1hcmtlciBGZWx0LCBTZWdvZSBVSSwgc2Fucy1zZXJpZiI+PHJlY3Qgd2lkdGg9IjYwMCIgaGVpZ2h0PSIyNjIiIHJ4PSIxOCIgZmlsbD0iI2ZmZjhlMSIvPjx0ZXh0IHg9IjMwMCIgeT0iMzAiIGZvbnQtc2l6ZT0iMTkiIGZpbGw9IiMyZDM0MzYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtd2VpZ2h0PSJib2xkIj5Gcm9tIGNvdHRvbiBwbGFudCB0byBjbG90aDwvdGV4dD48cmVjdCB4PSIyNCIgeT0iNDgiIHdpZHRoPSIxNjgiIGhlaWdodD0iMTcyIiByeD0iMTQiIGZpbGw9IiNlOGY4ZTAiIHN0cm9rZT0iIzJkMzQzNiIgc3Ryb2tlLXdpZHRoPSIyIi8+PHBhdGggZD0iTTEwOCwxOTAgTDEwOCwxMjAiIHN0cm9rZT0iIzJlY2M3MSIgc3Ryb2tlLXdpZHRoPSI3IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48cGF0aCBkPSJNMTA4LDE1MCBRODQsMTM4IDc0LDEyMCIgc3Ryb2tlPSIjMmVjYzcxIiBzdHJva2Utd2lkdGg9IjUiIGZpbGw9Im5vbmUiLz48cGF0aCBkPSJNMTA4LDEzNiBRMTMyLDEyNCAxNDIsMTA2IiBzdHJva2U9IiMyZWNjNzEiIHN0cm9rZS13aWR0aD0iNSIgZmlsbD0ibm9uZSIvPjxjaXJjbGUgY3g9Ijc0IiBjeT0iMTE2IiByPSIxNSIgZmlsbD0iI2ZmZmZmZiIgc3Ryb2tlPSIjMmVjYzcxIiBzdHJva2Utd2lkdGg9IjIuNSIvPjxjaXJjbGUgY3g9IjE0MiIgY3k9IjEwMiIgcj0iMTUiIGZpbGw9IiNmZmZmZmYiIHN0cm9rZT0iIzJlY2M3MSIgc3Ryb2tlLXdpZHRoPSIyLjUiLz48Y2lyY2xlIGN4PSIxMDgiIGN5PSI5NiIgcj0iMTciIGZpbGw9IiNmZmZmZmYiIHN0cm9rZT0iIzJlY2M3MSIgc3Ryb2tlLXdpZHRoPSIyLjUiLz48Y2lyY2xlIGN4PSIxMDMiIGN5PSI5MiIgcj0iMy4yIiBmaWxsPSIjMmQzNDM2Ii8+PGNpcmNsZSBjeD0iMTEzIiBjeT0iOTciIHI9IjMuMiIgZmlsbD0iIzJkMzQzNiIvPjxjaXJjbGUgY3g9IjEwMyIgY3k9IjEwMSIgcj0iMy4yIiBmaWxsPSIjMmQzNDM2Ii8+PGNpcmNsZSBjeD0iNjYiIGN5PSIxMTIiIHI9IjMuMiIgZmlsbD0iIzJkMzQzNiIvPjxjaXJjbGUgY3g9Ijc4IiBjeT0iMTE4IiByPSIzLjIiIGZpbGw9IiMyZDM0MzYiLz48Y2lyY2xlIGN4PSI3MCIgY3k9IjEyMSIgcj0iMy4yIiBmaWxsPSIjMmQzNDM2Ii8+PGNpcmNsZSBjeD0iMTM2IiBjeT0iOTgiIHI9IjMuMiIgZmlsbD0iIzJkMzQzNiIvPjxjaXJjbGUgY3g9IjE0NyIgY3k9IjEwNCIgcj0iMy4yIiBmaWxsPSIjMmQzNDM2Ii8+PGNpcmNsZSBjeD0iMTQwIiBjeT0iMTA3IiByPSIzLjIiIGZpbGw9IiMyZDM0MzYiLz48dGV4dCB4PSIxMDgiIHk9IjIxMiIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzJkMzQzNiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC13ZWlnaHQ9ImJvbGQiPkNvdHRvbiBwbGFudDwvdGV4dD48cmVjdCB4PSIyMTYiIHk9IjQ4IiB3aWR0aD0iMTY4IiBoZWlnaHQ9IjE3MiIgcng9IjE0IiBmaWxsPSIjZmZmNGQ2IiBzdHJva2U9IiMyZDM0MzYiIHN0cm9rZS13aWR0aD0iMiIvPjxyZWN0IHg9IjI2OCIgeT0iOTYiIHdpZHRoPSI2NCIgaGVpZ2h0PSI3MiIgcng9IjgiIGZpbGw9IiNmZmIzMDAiIHN0cm9rZT0iIzJkMzQzNiIgc3Ryb2tlLXdpZHRoPSIyLjUiLz48cmVjdCB4PSIyNjAiIHk9Ijg4IiB3aWR0aD0iODAiIGhlaWdodD0iMTQiIHJ4PSI2IiBmaWxsPSIjYTk3MTRiIiBzdHJva2U9IiMyZDM0MzYiIHN0cm9rZS13aWR0aD0iMi41Ii8+PHJlY3QgeD0iMjYwIiB5PSIxNjIiIHdpZHRoPSI4MCIgaGVpZ2h0PSIxNCIgcng9IjYiIGZpbGw9IiNhOTcxNGIiIHN0cm9rZT0iIzJkMzQzNiIgc3Ryb2tlLXdpZHRoPSIyLjUiLz48bGluZSB4MT0iMjcyIiB5MT0iMTEwIiB4Mj0iMzI4IiB5Mj0iMTA2IiBzdHJva2U9IiMyZDM0MzYiIHN0cm9rZS13aWR0aD0iMS42IiBvcGFjaXR5PSIwLjUiLz48bGluZSB4MT0iMjcyIiB5MT0iMTIyIiB4Mj0iMzI4IiB5Mj0iMTE4IiBzdHJva2U9IiMyZDM0MzYiIHN0cm9rZS13aWR0aD0iMS42IiBvcGFjaXR5PSIwLjUiLz48bGluZSB4MT0iMjcyIiB5MT0iMTM0IiB4Mj0iMzI4IiB5Mj0iMTMwIiBzdHJva2U9IiMyZDM0MzYiIHN0cm9rZS13aWR0aD0iMS42IiBvcGFjaXR5PSIwLjUiLz48bGluZSB4MT0iMjcyIiB5MT0iMTQ2IiB4Mj0iMzI4IiB5Mj0iMTQyIiBzdHJva2U9IiMyZDM0MzYiIHN0cm9rZS13aWR0aD0iMS42IiBvcGFjaXR5PSIwLjUiLz48bGluZSB4MT0iMjcyIiB5MT0iMTU4IiB4Mj0iMzI4IiB5Mj0iMTU0IiBzdHJva2U9IiMyZDM0MzYiIHN0cm9rZS13aWR0aD0iMS42IiBvcGFjaXR5PSIwLjUiLz48dGV4dCB4PSIzMDAiIHk9IjIxMiIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzJkMzQzNiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC13ZWlnaHQ9ImJvbGQiPllhcm4gb24gYSBzcG9vbDwvdGV4dD48cmVjdCB4PSI0MDgiIHk9IjQ4IiB3aWR0aD0iMTY4IiBoZWlnaHQ9IjE3MiIgcng9IjE0IiBmaWxsPSIjZTZmMGZmIiBzdHJva2U9IiMyZDM0MzYiIHN0cm9rZS13aWR0aD0iMiIvPjxyZWN0IHg9IjQzMCIgeT0iODYiIHdpZHRoPSI0MCIgaGVpZ2h0PSIyOCIgcng9IjUiIGZpbGw9IiNmZjZiNmIiIHN0cm9rZT0iIzJkMzQzNiIgc3Ryb2tlLXdpZHRoPSIyIi8+PHJlY3QgeD0iNDc0IiB5PSI4NiIgd2lkdGg9IjQwIiBoZWlnaHQ9IjI4IiByeD0iNSIgZmlsbD0iI2ZmNmI2YiIgc3Ryb2tlPSIjMmQzNDM2IiBzdHJva2Utd2lkdGg9IjIiLz48cmVjdCB4PSI1MTgiIHk9Ijg2IiB3aWR0aD0iNDAiIGhlaWdodD0iMjgiIHJ4PSI1IiBmaWxsPSIjZmY2YjZiIiBzdHJva2U9IiMyZDM0MzYiIHN0cm9rZS13aWR0aD0iMiIvPjxyZWN0IHg9IjQzMCIgeT0iMTE4IiB3aWR0aD0iNDAiIGhlaWdodD0iMjgiIHJ4PSI1IiBmaWxsPSIjZmZkOTNkIiBzdHJva2U9IiMyZDM0MzYiIHN0cm9rZS13aWR0aD0iMiIvPjxyZWN0IHg9IjQ3NCIgeT0iMTE4IiB3aWR0aD0iNDAiIGhlaWdodD0iMjgiIHJ4PSI1IiBmaWxsPSIjZmZkOTNkIiBzdHJva2U9IiMyZDM0MzYiIHN0cm9rZS13aWR0aD0iMiIvPjxyZWN0IHg9IjUxOCIgeT0iMTE4IiB3aWR0aD0iNDAiIGhlaWdodD0iMjgiIHJ4PSI1IiBmaWxsPSIjZmZkOTNkIiBzdHJva2U9IiMyZDM0MzYiIHN0cm9rZS13aWR0aD0iMiIvPjxyZWN0IHg9IjQzMCIgeT0iMTUwIiB3aWR0aD0iNDAiIGhlaWdodD0iMjgiIHJ4PSI1IiBmaWxsPSIjNGVjZGM0IiBzdHJva2U9IiMyZDM0MzYiIHN0cm9rZS13aWR0aD0iMiIvPjxyZWN0IHg9IjQ3NCIgeT0iMTUwIiB3aWR0aD0iNDAiIGhlaWdodD0iMjgiIHJ4PSI1IiBmaWxsPSIjNGVjZGM0IiBzdHJva2U9IiMyZDM0MzYiIHN0cm9rZS13aWR0aD0iMiIvPjxyZWN0IHg9IjUxOCIgeT0iMTUwIiB3aWR0aD0iNDAiIGhlaWdodD0iMjgiIHJ4PSI1IiBmaWxsPSIjNGVjZGM0IiBzdHJva2U9IiMyZDM0MzYiIHN0cm9rZS13aWR0aD0iMiIvPjxyZWN0IHg9IjQzMCIgeT0iMTgyIiB3aWR0aD0iNDAiIGhlaWdodD0iMjgiIHJ4PSI1IiBmaWxsPSIjOWI1OWI2IiBzdHJva2U9IiMyZDM0MzYiIHN0cm9rZS13aWR0aD0iMiIvPjxyZWN0IHg9IjQ3NCIgeT0iMTgyIiB3aWR0aD0iNDAiIGhlaWdodD0iMjgiIHJ4PSI1IiBmaWxsPSIjOWI1OWI2IiBzdHJva2U9IiMyZDM0MzYiIHN0cm9rZS13aWR0aD0iMiIvPjxyZWN0IHg9IjUxOCIgeT0iMTgyIiB3aWR0aD0iNDAiIGhlaWdodD0iMjgiIHJ4PSI1IiBmaWxsPSIjOWI1OWI2IiBzdHJva2U9IiMyZDM0MzYiIHN0cm9rZS13aWR0aD0iMiIvPjx0ZXh0IHg9IjQ5MiIgeT0iMjEyIiBmb250LXNpemU9IjE0IiBmaWxsPSIjMmQzNDM2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXdlaWdodD0iYm9sZCI+V292ZW4gY2xvdGg8L3RleHQ+PHRleHQgeD0iMzAwIiB5PSIyNDQiIGZvbnQtc2l6ZT0iMTUiIGZpbGw9IiMyZDM0MzYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtd2VpZ2h0PSJib2xkIj5HaW5uZWQg4oaSIHNwdW4g4oaSIHdvdmVuPC90ZXh0Pjwvc3ZnPg==", "alt": "Three small pictures in a row: cotton plant with fluffy bolls, cotton yarn on a spindle, woven cloth"}}]}, {"id": "need-for-industries-3", "title": "Need for Industries", "emoji": "🏭", "questions": [{"id": "industries-chapter-5-part-1-q4", "section": "Need for Industries", "question": "In 1947, about how much of India's GDP came from farming, forestry, fishing, mining and quarrying together?", "options": ["About 56.6%", "About 15%", "About 6%", "About 100%"], "correctIndex": 0, "explanation": "The primary sector gave about 56.6% of GDP, while manufacturing and construction gave only 15%.", "suggestImage": true, "imageNote": "Two simple pie charts comparing 1947 India: primary sector 56.6% versus manufacturing, construction and utilities 15%", "image": {"type": "svg", "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2MDAgMjgyIiB3aWR0aD0iNjAwIiBoZWlnaHQ9IjI4MiIgZm9udC1mYW1pbHk9IkNvbWljIFNhbnMgTVMsIENoYWxrYm9hcmQgU0UsIE1hcmtlciBGZWx0LCBTZWdvZSBVSSwgc2Fucy1zZXJpZiI+PHJlY3Qgd2lkdGg9IjYwMCIgaGVpZ2h0PSIyODIiIHJ4PSIxOCIgZmlsbD0iI2ZmZjhlMSIvPjx0ZXh0IHg9IjMwMCIgeT0iMzIiIGZvbnQtc2l6ZT0iMTkiIGZpbGw9IiMyZDM0MzYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtd2VpZ2h0PSJib2xkIj5JbmRpYSBpbiAxOTQ3IOKAlCBzaGFyZSBvZiBHRFA8L3RleHQ+PGNpcmNsZSBjeD0iMTUwIiBjeT0iMTIwIiByPSI2NiIgZmlsbD0iI2YwZjBmMCIgc3Ryb2tlPSIjMmQzNDM2IiBzdHJva2Utd2lkdGg9IjIuNSIvPjxjaXJjbGUgY3g9IjE1MCIgY3k9IjEyMCIgcj0iNjYiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzJlY2M3MSIgc3Ryb2tlLXdpZHRoPSIyNiIgc3Ryb2tlLWRhc2hhcnJheT0iMjM0LjcgNDE0LjciIHRyYW5zZm9ybT0icm90YXRlKC05MCAxNTAgMTIwKSIgc3Ryb2tlLWxpbmVjYXA9ImJ1dHQiLz48dGV4dCB4PSIxNTAiIHk9IjEyNCIgZm9udC1zaXplPSIyMiIgZmlsbD0iIzJkMzQzNiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC13ZWlnaHQ9ImJvbGQiPjU2LjYlPC90ZXh0Pjx0ZXh0IHg9IjE1MCIgeT0iMTQ2IiBmb250LXNpemU9IjEzIiBmaWxsPSIjMmQzNDM2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXdlaWdodD0ibm9ybWFsIj5wcmltYXJ5IHNlY3RvcjwvdGV4dD48Y2lyY2xlIGN4PSI0NTAiIGN5PSIxMjAiIHI9IjY2IiBmaWxsPSIjZjBmMGYwIiBzdHJva2U9IiMyZDM0MzYiIHN0cm9rZS13aWR0aD0iMi41Ii8+PGNpcmNsZSBjeD0iNDUwIiBjeT0iMTIwIiByPSI2NiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZmY2YjZiIiBzdHJva2Utd2lkdGg9IjI2IiBzdHJva2UtZGFzaGFycmF5PSI2Mi4yIDQxNC43IiB0cmFuc2Zvcm09InJvdGF0ZSgtOTAgNDUwIDEyMCkiIHN0cm9rZS1saW5lY2FwPSJidXR0Ii8+PHRleHQgeD0iNDUwIiB5PSIxMjQiIGZvbnQtc2l6ZT0iMjIiIGZpbGw9IiMyZDM0MzYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtd2VpZ2h0PSJib2xkIj4xNSU8L3RleHQ+PHRleHQgeD0iNDUwIiB5PSIxNDYiIGZvbnQtc2l6ZT0iMTMiIGZpbGw9IiMyZDM0MzYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtd2VpZ2h0PSJub3JtYWwiPm1hbnVmYWN0dXJpbmc8L3RleHQ+PHRleHQgeD0iMTUwIiB5PSIyMTIiIGZvbnQtc2l6ZT0iMTMiIGZpbGw9IiMyZDM0MzYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtd2VpZ2h0PSJub3JtYWwiPmFncmljdWx0dXJlIMK3IGZvcmVzdHJ5PC90ZXh0Pjx0ZXh0IHg9IjE1MCIgeT0iMjMwIiBmb250LXNpemU9IjEzIiBmaWxsPSIjMmQzNDM2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXdlaWdodD0ibm9ybWFsIj5maXNoaW5nIMK3IG1pbmluZzwvdGV4dD48dGV4dCB4PSI0NTAiIHk9IjIxMiIgZm9udC1zaXplPSIxMyIgZmlsbD0iIzJkMzQzNiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC13ZWlnaHQ9Im5vcm1hbCI+bWFudWZhY3R1cmluZyDCtyBjb25zdHJ1Y3Rpb248L3RleHQ+PHRleHQgeD0iNDUwIiB5PSIyMzAiIGZvbnQtc2l6ZT0iMTMiIGZpbGw9IiMyZDM0MzYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtd2VpZ2h0PSJub3JtYWwiPmVsZWN0cmljaXR5IMK3IHdhdGVyIHN1cHBseTwvdGV4dD48dGV4dCB4PSIzMDAiIHk9IjI2NCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzJkMzQzNiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC13ZWlnaHQ9ImJvbGQiPkluZHVzdHJ5IHdhcyBzbWFsbCDigJQgc28gdGhlIGNvdW50cnkgbmVlZGVkIG1vcmUgb2YgaXQ8L3RleHQ+PC9zdmc+", "alt": "Two simple pie charts comparing 1947 India: primary sector 56.6% versus manufacturing, construction and utilities 15%"}}, {"id": "industries-chapter-5-part-1-q5", "section": "Need for Industries", "question": "Which two countries does the chapter name as showing fast progress through rapid industrialisation?", "options": ["America and Japan", "India and Bangladesh", "Brazil and Mexico", "Egypt and Kenya"], "correctIndex": 0, "explanation": "A strong industrial sector made America and Japan grow faster with better incomes and living standards.", "suggestImage": false, "imageNote": "", "image": null}]}, {"id": "factors-affecting-location-4", "title": "Factors Affecting Location", "emoji": "🗺️", "questions": [{"id": "industries-chapter-5-part-1-q6", "section": "Factors Affecting Location", "question": "Why is the sugar industry always set up very close to sugarcane fields?", "options": ["To save the cost of transport, because sugarcane is heavy and loses weight quickly", "To get more rain for the crops", "To find more workers easily", "To be near the sea for shipping"], "correctIndex": 0, "explanation": "Sugar mills are placed near sugarcane fields so the heavy cane does not cost much to transport.", "suggestImage": true, "imageNote": "Simple map of a sugarcane-growing state with a sugar mill icon placed right beside the fields", "image": {"type": "svg", "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2MDAgMzAwIiB3aWR0aD0iNjAwIiBoZWlnaHQ9IjMwMCIgZm9udC1mYW1pbHk9IkNvbWljIFNhbnMgTVMsIENoYWxrYm9hcmQgU0UsIE1hcmtlciBGZWx0LCBTZWdvZSBVSSwgc2Fucy1zZXJpZiI+PHJlY3Qgd2lkdGg9IjYwMCIgaGVpZ2h0PSIzMDAiIHJ4PSIxOCIgZmlsbD0iI2ZmZjhlMSIvPjx0ZXh0IHg9IjMwMCIgeT0iMzAiIGZvbnQtc2l6ZT0iMTgiIGZpbGw9IiMyZDM0MzYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtd2VpZ2h0PSJib2xkIj5TdWdhciBtaWxsIGdvZXMgbmVhciB0aGUgc3VnYXJjYW5lIGZpZWxkPC90ZXh0PjxyZWN0IHg9IjAiIHk9IjE1MCIgd2lkdGg9IjYwMCIgaGVpZ2h0PSIxMTAiIGZpbGw9IiNmNGQwM2YiIG9wYWNpdHk9IjAuNDUiLz48bGluZSB4MT0iMjgiIHkxPSIyNTIiIHgyPSIyOCIgeTI9IjE5NiIgc3Ryb2tlPSIjMmVjYzcxIiBzdHJva2Utd2lkdGg9IjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPjxwYXRoIGQ9Ik0yOCwyMTQgcS0xMywtOCAtMTUsLTIwIiBzdHJva2U9IiMyZWNjNzEiIHN0cm9rZS13aWR0aD0iNCIgZmlsbD0ibm9uZSIvPjxwYXRoIGQ9Ik0yOCwyMDQgcTEzLC04IDE1LC0yMCIgc3Ryb2tlPSIjMmVjYzcxIiBzdHJva2Utd2lkdGg9IjQiIGZpbGw9Im5vbmUiLz48bGluZSB4MT0iNTQiIHkxPSIyNTIiIHgyPSI1NCIgeTI9IjE5NiIgc3Ryb2tlPSIjMmVjYzcxIiBzdHJva2Utd2lkdGg9IjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPjxwYXRoIGQ9Ik01NCwyMTQgcS0xMywtOCAtMTUsLTIwIiBzdHJva2U9IiMyZWNjNzEiIHN0cm9rZS13aWR0aD0iNCIgZmlsbD0ibm9uZSIvPjxwYXRoIGQ9Ik01NCwyMDQgcTEzLC04IDE1LC0yMCIgc3Ryb2tlPSIjMmVjYzcxIiBzdHJva2Utd2lkdGg9IjQiIGZpbGw9Im5vbmUiLz48bGluZSB4MT0iODAiIHkxPSIyNTIiIHgyPSI4MCIgeTI9IjE5NiIgc3Ryb2tlPSIjMmVjYzcxIiBzdHJva2Utd2lkdGg9IjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPjxwYXRoIGQ9Ik04MCwyMTQgcS0xMywtOCAtMTUsLTIwIiBzdHJva2U9IiMyZWNjNzEiIHN0cm9rZS13aWR0aD0iNCIgZmlsbD0ibm9uZSIvPjxwYXRoIGQ9Ik04MCwyMDQgcTEzLC04IDE1LC0yMCIgc3Ryb2tlPSIjMmVjYzcxIiBzdHJva2Utd2lkdGg9IjQiIGZpbGw9Im5vbmUiLz48bGluZSB4MT0iMTA2IiB5MT0iMjUyIiB4Mj0iMTA2IiB5Mj0iMTk2IiBzdHJva2U9IiMyZWNjNzEiIHN0cm9rZS13aWR0aD0iNSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+PHBhdGggZD0iTTEwNiwyMTQgcS0xMywtOCAtMTUsLTIwIiBzdHJva2U9IiMyZWNjNzEiIHN0cm9rZS13aWR0aD0iNCIgZmlsbD0ibm9uZSIvPjxwYXRoIGQ9Ik0xMDYsMjA0IHExMywtOCAxNSwtMjAiIHN0cm9rZT0iIzJlY2M3MSIgc3Ryb2tlLXdpZHRoPSI0IiBmaWxsPSJub25lIi8+PGxpbmUgeDE9IjEzMiIgeTE9IjI1MiIgeDI9IjEzMiIgeTI9IjE5NiIgc3Ryb2tlPSIjMmVjYzcxIiBzdHJva2Utd2lkdGg9IjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPjxwYXRoIGQ9Ik0xMzIsMjE0IHEtMTMsLTggLTE1LC0yMCIgc3Ryb2tlPSIjMmVjYzcxIiBzdHJva2Utd2lkdGg9IjQiIGZpbGw9Im5vbmUiLz48cGF0aCBkPSJNMTMyLDIwNCBxMTMsLTggMTUsLTIwIiBzdHJva2U9IiMyZWNjNzEiIHN0cm9rZS13aWR0aD0iNCIgZmlsbD0ibm9uZSIvPjxsaW5lIHgxPSIxNTgiIHkxPSIyNTIiIHgyPSIxNTgiIHkyPSIxOTYiIHN0cm9rZT0iIzJlY2M3MSIgc3Ryb2tlLXdpZHRoPSI1IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48cGF0aCBkPSJNMTU4LDIxNCBxLTEzLC04IC0xNSwtMjAiIHN0cm9rZT0iIzJlY2M3MSIgc3Ryb2tlLXdpZHRoPSI0IiBmaWxsPSJub25lIi8+PHBhdGggZD0iTTE1OCwyMDQgcTEzLC04IDE1LC0yMCIgc3Ryb2tlPSIjMmVjYzcxIiBzdHJva2Utd2lkdGg9IjQiIGZpbGw9Im5vbmUiLz48bGluZSB4MT0iMTg0IiB5MT0iMjUyIiB4Mj0iMTg0IiB5Mj0iMTk2IiBzdHJva2U9IiMyZWNjNzEiIHN0cm9rZS13aWR0aD0iNSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+PHBhdGggZD0iTTE4NCwyMTQgcS0xMywtOCAtMTUsLTIwIiBzdHJva2U9IiMyZWNjNzEiIHN0cm9rZS13aWR0aD0iNCIgZmlsbD0ibm9uZSIvPjxwYXRoIGQ9Ik0xODQsMjA0IHExMywtOCAxNSwtMjAiIHN0cm9rZT0iIzJlY2M3MSIgc3Ryb2tlLXdpZHRoPSI0IiBmaWxsPSJub25lIi8+PHJlY3QgeD0iMjgiIHk9IjE3NiIgd2lkdGg9IjE1MCIgaGVpZ2h0PSIxMiIgcng9IjUiIGZpbGw9IiNhOTcxNGIiIHN0cm9rZT0iIzJkMzQzNiIgc3Ryb2tlLXdpZHRoPSIyLjUiLz48dGV4dCB4PSIxMDMiIHk9IjE2OCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzJkMzQzNiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC13ZWlnaHQ9ImJvbGQiPlN1Z2FyY2FuZSBmaWVsZDwvdGV4dD48cmVjdCB4PSIyNTAiIHk9IjE1MCIgd2lkdGg9IjE5MCIgaGVpZ2h0PSIxMDQiIHJ4PSIxMCIgZmlsbD0iI2ZmNmI2YiIgc3Ryb2tlPSIjMmQzNDM2IiBzdHJva2Utd2lkdGg9IjIuNSIvPjxwYXRoIGQ9Ik0yNDQsMTUwIEwzNDUsOTYgTDQ0NiwxNTAgeiIgZmlsbD0iIzJkMzQzNiIgc3Ryb2tlPSIjMmQzNDM2IiBzdHJva2Utd2lkdGg9IjIuNSIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjxyZWN0IHg9IjI2OCIgeT0iNzIiIHdpZHRoPSIyMCIgaGVpZ2h0PSI4MCIgcng9IjUiIGZpbGw9IiNiMmJlYzMiIHN0cm9rZT0iIzJkMzQzNiIgc3Ryb2tlLXdpZHRoPSIyLjUiLz48ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgyNzgsNTYpIHNjYWxlKDAuNzUpIiBmaWxsPSIjYjJiZWMzIiBvcGFjaXR5PSIwLjg1Ij48Y2lyY2xlIGN4PSIwIiBjeT0iMCIgcj0iMTEiLz48Y2lyY2xlIGN4PSIxNyIgY3k9Ii05IiByPSIxNCIvPjxjaXJjbGUgY3g9IjM1IiBjeT0iMiIgcj0iMTAiLz48Y2lyY2xlIGN4PSIxMCIgY3k9IjE2IiByPSIxMyIvPjxjaXJjbGUgY3g9IjMwIiBjeT0iMTgiIHI9IjExIi8+PC9nPjx0ZXh0IHg9IjM0NSIgeT0iMTkwIiBmb250LXNpemU9IjE1IiBmaWxsPSIjZmZmZmZmIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXdlaWdodD0iYm9sZCI+U1VHQVIgTUlMTDwvdGV4dD48cmVjdCB4PSIzMDAiIHk9IjIwMCIgd2lkdGg9IjkwIiBoZWlnaHQ9IjM0IiByeD0iNiIgZmlsbD0iI2ZmZmZmZiIgc3Ryb2tlPSIjMmQzNDM2IiBzdHJva2Utd2lkdGg9IjIuNSIvPjx0ZXh0IHg9IjM0NSIgeT0iMjI0IiBmb250LXNpemU9IjEzIiBmaWxsPSIjMmQzNDM2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXdlaWdodD0ibm9ybWFsIj5jcnVzaGVzIGNhbmU8L3RleHQ+PGxpbmUgeDE9IjE5NiIgeTE9IjIxNiIgeDI9IjI0MCIgeTI9IjIxNiIgc3Ryb2tlPSIjMmQzNDM2IiBzdHJva2Utd2lkdGg9IjQiIHN0cm9rZS1kYXNoYXJyYXk9IjkgNyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+PHRleHQgeD0iMjE4IiB5PSIyNDAiIGZvbnQtc2l6ZT0iMTIiIGZpbGw9IiMyZDM0MzYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtd2VpZ2h0PSJub3JtYWwiPnNob3J0IHRyaXA8L3RleHQ+PHJlY3QgeD0iNDc4IiB5PSIxNTAiIHdpZHRoPSIxMDQiIGhlaWdodD0iMTA0IiByeD0iMTAiIGZpbGw9IiNmZmY0ZDYiIHN0cm9rZT0iIzJkMzQzNiIgc3Ryb2tlLXdpZHRoPSIyLjUiLz48cmVjdCB4PSI0OTIuMCIgeT0iMTc2IiB3aWR0aD0iMjYiIGhlaWdodD0iMjYiIHJ4PSI2IiBmaWxsPSIjZmZiMzAwIiBzdHJva2U9IiMyZDM0MzYiIHN0cm9rZS13aWR0aD0iMi41Ii8+PHJlY3QgeD0iNTEwLjAiIHk9IjE4NCIgd2lkdGg9IjI2IiBoZWlnaHQ9IjI2IiByeD0iNiIgZmlsbD0iI2ZmYjMwMCIgc3Ryb2tlPSIjMmQzNDM2IiBzdHJva2Utd2lkdGg9IjIuNSIvPjxyZWN0IHg9IjUyOC4wIiB5PSIxNzYiIHdpZHRoPSIyNiIgaGVpZ2h0PSIyNiIgcng9IjYiIGZpbGw9IiNmZmIzMDAiIHN0cm9rZT0iIzJkMzQzNiIgc3Ryb2tlLXdpZHRoPSIyLjUiLz48dGV4dCB4PSI1MzAiIHk9IjIzNiIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzJkMzQzNiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC13ZWlnaHQ9ImJvbGQiPlN1Z2FyPC90ZXh0Pjx0ZXh0IHg9IjMwMCIgeT0iMjg2IiBmb250LXNpemU9IjE0IiBmaWxsPSIjMmQzNDM2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXdlaWdodD0iYm9sZCI+Q2FuZSBpcyBoZWF2eSBhbmQgcGVyaXNoYWJsZSDigJQgc28gdGhlIG1pbGwgaXMgYnVpbHQgbmV4dCB0byB0aGUgZmllbGQ8L3RleHQ+PC9zdmc+", "alt": "Simple map of a sugarcane-growing state with a sugar mill icon placed right beside the fields"}}, {"id": "industries-chapter-5-part-1-q7", "section": "Factors Affecting Location", "question": "Why do woollen clothes sell better in northern India than in southern India?", "options": ["The north has extreme cold, so people there need woollens", "The north has more woollen factories", "Woollens are much cheaper in the north", "People in the south do not like wool"], "correctIndex": 0, "explanation": "The north has extreme cold, while the south has almost no winter, so demand there is very low.", "suggestImage": true, "imageNote": "Map of India shaded differently in north and south, with a woollen sweater icon in the cold north", "image": {"type": "svg", "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2MDAgMzEyIiB3aWR0aD0iNjAwIiBoZWlnaHQ9IjMxMiIgZm9udC1mYW1pbHk9IkNvbWljIFNhbnMgTVMsIENoYWxrYm9hcmQgU0UsIE1hcmtlciBGZWx0LCBTZWdvZSBVSSwgc2Fucy1zZXJpZiI+PHJlY3Qgd2lkdGg9IjYwMCIgaGVpZ2h0PSIzMTIiIHJ4PSIxOCIgZmlsbD0iI2ZmZjhlMSIvPjx0ZXh0IHg9IjMwMCIgeT0iMzAiIGZvbnQtc2l6ZT0iMTkiIGZpbGw9IiMyZDM0MzYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtd2VpZ2h0PSJib2xkIj5XaGVyZSB0aGUgbWFya2V0IGlzPC90ZXh0PjxwYXRoIGQ9Ik0zMDAsNDQgQzM0OCw0NCAzODQsNzQgMzg2LDExOCBDMzg4LDE1OCAzNzIsMTgyIDM2NiwyMTQgQzM2MiwyNDAgMzQ0LDI2MiAzMTYsMjY2IEMyODgsMjYyIDI3NCwyNDAgMjcwLDIxNCBDMjY0LDE4MiAyNDYsMTU4IDI0OCwxMTggQzI1MCw3NCAyNzIsNDQgMzAwLDQ0IFoiIGZpbGw9IiNmZmU5YTgiIHN0cm9rZT0iIzJkMzQzNiIgc3Ryb2tlLXdpZHRoPSIyLjUiLz48cGF0aCBkPSJNMzAwLDQ0IEMzNDgsNDQgMzg0LDc0IDM4NiwxMTggQzM4OCwxNDYgMzgwLDE2NCAzNzYsMTc4IEwyNTIsMTc4IEMyNDYsMTUwIDI1MCw3NCAzMDAsNDQgWiIgZmlsbD0iI2FlZDZmMSIgb3BhY2l0eT0iMC44NSIvPjx0ZXh0IHg9IjMyMCIgeT0iMTAwIiBmb250LXNpemU9IjE1IiBmaWxsPSIjMWI2Y2E4IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXdlaWdodD0iYm9sZCI+Tk9SVEg8L3RleHQ+PHRleHQgeD0iMzIwIiB5PSIxMjAiIGZvbnQtc2l6ZT0iMTIiIGZpbGw9IiMxYjZjYTgiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtd2VpZ2h0PSJub3JtYWwiPmV4dHJlbWUgY29sZDwvdGV4dD48dGV4dCB4PSIzMjAiIHk9IjIzMiIgZm9udC1zaXplPSIxNSIgZmlsbD0iI2IwNmEwMCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC13ZWlnaHQ9ImJvbGQiPlNPVVRIPC90ZXh0Pjx0ZXh0IHg9IjMyMCIgeT0iMjUwIiBmb250LXNpemU9IjEyIiBmaWxsPSIjYjA2YTAwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXdlaWdodD0ibm9ybWFsIj5hbG1vc3Qgbm8gd2ludGVyPC90ZXh0PjxyZWN0IHg9IjQ2IiB5PSI2MiIgd2lkdGg9IjEyOCIgaGVpZ2h0PSIxMDQiIHJ4PSIxMiIgZmlsbD0iI2ZmZmZmZiIgc3Ryb2tlPSIjMmQzNDM2IiBzdHJva2Utd2lkdGg9IjIuNSIvPjxwYXRoIGQ9Ik04NCw4NCBMMTEwLDg0IEwxMzQsMTAwIEwxMjIsMTIwIEwxMTIsMTEyIEwxMTIsMTQ2IEw4MiwxNDYgTDgyLDExMiBMNzIsMTIwIEw2MCwxMDAgWiIgZmlsbD0iIzliNTliNiIgc3Ryb2tlPSIjMmQzNDM2IiBzdHJva2Utd2lkdGg9IjIuNSIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjx0ZXh0IHg9IjExMCIgeT0iMTg2IiBmb250LXNpemU9IjE1IiBmaWxsPSIjMmQzNDM2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXdlaWdodD0iYm9sZCI+V29vbGxlbnM8L3RleHQ+PHRleHQgeD0iMTEwIiB5PSIyMDQiIGZvbnQtc2l6ZT0iMTIiIGZpbGw9IiMyZDM0MzYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtd2VpZ2h0PSJub3JtYWwiPnNlbGwgd2VsbCBoZXJlPC90ZXh0PjxyZWN0IHg9IjQ1MiIgeT0iMTUwIiB3aWR0aD0iMTI4IiBoZWlnaHQ9IjEwNCIgcng9IjEyIiBmaWxsPSIjZmZmZmZmIiBzdHJva2U9IiMyZDM0MzYiIHN0cm9rZS13aWR0aD0iMi41Ii8+PGNpcmNsZSBjeD0iNTE2IiBjeT0iMTk2IiByPSIyMCIgZmlsbD0iI2ZmZDkzZCIgc3Ryb2tlPSIjZmZiMzAwIiBzdHJva2Utd2lkdGg9IjMiLz48bGluZSB4MT0iNTQ0LjAiIHkxPSIxOTYuMCIgeDI9IjU1NC4wIiB5Mj0iMTk2LjAiIHN0cm9rZT0iI2ZmYjMwMCIgc3Ryb2tlLXdpZHRoPSIzLjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPjxsaW5lIHgxPSI1MzUuOCIgeTE9IjIxNS44IiB4Mj0iNTQyLjkiIHkyPSIyMjIuOSIgc3Ryb2tlPSIjZmZiMzAwIiBzdHJva2Utd2lkdGg9IjMuNSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+PGxpbmUgeDE9IjUxNi4wIiB5MT0iMjI0LjAiIHgyPSI1MTYuMCIgeTI9IjIzNC4wIiBzdHJva2U9IiNmZmIzMDAiIHN0cm9rZS13aWR0aD0iMy41IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48bGluZSB4MT0iNDk2LjIiIHkxPSIyMTUuOCIgeDI9IjQ4OS4xIiB5Mj0iMjIyLjkiIHN0cm9rZT0iI2ZmYjMwMCIgc3Ryb2tlLXdpZHRoPSIzLjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPjxsaW5lIHgxPSI0ODguMCIgeTE9IjE5Ni4wIiB4Mj0iNDc4LjAiIHkyPSIxOTYuMCIgc3Ryb2tlPSIjZmZiMzAwIiBzdHJva2Utd2lkdGg9IjMuNSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+PGxpbmUgeDE9IjQ5Ni4yIiB5MT0iMTc2LjIiIHgyPSI0ODkuMSIgeTI9IjE2OS4xIiBzdHJva2U9IiNmZmIzMDAiIHN0cm9rZS13aWR0aD0iMy41IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48bGluZSB4MT0iNTE2LjAiIHkxPSIxNjguMCIgeDI9IjUxNi4wIiB5Mj0iMTU4LjAiIHN0cm9rZT0iI2ZmYjMwMCIgc3Ryb2tlLXdpZHRoPSIzLjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPjxsaW5lIHgxPSI1MzUuOCIgeTE9IjE3Ni4yIiB4Mj0iNTQyLjkiIHkyPSIxNjkuMSIgc3Ryb2tlPSIjZmZiMzAwIiBzdHJva2Utd2lkdGg9IjMuNSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+PHRleHQgeD0iNTE2IiB5PSIyNzQiIGZvbnQtc2l6ZT0iMTUiIGZpbGw9IiMyZDM0MzYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtd2VpZ2h0PSJib2xkIj5MaXR0bGUgZGVtYW5kPC90ZXh0Pjx0ZXh0IHg9IjMwMCIgeT0iMjk2IiBmb250LXNpemU9IjE0IiBmaWxsPSIjMmQzNDM2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXdlaWdodD0iYm9sZCI+RmFjdG9yaWVzIGFyZSBidWlsdCB3aGVyZSB0aGVyZSBpcyBhIHJlYWR5IG1hcmtldDwvdGV4dD48L3N2Zz4=", "alt": "Map of India shaded differently in north and south, with a woollen sweater icon in the cold north"}}]}, {"id": "types-of-industries-5", "title": "Types of Industries", "emoji": "🔧", "questions": [{"id": "industries-chapter-5-part-1-q10", "section": "Types of Industries", "question": "Which of these is an example of a light industry?", "options": ["TV sets and sewing machines", "Locomotives and automobiles", "Iron and steel plants", "Oil refineries"], "correctIndex": 0, "explanation": "Light industries need less capital and fewer workers, and their products are light in weight.", "suggestImage": true, "imageNote": "Two boxes: light industry (TV, sewing machine, electric goods) versus heavy industry (train engine, car, steel girder)", "image": {"type": "svg", "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2MDAgMzA4IiB3aWR0aD0iNjAwIiBoZWlnaHQ9IjMwOCIgZm9udC1mYW1pbHk9IkNvbWljIFNhbnMgTVMsIENoYWxrYm9hcmQgU0UsIE1hcmtlciBGZWx0LCBTZWdvZSBVSSwgc2Fucy1zZXJpZiI+PHJlY3Qgd2lkdGg9IjYwMCIgaGVpZ2h0PSIzMDgiIHJ4PSIxOCIgZmlsbD0iI2ZmZjhlMSIvPjx0ZXh0IHg9IjMwMCIgeT0iMzAiIGZvbnQtc2l6ZT0iMTkiIGZpbGw9IiMyZDM0MzYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtd2VpZ2h0PSJib2xkIj5MaWdodCBpbmR1c3RyeSB2cyBIZWF2eSBpbmR1c3RyeTwvdGV4dD48cmVjdCB4PSIyNiIgeT0iNTAiIHdpZHRoPSIyNjQiIGhlaWdodD0iMjE2IiByeD0iMTQiIGZpbGw9IiNlNmYwZmYiIHN0cm9rZT0iIzJkMzQzNiIgc3Ryb2tlLXdpZHRoPSIyLjUiLz48dGV4dCB4PSIxNTgiIHk9IjgyIiBmb250LXNpemU9IjE3IiBmaWxsPSIjMWI2Y2E4IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXdlaWdodD0iYm9sZCI+TElHSFQgSU5EVVNUUlk8L3RleHQ+PHRleHQgeD0iMTU4IiB5PSIxMDQiIGZvbnQtc2l6ZT0iMTIiIGZpbGw9IiMyZDM0MzYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtd2VpZ2h0PSJub3JtYWwiPmxlc3MgY2FwaXRhbCDCtyBmZXdlciB3b3JrZXJzPC90ZXh0PjxyZWN0IHg9IjU4IiB5PSIxMjIiIHdpZHRoPSI3NCIgaGVpZ2h0PSI1MiIgcng9IjgiIGZpbGw9IiMzNzQ3NGYiIHN0cm9rZT0iIzJkMzQzNiIgc3Ryb2tlLXdpZHRoPSIyLjUiLz48cmVjdCB4PSI2NiIgeT0iMTMwIiB3aWR0aD0iNTgiIGhlaWdodD0iMzYiIHJ4PSI0IiBmaWxsPSIjNGY5ZGU4IiBzdHJva2U9IiMyZDM0MzYiIHN0cm9rZS13aWR0aD0iMiIvPjx0ZXh0IHg9Ijk1IiB5PSIxOTAiIGZvbnQtc2l6ZT0iMTMiIGZpbGw9IiMyZDM0MzYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtd2VpZ2h0PSJib2xkIj5UVjwvdGV4dD48cGF0aCBkPSJNMTY4LDE2OCBxMCwtMjYgMjYsLTI2IHExOCwwIDIyLDEyIiBzdHJva2U9IiMyZDM0MzYiIHN0cm9rZS13aWR0aD0iNCIgZmlsbD0ibm9uZSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+PHJlY3QgeD0iMTY0IiB5PSIxNjIiIHdpZHRoPSI2MCIgaGVpZ2h0PSIxMCIgcng9IjQiIGZpbGw9IiM5YjU5YjYiIHN0cm9rZT0iIzJkMzQzNiIgc3Ryb2tlLXdpZHRoPSIyLjUiLz48cmVjdCB4PSIxNTgiIHk9IjE3MiIgd2lkdGg9IjcyIiBoZWlnaHQ9IjEwIiByeD0iNCIgZmlsbD0iIzJkMzQzNiIvPjx0ZXh0IHg9IjE5NiIgeT0iMTkwIiBmb250LXNpemU9IjEyIiBmaWxsPSIjMmQzNDM2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXdlaWdodD0iYm9sZCI+U2V3aW5nIG1hY2hpbmU8L3RleHQ+PHJlY3QgeD0iNzQiIHk9IjIwNCIgd2lkdGg9IjM0IiBoZWlnaHQ9IjM0IiByeD0iNyIgZmlsbD0iIzJlY2M3MSIgc3Ryb2tlPSIjMmQzNDM2IiBzdHJva2Utd2lkdGg9IjIuNSIvPjxyZWN0IHg9IjEyMCIgeT0iMjA0IiB3aWR0aD0iMzQiIGhlaWdodD0iMzQiIHJ4PSI3IiBmaWxsPSIjZmZiMzAwIiBzdHJva2U9IiMyZDM0MzYiIHN0cm9rZS13aWR0aD0iMi41Ii8+PHRleHQgeD0iMTE0IiB5PSIyNTYiIGZvbnQtc2l6ZT0iMTMiIGZpbGw9IiMyZDM0MzYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtd2VpZ2h0PSJib2xkIj5FbGVjdHJpYyBnb29kczwvdGV4dD48cmVjdCB4PSIzMTAiIHk9IjUwIiB3aWR0aD0iMjY0IiBoZWlnaHQ9IjIxNiIgcng9IjE0IiBmaWxsPSIjZmZlNGU0IiBzdHJva2U9IiMyZDM0MzYiIHN0cm9rZS13aWR0aD0iMi41Ii8+PHRleHQgeD0iNDQyIiB5PSI4MiIgZm9udC1zaXplPSIxNyIgZmlsbD0iI2MwMzkyYiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC13ZWlnaHQ9ImJvbGQiPkhFQVZZIElORFVTVFJZPC90ZXh0Pjx0ZXh0IHg9IjQ0MiIgeT0iMTA0IiBmb250LXNpemU9IjEyIiBmaWxsPSIjMmQzNDM2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXdlaWdodD0ibm9ybWFsIj5odWdlIGNhcGl0YWwgwrcgaGVhdnkgZ29vZHM8L3RleHQ+PHJlY3QgeD0iMzM0IiB5PSIxMjAiIHdpZHRoPSIyMTYiIGhlaWdodD0iNTYiIHJ4PSIxMCIgZmlsbD0iI2ZmNmI2YiIgc3Ryb2tlPSIjMmQzNDM2IiBzdHJva2Utd2lkdGg9IjIuNSIvPjxyZWN0IHg9IjM0OCIgeT0iMTMyIiB3aWR0aD0iNDIiIGhlaWdodD0iMjgiIHJ4PSI1IiBmaWxsPSIjZmZmZmZmIiBzdHJva2U9IiMyZDM0MzYiIHN0cm9rZS13aWR0aD0iMiIvPjxyZWN0IHg9IjQwMiIgeT0iMTMyIiB3aWR0aD0iNDIiIGhlaWdodD0iMjgiIHJ4PSI1IiBmaWxsPSIjZmZmZmZmIiBzdHJva2U9IiMyZDM0MzYiIHN0cm9rZS13aWR0aD0iMiIvPjxyZWN0IHg9IjQ1NiIgeT0iMTMyIiB3aWR0aD0iNDIiIGhlaWdodD0iMjgiIHJ4PSI1IiBmaWxsPSIjZmZmZmZmIiBzdHJva2U9IiMyZDM0MzYiIHN0cm9rZS13aWR0aD0iMiIvPjxjaXJjbGUgY3g9IjM2MCIgY3k9IjE4MCIgcj0iMTAiIGZpbGw9IiMyZDM0MzYiIHN0cm9rZT0iIzJkMzQzNiIgc3Ryb2tlLXdpZHRoPSIyLjUiLz48Y2lyY2xlIGN4PSI1MjQiIGN5PSIxODAiIHI9IjEwIiBmaWxsPSIjMmQzNDM2IiBzdHJva2U9IiMyZDM0MzYiIHN0cm9rZS13aWR0aD0iMi41Ii8+PHRleHQgeD0iNDQyIiB5PSIyMDQiIGZvbnQtc2l6ZT0iMTMiIGZpbGw9IiMyZDM0MzYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtd2VpZ2h0PSJib2xkIj5Mb2NvbW90aXZlczwvdGV4dD48cmVjdCB4PSIzNDQiIHk9IjIxNiIgd2lkdGg9IjE5NiIgaGVpZ2h0PSIyMCIgcng9IjUiIGZpbGw9IiNiMmJlYzMiIHN0cm9rZT0iIzJkMzQzNiIgc3Ryb2tlLXdpZHRoPSIyLjUiLz48dGV4dCB4PSI0NDIiIHk9IjI1NiIgZm9udC1zaXplPSIxMyIgZmlsbD0iIzJkMzQzNiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC13ZWlnaHQ9ImJvbGQiPlN0ZWVsIGdpcmRlcnM8L3RleHQ+PHRleHQgeD0iMzAwIiB5PSIyOTIiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiMyZDM0MzYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtd2VpZ2h0PSJib2xkIj5MaWdodCBwcm9kdWN0cyB3ZWlnaCBsaXR0bGUgwrcgaGVhdnkgcHJvZHVjdHMgbmVlZCBiaWcgdHJhbnNwb3J0PC90ZXh0Pjwvc3ZnPg==", "alt": "Two boxes: light industry (TV, sewing machine, electric goods) versus heavy industry (train engine, car, steel girder)"}}, {"id": "industries-chapter-5-part-1-q11", "section": "Types of Industries", "question": "In a cooperative sector industry, who owns and manages the industry?", "options": ["The people who produce the raw materials themselves", "The central government", "Private industrialists and firms", "Foreign companies from abroad"], "correctIndex": 0, "explanation": "Cooperative industries are owned by the raw material producers themselves, like sugar mills run by farmers.", "suggestImage": true, "imageNote": "Four management types as icons: private (shop), public (government building), joint (handshake), cooperative (group of farmers)", "image": {"type": "svg", "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2MDAgMzE0IiB3aWR0aD0iNjAwIiBoZWlnaHQ9IjMxNCIgZm9udC1mYW1pbHk9IkNvbWljIFNhbnMgTVMsIENoYWxrYm9hcmQgU0UsIE1hcmtlciBGZWx0LCBTZWdvZSBVSSwgc2Fucy1zZXJpZiI+PHJlY3Qgd2lkdGg9IjYwMCIgaGVpZ2h0PSIzMTQiIHJ4PSIxOCIgZmlsbD0iI2ZmZjhlMSIvPjx0ZXh0IHg9IjMwMCIgeT0iMzAiIGZvbnQtc2l6ZT0iMTkiIGZpbGw9IiMyZDM0MzYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtd2VpZ2h0PSJib2xkIj5XaG8gb3ducyB0aGUgaW5kdXN0cnk/PC90ZXh0PjxyZWN0IHg9IjMwIiB5PSI1MCIgd2lkdGg9IjExOCIgaGVpZ2h0PSIyMDAiIHJ4PSIxMiIgZmlsbD0iI2ZmZmZmZiIgc3Ryb2tlPSIjMmQzNDM2IiBzdHJva2Utd2lkdGg9IjIuNSIvPjxyZWN0IHg9IjMwIiB5PSI1MCIgd2lkdGg9IjExOCIgaGVpZ2h0PSIzMCIgcng9IjEyIiBmaWxsPSIjNGY5ZGU4Ii8+PHJlY3QgeD0iMzAiIHk9IjY4IiB3aWR0aD0iMTE4IiBoZWlnaHQ9IjE0IiBmaWxsPSIjNGY5ZGU4Ii8+PHRleHQgeD0iODkiIHk9IjcyIiBmb250LXNpemU9IjEyIiBmaWxsPSIjZmZmZmZmIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXdlaWdodD0iYm9sZCI+UFJJVkFURTwvdGV4dD48cmVjdCB4PSI1NiIgeT0iMTA0IiB3aWR0aD0iNjYiIGhlaWdodD0iNTYiIHJ4PSI2IiBmaWxsPSIjZmZmNGQ2IiBzdHJva2U9IiMyZDM0MzYiIHN0cm9rZS13aWR0aD0iMi41Ii8+PHBhdGggZD0iTTUwLDEwNCBMODksODQgTDEyOCwxMDQgeiIgZmlsbD0iI2ZmNmI2YiIgc3Ryb2tlPSIjMmQzNDM2IiBzdHJva2Utd2lkdGg9IjIuNSIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjxyZWN0IHg9Ijc0IiB5PSIxMjYiIHdpZHRoPSIzMCIgaGVpZ2h0PSIzNCIgcng9IjQiIGZpbGw9IiNmZmZmZmYiIHN0cm9rZT0iIzJkMzQzNiIgc3Ryb2tlLXdpZHRoPSIyLjUiLz48dGV4dCB4PSI4OSIgeT0iMjA4IiBmb250LXNpemU9IjEyIiBmaWxsPSIjMmQzNDM2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXdlaWdodD0ibm9ybWFsIj5zaG9wIG93bmVyPC90ZXh0PjxyZWN0IHg9IjE3MiIgeT0iNTAiIHdpZHRoPSIxMTgiIGhlaWdodD0iMjAwIiByeD0iMTIiIGZpbGw9IiNmZmZmZmYiIHN0cm9rZT0iIzJkMzQzNiIgc3Ryb2tlLXdpZHRoPSIyLjUiLz48cmVjdCB4PSIxNzIiIHk9IjUwIiB3aWR0aD0iMTE4IiBoZWlnaHQ9IjMwIiByeD0iMTIiIGZpbGw9IiNmZjZiNmIiLz48cmVjdCB4PSIxNzIiIHk9IjY4IiB3aWR0aD0iMTE4IiBoZWlnaHQ9IjE0IiBmaWxsPSIjZmY2YjZiIi8+PHRleHQgeD0iMjMxIiB5PSI3MiIgZm9udC1zaXplPSIxMiIgZmlsbD0iI2ZmZmZmZiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC13ZWlnaHQ9ImJvbGQiPlBVQkxJQzwvdGV4dD48cGF0aCBkPSJNMTk0LDEyOCBMMjMxLDEwMiBMMjY4LDEyOCB6IiBmaWxsPSIjYjJiZWMzIiBzdHJva2U9IiMyZDM0MzYiIHN0cm9rZS13aWR0aD0iMi41IiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PHJlY3QgeD0iMjAwIiB5PSIxMzAiIHdpZHRoPSI3IiBoZWlnaHQ9IjI0IiBmaWxsPSIjZmZmZmZmIiBzdHJva2U9IiMyZDM0MzYiIHN0cm9rZS13aWR0aD0iMiIvPjxyZWN0IHg9IjIxNCIgeT0iMTMwIiB3aWR0aD0iNyIgaGVpZ2h0PSIyNCIgZmlsbD0iI2ZmZmZmZiIgc3Ryb2tlPSIjMmQzNDM2IiBzdHJva2Utd2lkdGg9IjIiLz48cmVjdCB4PSIyMjgiIHk9IjEzMCIgd2lkdGg9IjciIGhlaWdodD0iMjQiIGZpbGw9IiNmZmZmZmYiIHN0cm9rZT0iIzJkMzQzNiIgc3Ryb2tlLXdpZHRoPSIyIi8+PHJlY3QgeD0iMjQyIiB5PSIxMzAiIHdpZHRoPSI3IiBoZWlnaHQ9IjI0IiBmaWxsPSIjZmZmZmZmIiBzdHJva2U9IiMyZDM0MzYiIHN0cm9rZS13aWR0aD0iMiIvPjxyZWN0IHg9IjI1NiIgeT0iMTMwIiB3aWR0aD0iNyIgaGVpZ2h0PSIyNCIgZmlsbD0iI2ZmZmZmZiIgc3Ryb2tlPSIjMmQzNDM2IiBzdHJva2Utd2lkdGg9IjIiLz48cmVjdCB4PSIxOTQiIHk9IjE1NCIgd2lkdGg9Ijc0IiBoZWlnaHQ9IjgiIHJ4PSIzIiBmaWxsPSIjYjJiZWMzIiBzdHJva2U9IiMyZDM0MzYiIHN0cm9rZS13aWR0aD0iMiIvPjx0ZXh0IHg9IjIzMSIgeT0iMjA4IiBmb250LXNpemU9IjEyIiBmaWxsPSIjMmQzNDM2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXdlaWdodD0ibm9ybWFsIj5nb3Zlcm5tZW50PC90ZXh0PjxyZWN0IHg9IjMxNCIgeT0iNTAiIHdpZHRoPSIxMTgiIGhlaWdodD0iMjAwIiByeD0iMTIiIGZpbGw9IiNmZmZmZmYiIHN0cm9rZT0iIzJkMzQzNiIgc3Ryb2tlLXdpZHRoPSIyLjUiLz48cmVjdCB4PSIzMTQiIHk9IjUwIiB3aWR0aD0iMTE4IiBoZWlnaHQ9IjMwIiByeD0iMTIiIGZpbGw9IiM5YjU5YjYiLz48cmVjdCB4PSIzMTQiIHk9IjY4IiB3aWR0aD0iMTE4IiBoZWlnaHQ9IjE0IiBmaWxsPSIjOWI1OWI2Ii8+PHRleHQgeD0iMzczIiB5PSI3MiIgZm9udC1zaXplPSIxMiIgZmlsbD0iI2ZmZmZmZiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC13ZWlnaHQ9ImJvbGQiPkpPSU5UPC90ZXh0PjxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDM1NiwxNzgpIHNjYWxlKDAuOTUpIj48Y2lyY2xlIGN4PSIwIiBjeT0iLTM0LjY5OTk5OTk5OTk5OTk5NiIgcj0iOSIgZmlsbD0iI2Y2YzlhMCIgc3Ryb2tlPSIjMmQzNDM2IiBzdHJva2Utd2lkdGg9IjIiLz48cmVjdCB4PSItMTEiIHk9Ii0yMy42OTk5OTk5OTk5OTk5OTYiIHdpZHRoPSIyMiIgaGVpZ2h0PSIyNCIgcng9IjciIGZpbGw9IiM5YjU5YjYiIHN0cm9rZT0iIzJkMzQzNiIgc3Ryb2tlLXdpZHRoPSIyIi8+PHJlY3QgeD0iLTkiIHk9Ii02IiB3aWR0aD0iNyIgaGVpZ2h0PSI3IiByeD0iMyIgZmlsbD0iIzJkMzQzNiIvPjxyZWN0IHg9IjIiIHk9Ii02IiB3aWR0aD0iNyIgaGVpZ2h0PSI3IiByeD0iMyIgZmlsbD0iIzJkMzQzNiIvPjwvZz48ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgzOTIsMTc4KSBzY2FsZSgwLjk1KSI+PGNpcmNsZSBjeD0iMCIgY3k9Ii0zNC42OTk5OTk5OTk5OTk5OTYiIHI9IjkiIGZpbGw9IiNmNmM5YTAiIHN0cm9rZT0iIzJkMzQzNiIgc3Ryb2tlLXdpZHRoPSIyIi8+PHJlY3QgeD0iLTExIiB5PSItMjMuNjk5OTk5OTk5OTk5OTk2IiB3aWR0aD0iMjIiIGhlaWdodD0iMjQiIHJ4PSI3IiBmaWxsPSIjNGY5ZGU4IiBzdHJva2U9IiMyZDM0MzYiIHN0cm9rZS13aWR0aD0iMiIvPjxyZWN0IHg9Ii05IiB5PSItNiIgd2lkdGg9IjciIGhlaWdodD0iNyIgcng9IjMiIGZpbGw9IiMyZDM0MzYiLz48cmVjdCB4PSIyIiB5PSItNiIgd2lkdGg9IjciIGhlaWdodD0iNyIgcng9IjMiIGZpbGw9IiMyZDM0MzYiLz48L2c+PHBhdGggZD0iTTM2NiwxNTAgbDEyLDEwIGwtMTIsMTAiIHN0cm9rZT0iIzJkMzQzNiIgc3Ryb2tlLXdpZHRoPSIzIiBmaWxsPSJub25lIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48cGF0aCBkPSJNMzgyLDE1MCBsLTEyLDEwIGwxMiwxMCIgc3Ryb2tlPSIjMmQzNDM2IiBzdHJva2Utd2lkdGg9IjMiIGZpbGw9Im5vbmUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjx0ZXh0IHg9IjM3MyIgeT0iMjA4IiBmb250LXNpemU9IjEyIiBmaWxsPSIjMmQzNDM2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXdlaWdodD0ibm9ybWFsIj5maXJtICsgc3RhdGU8L3RleHQ+PHJlY3QgeD0iNDU2IiB5PSI1MCIgd2lkdGg9IjExOCIgaGVpZ2h0PSIyMDAiIHJ4PSIxMiIgZmlsbD0iI2ZmZmZmZiIgc3Ryb2tlPSIjMmQzNDM2IiBzdHJva2Utd2lkdGg9IjIuNSIvPjxyZWN0IHg9IjQ1NiIgeT0iNTAiIHdpZHRoPSIxMTgiIGhlaWdodD0iMzAiIHJ4PSIxMiIgZmlsbD0iIzJlY2M3MSIvPjxyZWN0IHg9IjQ1NiIgeT0iNjgiIHdpZHRoPSIxMTgiIGhlaWdodD0iMTQiIGZpbGw9IiMyZWNjNzEiLz48dGV4dCB4PSI1MTUiIHk9IjcyIiBmb250LXNpemU9IjEyIiBmaWxsPSIjZmZmZmZmIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXdlaWdodD0iYm9sZCI+Q09PUEVSQVRJVkU8L3RleHQ+PGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoNDg2LDE3OCkgc2NhbGUoMC45KSI+PGNpcmNsZSBjeD0iMCIgY3k9Ii0zMi40IiByPSI5IiBmaWxsPSIjZjZjOWEwIiBzdHJva2U9IiMyZDM0MzYiIHN0cm9rZS13aWR0aD0iMiIvPjxyZWN0IHg9Ii0xMSIgeT0iLTIxLjQiIHdpZHRoPSIyMiIgaGVpZ2h0PSIyNCIgcng9IjciIGZpbGw9IiMyZWNjNzEiIHN0cm9rZT0iIzJkMzQzNiIgc3Ryb2tlLXdpZHRoPSIyIi8+PHJlY3QgeD0iLTkiIHk9Ii02IiB3aWR0aD0iNyIgaGVpZ2h0PSI3IiByeD0iMyIgZmlsbD0iIzJkMzQzNiIvPjxyZWN0IHg9IjIiIHk9Ii02IiB3aWR0aD0iNyIgaGVpZ2h0PSI3IiByeD0iMyIgZmlsbD0iIzJkMzQzNiIvPjwvZz48ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSg1MTQsMTc4KSBzY2FsZSgwLjkpIj48Y2lyY2xlIGN4PSIwIiBjeT0iLTMyLjQiIHI9IjkiIGZpbGw9IiNmNmM5YTAiIHN0cm9rZT0iIzJkMzQzNiIgc3Ryb2tlLXdpZHRoPSIyIi8+PHJlY3QgeD0iLTExIiB5PSItMjEuNCIgd2lkdGg9IjIyIiBoZWlnaHQ9IjI0IiByeD0iNyIgZmlsbD0iI2ZmYjMwMCIgc3Ryb2tlPSIjMmQzNDM2IiBzdHJva2Utd2lkdGg9IjIiLz48cmVjdCB4PSItOSIgeT0iLTYiIHdpZHRoPSI3IiBoZWlnaHQ9IjciIHJ4PSIzIiBmaWxsPSIjMmQzNDM2Ii8+PHJlY3QgeD0iMiIgeT0iLTYiIHdpZHRoPSI3IiBoZWlnaHQ9IjciIHJ4PSIzIiBmaWxsPSIjMmQzNDM2Ii8+PC9nPjxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDU0MiwxNzgpIHNjYWxlKDAuOSkiPjxjaXJjbGUgY3g9IjAiIGN5PSItMzIuNCIgcj0iOSIgZmlsbD0iI2Y2YzlhMCIgc3Ryb2tlPSIjMmQzNDM2IiBzdHJva2Utd2lkdGg9IjIiLz48cmVjdCB4PSItMTEiIHk9Ii0yMS40IiB3aWR0aD0iMjIiIGhlaWdodD0iMjQiIHJ4PSI3IiBmaWxsPSIjNGVjZGM0IiBzdHJva2U9IiMyZDM0MzYiIHN0cm9rZS13aWR0aD0iMiIvPjxyZWN0IHg9Ii05IiB5PSItNiIgd2lkdGg9IjciIGhlaWdodD0iNyIgcng9IjMiIGZpbGw9IiMyZDM0MzYiLz48cmVjdCB4PSIyIiB5PSItNiIgd2lkdGg9IjciIGhlaWdodD0iNyIgcng9IjMiIGZpbGw9IiMyZDM0MzYiLz48L2c+PHRleHQgeD0iNTE1IiB5PSIyMDgiIGZvbnQtc2l6ZT0iMTIiIGZpbGw9IiMyZDM0MzYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtd2VpZ2h0PSJub3JtYWwiPmZhcm1lcnMgZ3JvdXA8L3RleHQ+PHRleHQgeD0iMzAwIiB5PSIyNzYiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiMyZDM0MzYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtd2VpZ2h0PSJib2xkIj5Db29wZXJhdGl2ZSA9IG93bmVkIGJ5IHRoZSBwZW9wbGUgd2hvIGdyb3cgdGhlIHJhdyBtYXRlcmlhbDwvdGV4dD48dGV4dCB4PSIzMDAiIHk9IjI5OCIgZm9udC1zaXplPSIxMyIgZmlsbD0iIzJkMzQzNiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC13ZWlnaHQ9Im5vcm1hbCI+ZS5nLiBzdWdhciBtaWxscyBydW4gYnkgc3VnYXJjYW5lIGZhcm1lcnM8L3RleHQ+PC9zdmc+", "alt": "Four management types as icons: private (shop), public (government building), joint (handshake), cooperative (group of f"}}]}, {"id": "iron-steel-industry-6", "title": "Iron & Steel Industry", "emoji": "🚪", "questions": [{"id": "chunk-2-q1", "section": "Iron & Steel Industry", "question": "Why is the iron and steel industry called the basic or key industry of the modern age?", "options": ["It is the cheapest industry in the world", "It needs no raw materials at all", "It forms the backbone of modern industry", "It is found only near the sea"], "correctIndex": 2, "explanation": "The text says the iron and steel industry is the basic industry that forms the backbone of the modern world.", "suggestImage": false, "imageNote": "", "image": null}, {"id": "chunk-2-q2", "section": "Iron & Steel Industry", "question": "In Asia, which two countries are the leading producers of iron and steel?", "options": ["India and Pakistan", "China and Japan", "Thailand and Vietnam", "China and Indonesia"], "correctIndex": 1, "explanation": "The text names China and Japan as the leading iron and steel producers in Asia.", "suggestImage": true, "imageNote": "World map of the iron and steel industry (like Fig. 5.6) with China and Japan marked as Asia's leading producers.", "image": {"type": "svg", "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2MDAgMjc0IiB3aWR0aD0iNjAwIiBoZWlnaHQ9IjI3NCIgZm9udC1mYW1pbHk9IkNvbWljIFNhbnMgTVMsIENoYWxrYm9hcmQgU0UsIE1hcmtlciBGZWx0LCBTZWdvZSBVSSwgc2Fucy1zZXJpZiI+PHJlY3Qgd2lkdGg9IjYwMCIgaGVpZ2h0PSIyNzQiIHJ4PSIxOCIgZmlsbD0iI2ZmZjhlMSIvPjx0ZXh0IHg9IjMwMCIgeT0iMjgiIGZvbnQtc2l6ZT0iMTkiIGZpbGw9IiMyZDM0MzYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtd2VpZ2h0PSJib2xkIj5Jcm9uIGFuZCBzdGVlbCDigJQgd29ybGQ8L3RleHQ+PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2MDAgMjUwIiB3aWR0aD0iNjAwIiBoZWlnaHQ9IjI1MCIgZm9udC1mYW1pbHk9IkNvbWljIFNhbnMgTVMsIENoYWxrYm9hcmQgU0UsIE1hcmtlciBGZWx0LCBTZWdvZSBVSSwgc2Fucy1zZXJpZiI+PHJlY3Qgd2lkdGg9IjYwMCIgaGVpZ2h0PSIyNTAiIHJ4PSIxOCIgZmlsbD0iI2ZmZjhlMSIvPjxwYXRoIGQ9Ik00MCw3NCBDNTIsNTQgODIsNDQgMTEyLDUwIEMxNDAsNTYgMTUwLDcwIDE3Niw2NiBDMjA2LDYyIDIxNCw0NCAyNDQsNDYgQzI3Miw0OCAyODIsNjggMzA2LDcyIEMzMzAsNzYgMzQ0LDY0IDM2Niw2OCBDMzkyLDcyIDQwMiw5MiAzOTYsMTEyIEMzOTAsMTM0IDM2NiwxNDAgMzUwLDE1MCBDMzMyLDE2MSAzMjAsMTgyIDMwMCwxODYgQzI3OCwxOTAgMjY4LDE3MiAyNDYsMTcyIEMyMjQsMTcyIDIxNCwxOTAgMTk0LDE4NiBDMTcyLDE4MiAxNjgsMTYwIDE0OCwxNTYgQzEyNiwxNTIgMTEyLDE2OCA5MiwxNjAgQzcwLDE1MiA2NiwxMjggNTIsMTE2IEM0MiwxMDcgMzQsODggNDAsNzQgWiIgZmlsbD0iI2RmZjNlNCIgc3Ryb2tlPSIjMmQzNDM2IiBzdHJva2Utd2lkdGg9IjIuNSIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjxjaXJjbGUgY3g9IjM1MiIgY3k9IjEwOCIgcj0iOSIgZmlsbD0iI2ZmNmI2YiIgc3Ryb2tlPSIjMmQzNDM2IiBzdHJva2Utd2lkdGg9IjIiLz48dGV4dCB4PSIzNTIiIHk9IjEzNCIgZm9udC1zaXplPSIxMyIgZmlsbD0iIzJkMzQzNiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC13ZWlnaHQ9ImJvbGQiPkNoaW5hPC90ZXh0PjxjaXJjbGUgY3g9IjQzMCIgY3k9IjEwNiIgcj0iOSIgZmlsbD0iI2ZmYjMwMCIgc3Ryb2tlPSIjMmQzNDM2IiBzdHJva2Utd2lkdGg9IjIiLz48dGV4dCB4PSI0MzAiIHk9IjEzMiIgZm9udC1zaXplPSIxMyIgZmlsbD0iIzJkMzQzNiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC13ZWlnaHQ9ImJvbGQiPkphcGFuPC90ZXh0Pjwvc3ZnPjxjaXJjbGUgY3g9IjM1MiIgY3k9IjEwOCIgcj0iMjIiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2ZmNmI2YiIgc3Ryb2tlLXdpZHRoPSIzIi8+PGNpcmNsZSBjeD0iNDMwIiBjeT0iMTA2IiByPSIyMiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZmZiMzAwIiBzdHJva2Utd2lkdGg9IjMiLz48dGV4dCB4PSIzMDAiIHk9IjIzNiIgZm9udC1zaXplPSIxNSIgZmlsbD0iIzJkMzQzNiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC13ZWlnaHQ9ImJvbGQiPkluIEFzaWEsIENoaW5hIGFuZCBKYXBhbiBsZWFkIGluIGlyb24gYW5kIHN0ZWVsPC90ZXh0Pjx0ZXh0IHg9IjMwMCIgeT0iMjU4IiBmb250LXNpemU9IjEzIiBmaWxsPSIjMmQzNDM2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXdlaWdodD0ibm9ybWFsIj5JbmRpYSBhbHNvIG1ha2VzIHN0ZWVsLCBidXQgcHJvZHVjZXMgbGVzczwvdGV4dD48L3N2Zz4=", "alt": "World map of the iron and steel industry (like Fig. 5.6) with China and Japan marked as Asia's leading producers."}}]}, {"id": "cotton-textile-industry-7", "title": "Cotton Textile Industry", "emoji": "🧵", "questions": [{"id": "chunk-2-q5", "section": "Cotton Textile Industry", "question": "What does the word 'textile' mean?", "options": ["Painted wood", "Woven fabric", "Melted glass", "Fresh fruit juice"], "correctIndex": 1, "explanation": "The text says textile means woven fabric, the cloth made by weaving fibres together.", "suggestImage": false, "imageNote": "", "image": null}, {"id": "chunk-2-q6", "section": "Cotton Textile Industry", "question": "Which set of five steps is used to turn raw fibre into cloth?", "options": ["Planting, watering, cutting, drying and packing", "Digging, boiling, filtering, drying and freezing", "Carding, spinning, weaving, dyeing and processing", "Painting, folding, cutting, ironing and wrapping"], "correctIndex": 2, "explanation": "Carding, spinning, weaving, dyeing and processing are the five steps the text lists for making cloth.", "suggestImage": true, "imageNote": "Simple flow diagram: raw cotton to carding (fibres made parallel) to spinning (yarn) to weaving (cloth) to dyeing and processing to finished cloth.", "image": {"type": "svg", "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2MDAgMjY4IiB3aWR0aD0iNjAwIiBoZWlnaHQ9IjI2OCIgZm9udC1mYW1pbHk9IkNvbWljIFNhbnMgTVMsIENoYWxrYm9hcmQgU0UsIE1hcmtlciBGZWx0LCBTZWdvZSBVSSwgc2Fucy1zZXJpZiI+PHJlY3Qgd2lkdGg9IjYwMCIgaGVpZ2h0PSIyNjgiIHJ4PSIxOCIgZmlsbD0iI2ZmZjhlMSIvPjxkZWZzPjxtYXJrZXIgaWQ9ImFoIiBtYXJrZXJXaWR0aD0iOSIgbWFya2VySGVpZ2h0PSI5IiByZWZYPSI3IiByZWZZPSI0LjUiIG9yaWVudD0iYXV0byI+PHBhdGggZD0iTTAsMCBMOSw0LjUgTDAsOSB6IiBmaWxsPSIjMmQzNDM2Ii8+PC9tYXJrZXI+PC9kZWZzPjx0ZXh0IHg9IjMwMCIgeT0iMzAiIGZvbnQtc2l6ZT0iMTkiIGZpbGw9IiMyZDM0MzYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtd2VpZ2h0PSJib2xkIj5Ib3cgY2xvdGggaXMgbWFkZSDigJQgZml2ZSBzdGVwczwvdGV4dD48cmVjdCB4PSIyNCIgeT0iNjIiIHdpZHRoPSIxMDAiIGhlaWdodD0iMTMwIiByeD0iMTIiIGZpbGw9IiNmZmQ5M2QiIHN0cm9rZT0iIzJkMzQzNiIgc3Ryb2tlLXdpZHRoPSIyLjUiLz48dGV4dCB4PSI3NCIgeT0iOTIiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiMyZDM0MzYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtd2VpZ2h0PSJib2xkIj4xLiBDYXJkaW5nPC90ZXh0Pjx0ZXh0IHg9Ijc0IiB5PSIxMjYiIGZvbnQtc2l6ZT0iMTIiIGZpbGw9IiMyZDM0MzYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtd2VpZ2h0PSJub3JtYWwiPmZpYnJlcyBtYWRlPC90ZXh0Pjx0ZXh0IHg9Ijc0IiB5PSIxNDYiIGZvbnQtc2l6ZT0iMTIiIGZpbGw9IiMyZDM0MzYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtd2VpZ2h0PSJub3JtYWwiPnBhcmFsbGVsPC90ZXh0PjxjaXJjbGUgY3g9Ijc0IiBjeT0iMTc4IiByPSIxMyIgZmlsbD0iI2ZmZmZmZiIgc3Ryb2tlPSIjMmQzNDM2IiBzdHJva2Utd2lkdGg9IjIiLz48bGluZSB4MT0iMTI4IiB5MT0iMTI3IiB4Mj0iMTQwIiB5Mj0iMTI3IiBzdHJva2U9IiMyZDM0MzYiIHN0cm9rZS13aWR0aD0iNCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBtYXJrZXItZW5kPSJ1cmwoI2FoKSIvPjxyZWN0IHg9IjEzNiIgeT0iNjIiIHdpZHRoPSIxMDAiIGhlaWdodD0iMTMwIiByeD0iMTIiIGZpbGw9IiM0ZWNkYzQiIHN0cm9rZT0iIzJkMzQzNiIgc3Ryb2tlLXdpZHRoPSIyLjUiLz48dGV4dCB4PSIxODYiIHk9IjkyIiBmb250LXNpemU9IjE0IiBmaWxsPSIjMmQzNDM2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXdlaWdodD0iYm9sZCI+Mi4gU3Bpbm5pbmc8L3RleHQ+PHRleHQgeD0iMTg2IiB5PSIxMjYiIGZvbnQtc2l6ZT0iMTIiIGZpbGw9IiMyZDM0MzYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtd2VpZ2h0PSJub3JtYWwiPmZpYnJlcyBwdWxsZWQ8L3RleHQ+PHRleHQgeD0iMTg2IiB5PSIxNDYiIGZvbnQtc2l6ZT0iMTIiIGZpbGw9IiMyZDM0MzYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtd2VpZ2h0PSJub3JtYWwiPmludG8geWFybjwvdGV4dD48Y2lyY2xlIGN4PSIxODYiIGN5PSIxNzgiIHI9IjEzIiBmaWxsPSIjZmZmZmZmIiBzdHJva2U9IiMyZDM0MzYiIHN0cm9rZS13aWR0aD0iMiIvPjxsaW5lIHgxPSIyNDAiIHkxPSIxMjciIHgyPSIyNTIiIHkyPSIxMjciIHN0cm9rZT0iIzJkMzQzNiIgc3Ryb2tlLXdpZHRoPSI0IiBzdHJva2UtbGluZWNhcD0icm91bmQiIG1hcmtlci1lbmQ9InVybCgjYWgpIi8+PHJlY3QgeD0iMjQ4IiB5PSI2MiIgd2lkdGg9IjEwMCIgaGVpZ2h0PSIxMzAiIHJ4PSIxMiIgZmlsbD0iIzRmOWRlOCIgc3Ryb2tlPSIjMmQzNDM2IiBzdHJva2Utd2lkdGg9IjIuNSIvPjx0ZXh0IHg9IjI5OCIgeT0iOTIiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiNmZmZmZmYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtd2VpZ2h0PSJib2xkIj4zLiBXZWF2aW5nPC90ZXh0Pjx0ZXh0IHg9IjI5OCIgeT0iMTI2IiBmb250LXNpemU9IjEyIiBmaWxsPSIjZmZmZmZmIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXdlaWdodD0ibm9ybWFsIj55YXJuIG1hZGU8L3RleHQ+PHRleHQgeD0iMjk4IiB5PSIxNDYiIGZvbnQtc2l6ZT0iMTIiIGZpbGw9IiNmZmZmZmYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtd2VpZ2h0PSJub3JtYWwiPmludG8gY2xvdGg8L3RleHQ+PGNpcmNsZSBjeD0iMjk4IiBjeT0iMTc4IiByPSIxMyIgZmlsbD0iI2ZmZmZmZiIgc3Ryb2tlPSIjMmQzNDM2IiBzdHJva2Utd2lkdGg9IjIiLz48bGluZSB4MT0iMzUyIiB5MT0iMTI3IiB4Mj0iMzY0IiB5Mj0iMTI3IiBzdHJva2U9IiMyZDM0MzYiIHN0cm9rZS13aWR0aD0iNCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBtYXJrZXItZW5kPSJ1cmwoI2FoKSIvPjxyZWN0IHg9IjM2MCIgeT0iNjIiIHdpZHRoPSIxMDAiIGhlaWdodD0iMTMwIiByeD0iMTIiIGZpbGw9IiM5YjU5YjYiIHN0cm9rZT0iIzJkMzQzNiIgc3Ryb2tlLXdpZHRoPSIyLjUiLz48dGV4dCB4PSI0MTAiIHk9IjkyIiBmb250LXNpemU9IjE0IiBmaWxsPSIjZmZmZmZmIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXdlaWdodD0iYm9sZCI+NC4gRHllaW5nPC90ZXh0Pjx0ZXh0IHg9IjQxMCIgeT0iMTI2IiBmb250LXNpemU9IjEyIiBmaWxsPSIjZmZmZmZmIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXdlaWdodD0ibm9ybWFsIj5jbG90aCBnaXZlbjwvdGV4dD48dGV4dCB4PSI0MTAiIHk9IjE0NiIgZm9udC1zaXplPSIxMiIgZmlsbD0iI2ZmZmZmZiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC13ZWlnaHQ9Im5vcm1hbCI+Y29sb3VyPC90ZXh0PjxjaXJjbGUgY3g9IjQxMCIgY3k9IjE3OCIgcj0iMTMiIGZpbGw9IiNmZmZmZmYiIHN0cm9rZT0iIzJkMzQzNiIgc3Ryb2tlLXdpZHRoPSIyIi8+PGxpbmUgeDE9IjQ2NCIgeTE9IjEyNyIgeDI9IjQ3NiIgeTI9IjEyNyIgc3Ryb2tlPSIjMmQzNDM2IiBzdHJva2Utd2lkdGg9IjQiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgbWFya2VyLWVuZD0idXJsKCNhaCkiLz48cmVjdCB4PSI0NzIiIHk9IjYyIiB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEzMCIgcng9IjEyIiBmaWxsPSIjMmVjYzcxIiBzdHJva2U9IiMyZDM0MzYiIHN0cm9rZS13aWR0aD0iMi41Ii8+PHRleHQgeD0iNTIyIiB5PSI5MiIgZm9udC1zaXplPSIxNCIgZmlsbD0iI2ZmZmZmZiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC13ZWlnaHQ9ImJvbGQiPjUuIFByb2Nlc3Npbmc8L3RleHQ+PHRleHQgeD0iNTIyIiB5PSIxMjYiIGZvbnQtc2l6ZT0iMTIiIGZpbGw9IiNmZmZmZmYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtd2VpZ2h0PSJub3JtYWwiPmZpbmlzaGVkPC90ZXh0Pjx0ZXh0IHg9IjUyMiIgeT0iMTQ2IiBmb250LXNpemU9IjEyIiBmaWxsPSIjZmZmZmZmIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXdlaWdodD0ibm9ybWFsIj5mYWJyaWM8L3RleHQ+PGNpcmNsZSBjeD0iNTIyIiBjeT0iMTc4IiByPSIxMyIgZmlsbD0iI2ZmZmZmZiIgc3Ryb2tlPSIjMmQzNDM2IiBzdHJva2Utd2lkdGg9IjIiLz48cmVjdCB4PSIzMCIgeT0iMjE2IiB3aWR0aD0iNTQwIiBoZWlnaHQ9IjM0IiByeD0iMTAiIGZpbGw9IiNmZmZmZmYiIHN0cm9rZT0iIzJkMzQzNiIgc3Ryb2tlLXdpZHRoPSIyIi8+PHRleHQgeD0iMzAwIiB5PSIyMzkiIGZvbnQtc2l6ZT0iMTMiIGZpbGw9IiMyZDM0MzYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtd2VpZ2h0PSJib2xkIj5yYXcgY290dG9uICDihpIgIGNhcmRpbmcgIOKGkiAgc3Bpbm5pbmcgIOKGkiAgd2VhdmluZyAg4oaSICBkeWVpbmcgIOKGkiAgZmluaXNoZWQgY2xvdGg8L3RleHQ+PC9zdmc+", "alt": "Simple flow diagram: raw cotton to carding (fibres made parallel) to spinning (yarn) to weaving (cloth) to dyeing and pr"}}]}, {"id": "sugar-industry-8", "title": "Sugar Industry", "emoji": "🍭", "questions": [{"id": "chunk-2-q10", "section": "Sugar Industry", "question": "Which plant is used to make sugar in cool temperate countries such as Russia and France?", "options": ["Sugarcane", "Sugarbeet", "Cotton", "Jute"], "correctIndex": 1, "explanation": "Temperate regions grow sugarbeet, while humid tropical regions grow sugarcane for making sugar.", "suggestImage": true, "imageNote": "Split world map: hot humid tropical areas shaded for sugarcane, cool temperate areas shaded for sugarbeet.", "image": {"type": "svg", "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2MDAgMjk4IiB3aWR0aD0iNjAwIiBoZWlnaHQ9IjI5OCIgZm9udC1mYW1pbHk9IkNvbWljIFNhbnMgTVMsIENoYWxrYm9hcmQgU0UsIE1hcmtlciBGZWx0LCBTZWdvZSBVSSwgc2Fucy1zZXJpZiI+PHJlY3Qgd2lkdGg9IjYwMCIgaGVpZ2h0PSIyOTgiIHJ4PSIxOCIgZmlsbD0iI2ZmZjhlMSIvPjx0ZXh0IHg9IjMwMCIgeT0iMjgiIGZvbnQtc2l6ZT0iMTkiIGZpbGw9IiMyZDM0MzYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtd2VpZ2h0PSJib2xkIj5Ud28gcGxhbnRzIG1ha2Ugc3VnYXI8L3RleHQ+PHJlY3QgeD0iMCIgeT0iNDQiIHdpZHRoPSI2MDAiIGhlaWdodD0iODYiIGZpbGw9IiNmZmU5YTgiIG9wYWNpdHk9IjAuNyIvPjxyZWN0IHg9IjAiIHk9IjEzMCIgd2lkdGg9IjYwMCIgaGVpZ2h0PSI4NiIgZmlsbD0iI2NmZThmNyIgb3BhY2l0eT0iMC43Ii8+PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2MDAgMjIwIiB3aWR0aD0iNjAwIiBoZWlnaHQ9IjIyMCIgZm9udC1mYW1pbHk9IkNvbWljIFNhbnMgTVMsIENoYWxrYm9hcmQgU0UsIE1hcmtlciBGZWx0LCBTZWdvZSBVSSwgc2Fucy1zZXJpZiI+PHJlY3Qgd2lkdGg9IjYwMCIgaGVpZ2h0PSIyMjAiIHJ4PSIxOCIgZmlsbD0iI2ZmZjhlMSIvPjxwYXRoIGQ9Ik00MCw3NCBDNTIsNTQgODIsNDQgMTEyLDUwIEMxNDAsNTYgMTUwLDcwIDE3Niw2NiBDMjA2LDYyIDIxNCw0NCAyNDQsNDYgQzI3Miw0OCAyODIsNjggMzA2LDcyIEMzMzAsNzYgMzQ0LDY0IDM2Niw2OCBDMzkyLDcyIDQwMiw5MiAzOTYsMTEyIEMzOTAsMTM0IDM2NiwxNDAgMzUwLDE1MCBDMzMyLDE2MSAzMjAsMTgyIDMwMCwxODYgQzI3OCwxOTAgMjY4LDE3MiAyNDYsMTcyIEMyMjQsMTcyIDIxNCwxOTAgMTk0LDE4NiBDMTcyLDE4MiAxNjgsMTYwIDE0OCwxNTYgQzEyNiwxNTIgMTEyLDE2OCA5MiwxNjAgQzcwLDE1MiA2NiwxMjggNTIsMTE2IEM0MiwxMDcgMzQsODggNDAsNzQgWiIgZmlsbD0iI2RmZjNlNCIgc3Ryb2tlPSIjMmQzNDM2IiBzdHJva2Utd2lkdGg9IjIuNSIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjxjaXJjbGUgY3g9IjMwMCIgY3k9Ijk2IiByPSI5IiBmaWxsPSIjMmVjYzcxIiBzdHJva2U9IiMyZDM0MzYiIHN0cm9rZS13aWR0aD0iMiIvPjxjaXJjbGUgY3g9IjMwMCIgY3k9IjE3OCIgcj0iOSIgZmlsbD0iIzliNTliNiIgc3Ryb2tlPSIjMmQzNDM2IiBzdHJva2Utd2lkdGg9IjIiLz48L3N2Zz48dGV4dCB4PSIzMDAiIHk9IjYyIiBmb250LXNpemU9IjE0IiBmaWxsPSIjOGE1YTAwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXdlaWdodD0iYm9sZCI+SE9UICZhbXA7IEhVTUlEIOKAlCB0cm9waWNhbCBjb3VudHJpZXM8L3RleHQ+PHRleHQgeD0iMzAwIiB5PSIxNTIiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiMxYjRhNmIiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtd2VpZ2h0PSJib2xkIj5DT09MICZhbXA7IFRFTVBFUkFURSDigJQgUnVzc2lhLCBGcmFuY2U8L3RleHQ+PHJlY3QgeD0iMzAiIHk9IjIwMCIgd2lkdGg9IjI1MCIgaGVpZ2h0PSI1NiIgcng9IjEwIiBmaWxsPSIjZmZmZmZmIiBzdHJva2U9IiMyZDM0MzYiIHN0cm9rZS13aWR0aD0iMi41Ii8+PGxpbmUgeDE9IjcwIiB5MT0iMjQ4IiB4Mj0iNzAiIHkyPSIyMTYiIHN0cm9rZT0iIzJlY2M3MSIgc3Ryb2tlLXdpZHRoPSI1IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48cGF0aCBkPSJNNzAsMjI4IHEtMTQsLTggLTE2LC0yMCIgc3Ryb2tlPSIjMmVjYzcxIiBzdHJva2Utd2lkdGg9IjQiIGZpbGw9Im5vbmUiLz48cGF0aCBkPSJNNzAsMjIyIHExNCwtOCAxNiwtMjAiIHN0cm9rZT0iIzJlY2M3MSIgc3Ryb2tlLXdpZHRoPSI0IiBmaWxsPSJub25lIi8+PHRleHQgeD0iMTgwIiB5PSIyMjQiIGZvbnQtc2l6ZT0iMTYiIGZpbGw9IiMyZWNjNzEiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtd2VpZ2h0PSJib2xkIj5TVUdBUkNBTkU8L3RleHQ+PHRleHQgeD0iMTgwIiB5PSIyNDQiIGZvbnQtc2l6ZT0iMTIiIGZpbGw9IiMyZDM0MzYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtd2VpZ2h0PSJub3JtYWwiPmhvdCwgd2V0IHBsYWNlczwvdGV4dD48cmVjdCB4PSIzMjAiIHk9IjIwMCIgd2lkdGg9IjI1MCIgaGVpZ2h0PSI1NiIgcng9IjEwIiBmaWxsPSIjZmZmZmZmIiBzdHJva2U9IiMyZDM0MzYiIHN0cm9rZS13aWR0aD0iMi41Ii8+PGNpcmNsZSBjeD0iMzYwIiBjeT0iMjI4IiByPSIxNyIgZmlsbD0iIzliNTliNiIgc3Ryb2tlPSIjMmQzNDM2IiBzdHJva2Utd2lkdGg9IjIuNSIvPjx0ZXh0IHg9IjM2MCIgeT0iMjM0IiBmb250LXNpemU9IjE1IiBmaWxsPSIjZmZmZmZmIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXdlaWdodD0iYm9sZCI+QjwvdGV4dD48dGV4dCB4PSI0NzAiIHk9IjIyNCIgZm9udC1zaXplPSIxNiIgZmlsbD0iIzliNTliNiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC13ZWlnaHQ9ImJvbGQiPlNVR0FSQkVFVDwvdGV4dD48dGV4dCB4PSI0NzAiIHk9IjI0NCIgZm9udC1zaXplPSIxMiIgZmlsbD0iIzJkMzQzNiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC13ZWlnaHQ9Im5vcm1hbCI+Y29vbCBjb3VudHJpZXM8L3RleHQ+PHRleHQgeD0iMzAwIiB5PSIyODIiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiMyZDM0MzYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtd2VpZ2h0PSJib2xkIj5Cb3RoIGdyb3cgd2hlcmUgdGhlIGNsaW1hdGUgc3VpdHMgdGhlbSDigJQgSW5kaWEgdXNlcyBzdWdhcmNhbmU8L3RleHQ+PC9zdmc+", "alt": "Split world map: hot humid tropical areas shaded for sugarcane, cool temperate areas shaded for sugarbeet."}}, {"id": "chunk-2-q11", "section": "Sugar Industry", "question": "Why are sugar mills always set up in the cane and beet growing areas?", "options": ["Those areas have the most skilled shipbuilders", "Sugar can only be made near the sea", "Cane and beet spoil quickly, so they must be processed soon after harvest", "Sugarbeet grows only in very cold countries"], "correctIndex": 2, "explanation": "Both cane and beet are perishable, so they must reach the mill immediately after the harvest.", "suggestImage": false, "imageNote": "", "image": null}]}, {"id": "ship-building-industry-9", "title": "Ship-Building Industry", "emoji": "🚢", "questions": [{"id": "chunk-5-q1", "section": "Ship-Building Industry", "question": "What is the building of ships and other floating vessels called?", "options": ["Ship-building", "Boat building", "Iron smelting", "Sugar making"], "correctIndex": 0, "explanation": "Ships are made in a special facility called a shipyard; building boats is a similar activity called boat building.", "suggestImage": true, "imageNote": "A busy shipyard with cranes, stacks of steel plates and a half-built ship standing on the ways.", "image": {"type": "svg", "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2MDAgMzE0IiB3aWR0aD0iNjAwIiBoZWlnaHQ9IjMxNCIgZm9udC1mYW1pbHk9IkNvbWljIFNhbnMgTVMsIENoYWxrYm9hcmQgU0UsIE1hcmtlciBGZWx0LCBTZWdvZSBVSSwgc2Fucy1zZXJpZiI+PHJlY3Qgd2lkdGg9IjYwMCIgaGVpZ2h0PSIzMTQiIHJ4PSIxOCIgZmlsbD0iI2ZmZjhlMSIvPjx0ZXh0IHg9IjMwMCIgeT0iMzAiIGZvbnQtc2l6ZT0iMTkiIGZpbGw9IiMyZDM0MzYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtd2VpZ2h0PSJib2xkIj5JbnNpZGUgYSBzaGlweWFyZDwvdGV4dD48cmVjdCB4PSIwIiB5PSIyMTIiIHdpZHRoPSI2MDAiIGhlaWdodD0iODgiIGZpbGw9IiM0ZjlkZTgiIG9wYWNpdHk9IjAuNCIvPjxwYXRoIGQ9Ik04LDI0OCBxMTAsLTggMjAsMCBxMTAsOCAyMCwwIiBzdHJva2U9IiM0ZjlkZTgiIHN0cm9rZS13aWR0aD0iMi41IiBmaWxsPSJub25lIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48cGF0aCBkPSJNNDgsMjQ4IHExMCwtOCAyMCwwIHExMCw4IDIwLDAiIHN0cm9rZT0iIzRmOWRlOCIgc3Ryb2tlLXdpZHRoPSIyLjUiIGZpbGw9Im5vbmUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPjxwYXRoIGQ9Ik04OCwyNDggcTEwLC04IDIwLDAgcTEwLDggMjAsMCIgc3Ryb2tlPSIjNGY5ZGU4IiBzdHJva2Utd2lkdGg9IjIuNSIgZmlsbD0ibm9uZSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+PHBhdGggZD0iTTEyOCwyNDggcTEwLC04IDIwLDAgcTEwLDggMjAsMCIgc3Ryb2tlPSIjNGY5ZGU4IiBzdHJva2Utd2lkdGg9IjIuNSIgZmlsbD0ibm9uZSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+PHBhdGggZD0iTTE2OCwyNDggcTEwLC04IDIwLDAgcTEwLDggMjAsMCIgc3Ryb2tlPSIjNGY5ZGU4IiBzdHJva2Utd2lkdGg9IjIuNSIgZmlsbD0ibm9uZSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+PHBhdGggZD0iTTIwOCwyNDggcTEwLC04IDIwLDAgcTEwLDggMjAsMCIgc3Ryb2tlPSIjNGY5ZGU4IiBzdHJva2Utd2lkdGg9IjIuNSIgZmlsbD0ibm9uZSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+PHBhdGggZD0iTTI0OCwyNDggcTEwLC04IDIwLDAgcTEwLDggMjAsMCIgc3Ryb2tlPSIjNGY5ZGU4IiBzdHJva2Utd2lkdGg9IjIuNSIgZmlsbD0ibm9uZSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+PHBhdGggZD0iTTI4OCwyNDggcTEwLC04IDIwLDAgcTEwLDggMjAsMCIgc3Ryb2tlPSIjNGY5ZGU4IiBzdHJva2Utd2lkdGg9IjIuNSIgZmlsbD0ibm9uZSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+PHBhdGggZD0iTTMyOCwyNDggcTEwLC04IDIwLDAgcTEwLDggMjAsMCIgc3Ryb2tlPSIjNGY5ZGU4IiBzdHJva2Utd2lkdGg9IjIuNSIgZmlsbD0ibm9uZSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+PHBhdGggZD0iTTM2OCwyNDggcTEwLC04IDIwLDAgcTEwLDggMjAsMCIgc3Ryb2tlPSIjNGY5ZGU4IiBzdHJva2Utd2lkdGg9IjIuNSIgZmlsbD0ibm9uZSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+PHBhdGggZD0iTTQwOCwyNDggcTEwLC04IDIwLDAgcTEwLDggMjAsMCIgc3Ryb2tlPSIjNGY5ZGU4IiBzdHJva2Utd2lkdGg9IjIuNSIgZmlsbD0ibm9uZSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+PHBhdGggZD0iTTQ0OCwyNDggcTEwLC04IDIwLDAgcTEwLDggMjAsMCIgc3Ryb2tlPSIjNGY5ZGU4IiBzdHJva2Utd2lkdGg9IjIuNSIgZmlsbD0ibm9uZSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+PHBhdGggZD0iTTQ4OCwyNDggcTEwLC04IDIwLDAgcTEwLDggMjAsMCIgc3Ryb2tlPSIjNGY5ZGU4IiBzdHJva2Utd2lkdGg9IjIuNSIgZmlsbD0ibm9uZSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+PHBhdGggZD0iTTUyOCwyNDggcTEwLC04IDIwLDAgcTEwLDggMjAsMCIgc3Ryb2tlPSIjNGY5ZGU4IiBzdHJva2Utd2lkdGg9IjIuNSIgZmlsbD0ibm9uZSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+PHJlY3QgeD0iMCIgeT0iMTk2IiB3aWR0aD0iNjAwIiBoZWlnaHQ9IjIwIiBmaWxsPSIjYjJiZWMzIi8+PHBhdGggZD0iTTE2OCwxOTYgTDQzMiwxOTYgTDQxMCwxNTAgTDE5MCwxNTAgWiIgZmlsbD0iI2ZmNmI2YiIgc3Ryb2tlPSIjMmQzNDM2IiBzdHJva2Utd2lkdGg9IjIuNSIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjxyZWN0IHg9IjIzMCIgeT0iMTE4IiB3aWR0aD0iMTQwIiBoZWlnaHQ9IjM0IiByeD0iNiIgZmlsbD0iI2ZmZmZmZiIgc3Ryb2tlPSIjMmQzNDM2IiBzdHJva2Utd2lkdGg9IjIuNSIvPjxyZWN0IHg9IjI2MiIgeT0iOTAiIHdpZHRoPSIxOCIgaGVpZ2h0PSIzMCIgcng9IjQiIGZpbGw9IiMyZDM0MzYiLz48cmVjdCB4PSIzMDAiIHk9IjkwIiB3aWR0aD0iMTgiIGhlaWdodD0iMzAiIHJ4PSI0IiBmaWxsPSIjMmQzNDM2Ii8+PGxpbmUgeDE9IjcwIiB5MT0iMTk2IiB4Mj0iNzAiIHkyPSI1OCIgc3Ryb2tlPSIjZmZiMzAwIiBzdHJva2Utd2lkdGg9IjgiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPjxsaW5lIHgxPSI3MCIgeTE9IjY0IiB4Mj0iMjAwIiB5Mj0iNjQiIHN0cm9rZT0iI2ZmYjMwMCIgc3Ryb2tlLXdpZHRoPSI3IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48bGluZSB4MT0iNzAiIHkxPSI2NCIgeDI9IjE0MCIgeTI9IjE5NiIgc3Ryb2tlPSIjZmZiMzAwIiBzdHJva2Utd2lkdGg9IjQiIG9wYWNpdHk9IjAuOCIvPjxsaW5lIHgxPSIxOTYiIHkxPSI2NCIgeDI9IjE5NiIgeTI9IjEwNCIgc3Ryb2tlPSIjMmQzNDM2IiBzdHJva2Utd2lkdGg9IjIuNSIvPjxyZWN0IHg9IjE4MiIgeT0iMTA0IiB3aWR0aD0iMjgiIGhlaWdodD0iMjAiIHJ4PSI0IiBmaWxsPSIjMmQzNDM2Ii8+PHJlY3QgeD0iNDcwIiB5PSIxNjgiIHdpZHRoPSIxMDQiIGhlaWdodD0iMTQiIHJ4PSI0IiBmaWxsPSIjYjJiZWMzIiBzdHJva2U9IiMyZDM0MzYiIHN0cm9rZS13aWR0aD0iMi41Ii8+PHJlY3QgeD0iNDc0IiB5PSIxNTQiIHdpZHRoPSI5NiIgaGVpZ2h0PSIxNCIgcng9IjQiIGZpbGw9IiNiMmJlYzMiIHN0cm9rZT0iIzJkMzQzNiIgc3Ryb2tlLXdpZHRoPSIyLjUiLz48cmVjdCB4PSI0NzAiIHk9IjE0MCIgd2lkdGg9IjEwNCIgaGVpZ2h0PSIxNCIgcng9IjQiIGZpbGw9IiNiMmJlYzMiIHN0cm9rZT0iIzJkMzQzNiIgc3Ryb2tlLXdpZHRoPSIyLjUiLz48dGV4dCB4PSI1MjIiIHk9IjEyOCIgZm9udC1zaXplPSIxMiIgZmlsbD0iIzJkMzQzNiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC13ZWlnaHQ9Im5vcm1hbCI+c3RlZWwgcGxhdGVzPC90ZXh0PjxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDMwMCwxOTgpIHNjYWxlKDAuOCkiPjxjaXJjbGUgY3g9IjAiIGN5PSItMjcuODAwMDAwMDAwMDAwMDA0IiByPSI5IiBmaWxsPSIjZjZjOWEwIiBzdHJva2U9IiMyZDM0MzYiIHN0cm9rZS13aWR0aD0iMiIvPjxyZWN0IHg9Ii0xMSIgeT0iLTE2LjgwMDAwMDAwMDAwMDAwNCIgd2lkdGg9IjIyIiBoZWlnaHQ9IjI0IiByeD0iNyIgZmlsbD0iI2ZmZDkzZCIgc3Ryb2tlPSIjMmQzNDM2IiBzdHJva2Utd2lkdGg9IjIiLz48cmVjdCB4PSItOSIgeT0iLTYiIHdpZHRoPSI3IiBoZWlnaHQ9IjciIHJ4PSIzIiBmaWxsPSIjMmQzNDM2Ii8+PHJlY3QgeD0iMiIgeT0iLTYiIHdpZHRoPSI3IiBoZWlnaHQ9IjciIHJ4PSIzIiBmaWxsPSIjMmQzNDM2Ii8+PC9nPjxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDMzNiwxOTgpIHNjYWxlKDAuOCkiPjxjaXJjbGUgY3g9IjAiIGN5PSItMjcuODAwMDAwMDAwMDAwMDA0IiByPSI5IiBmaWxsPSIjZjZjOWEwIiBzdHJva2U9IiMyZDM0MzYiIHN0cm9rZS13aWR0aD0iMiIvPjxyZWN0IHg9Ii0xMSIgeT0iLTE2LjgwMDAwMDAwMDAwMDAwNCIgd2lkdGg9IjIyIiBoZWlnaHQ9IjI0IiByeD0iNyIgZmlsbD0iIzRlY2RjNCIgc3Ryb2tlPSIjMmQzNDM2IiBzdHJva2Utd2lkdGg9IjIiLz48cmVjdCB4PSItOSIgeT0iLTYiIHdpZHRoPSI3IiBoZWlnaHQ9IjciIHJ4PSIzIiBmaWxsPSIjMmQzNDM2Ii8+PHJlY3QgeD0iMiIgeT0iLTYiIHdpZHRoPSI3IiBoZWlnaHQ9IjciIHJ4PSIzIiBmaWxsPSIjMmQzNDM2Ii8+PC9nPjx0ZXh0IHg9IjMwMCIgeT0iMjI2IiBmb250LXNpemU9IjEyIiBmaWxsPSIjMmQzNDM2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXdlaWdodD0iYm9sZCI+c2hpcCB1bmRlciBjb25zdHJ1Y3Rpb248L3RleHQ+PHRleHQgeD0iMzAwIiB5PSIyNzYiIGZvbnQtc2l6ZT0iMTUiIGZpbGw9IiMyZDM0MzYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtd2VpZ2h0PSJib2xkIj5TaGlwcyBhcmUgYnVpbHQgaW4gYSBzcGVjaWFsIHBsYWNlIGNhbGxlZCBhIHNoaXB5YXJkPC90ZXh0Pjx0ZXh0IHg9IjMwMCIgeT0iMjk4IiBmb250LXNpemU9IjEzIiBmaWxsPSIjMmQzNDM2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXdlaWdodD0ibm9ybWFsIj5Nb2Rlcm4gc2hpcHMgYXJlIG1hZGUgbW9zdGx5IG9mIHN0ZWVsPC90ZXh0Pjwvc3ZnPg==", "alt": "A busy shipyard with cranes, stacks of steel plates and a half-built ship standing on the ways."}}, {"id": "chunk-5-q2", "section": "Ship-Building Industry", "question": "Which materials are used to build ships?", "options": ["Softwood and steel", "Cotton and wool", "Iron ore and coal", "Rubber and plastic"], "correctIndex": 0, "explanation": "Ship-building grew where softwood was available, and nowadays large quantities of steel are also used.", "suggestImage": false, "imageNote": "", "image": null}]}, {"id": "fishing-industry-10", "title": "Fishing Industry", "emoji": "🐟", "questions": [{"id": "chunk3-q1", "section": "Fishing Industry", "question": "Which of these kinds of work is included in the fishing industry?", "options": ["Catching, culturing, processing and selling fish and fish products", "Making steel rods and railway coaches", "Growing rice and wheat on farms", "Building houses, bridges and roads"], "correctIndex": 0, "explanation": "Fishing means taking fish and also culturing, processing, storing, transporting and selling them.", "suggestImage": false, "imageNote": "", "image": null}, {"id": "chunk3-q2", "section": "Fishing Industry", "question": "The North East Atlantic fishing ground is famous for fishing in the shallow waters of which sea?", "options": ["The North Sea", "The Baltic Sea", "The Red Sea", "The Arabian Sea"], "correctIndex": 0, "explanation": "Shallow waters of the North Sea, especially Dogger Bank, are great fishing areas all year round.", "suggestImage": true, "imageNote": "Map of the North Atlantic showing the North East Atlantic fishing ground with the North Sea and Dogger Bank marked.", "image": {"type": "svg", "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2MDAgMzA0IiB3aWR0aD0iNjAwIiBoZWlnaHQ9IjMwNCIgZm9udC1mYW1pbHk9IkNvbWljIFNhbnMgTVMsIENoYWxrYm9hcmQgU0UsIE1hcmtlciBGZWx0LCBTZWdvZSBVSSwgc2Fucy1zZXJpZiI+PHJlY3Qgd2lkdGg9IjYwMCIgaGVpZ2h0PSIzMDQiIHJ4PSIxOCIgZmlsbD0iI2ZmZjhlMSIvPjx0ZXh0IHg9IjMwMCIgeT0iMzAiIGZvbnQtc2l6ZT0iMTgiIGZpbGw9IiMyZDM0MzYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtd2VpZ2h0PSJib2xkIj5Ob3J0aCBFYXN0IEF0bGFudGljIGZpc2hpbmcgZ3JvdW5kPC90ZXh0PjxyZWN0IHg9IjAiIHk9IjQ2IiB3aWR0aD0iNjAwIiBoZWlnaHQ9IjIxMiIgZmlsbD0iIzRmOWRlOCIgb3BhY2l0eT0iMC4zIi8+PHBhdGggZD0iTTAsNDYgTDExOCw0NiBDMTA0LDk2IDExOCwxNDAgOTYsMTkwIEM4MiwyMTggNzAsMjM4IDYyLDI1OCBMMCwyNTggWiIgZmlsbD0iI2U4ZGNjOCIgc3Ryb2tlPSIjMmQzNDM2IiBzdHJva2Utd2lkdGg9IjIuNSIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjxwYXRoIGQ9Ik02MDAsNDYgTDQ3MCw0NiBDNDg4LDkyIDQ3MCwxNDAgNDk2LDE5MiBDNTEyLDIyMiA1MjQsMjQyIDUzNCwyNTggTDYwMCwyNTggWiIgZmlsbD0iI2U4ZGNjOCIgc3Ryb2tlPSIjMmQzNDM2IiBzdHJva2Utd2lkdGg9IjIuNSIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjxwYXRoIGQ9Ik00NzAsNDYgTDYwMCw0NiBMNjAwLDEwNCBDNTYwLDExMCA1MTAsMTA0IDQ3MCw4NiBaIiBmaWxsPSIjZThkY2M4IiBzdHJva2U9IiMyZDM0MzYiIHN0cm9rZS13aWR0aD0iMi41IiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PGVsbGlwc2UgY3g9IjMyMCIgY3k9IjE0MCIgcng9IjE1MCIgcnk9IjY2IiBmaWxsPSIjNGVjZGM0IiBvcGFjaXR5PSIwLjQ1IiBzdHJva2U9IiM0ZWNkYzQiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWRhc2hhcnJheT0iMTAgNyIvPjx0ZXh0IHg9IjI1MCIgeT0iMTI4IiBmb250LXNpemU9IjE2IiBmaWxsPSIjMWI2Y2E4IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXdlaWdodD0iYm9sZCI+Tk9SVEggU0VBPC90ZXh0PjxlbGxpcHNlIGN4PSIzMzAiIGN5PSIxNzYiIHJ4PSI2NiIgcnk9IjI2IiBmaWxsPSIjZmZkOTNkIiBvcGFjaXR5PSIwLjg1IiBzdHJva2U9IiNmZmIzMDAiIHN0cm9rZS13aWR0aD0iMi41Ii8+PHRleHQgeD0iMzMwIiB5PSIxODIiIGZvbnQtc2l6ZT0iMTMiIGZpbGw9IiMyZDM0MzYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtd2VpZ2h0PSJib2xkIj5Eb2dnZXIgQmFuazwvdGV4dD48cGF0aCBkPSJNMTcwLDIyMiBMMjQ2LDIyMiBMMjMyLDI0NCBMMTg0LDI0NCBaIiBmaWxsPSIjZmY2YjZiIiBzdHJva2U9IiMyZDM0MzYiIHN0cm9rZS13aWR0aD0iMi41IiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PGxpbmUgeDE9IjIwOCIgeTE9IjIyMiIgeDI9IjIwOCIgeTI9IjE5MiIgc3Ryb2tlPSIjMmQzNDM2IiBzdHJva2Utd2lkdGg9IjMiLz48cGF0aCBkPSJNMjA4LDE5NCBMMjM4LDIxNiBMMjA4LDIxNiBaIiBmaWxsPSIjZmZmZmZmIiBzdHJva2U9IiMyZDM0MzYiIHN0cm9rZS13aWR0aD0iMi41IiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PHRleHQgeD0iMjA4IiB5PSIyNjQiIGZvbnQtc2l6ZT0iMTIiIGZpbGw9IiMyZDM0MzYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtd2VpZ2h0PSJib2xkIj5maXNoaW5nIGJvYXQ8L3RleHQ+PHBhdGggZD0iTTQyMCwyMzIgcTIyLC0xOCA0NCwwIHEtMjIsMTggLTQ0LDAgWiIgZmlsbD0iIzliNTliNiIgc3Ryb2tlPSIjMmQzNDM2IiBzdHJva2Utd2lkdGg9IjIuNSIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjxwYXRoIGQ9Ik00MjAsMjMyIGwtMTQsLTExIHYyMiB6IiBmaWxsPSIjOWI1OWI2IiBzdHJva2U9IiMyZDM0MzYiIHN0cm9rZS13aWR0aD0iMi41IiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PGNpcmNsZSBjeD0iNDM4IiBjeT0iMjMwIiByPSIyLjQiIGZpbGw9IiMyZDM0MzYiLz48dGV4dCB4PSIzMDAiIHk9IjI4OCIgZm9udC1zaXplPSIxNSIgZmlsbD0iIzJkMzQzNiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC13ZWlnaHQ9ImJvbGQiPlNoYWxsb3cgTm9ydGggU2VhIHdhdGVycyBhcmUgcmljaCBpbiBmaXNoIGFsbCB5ZWFyIHJvdW5kPC90ZXh0Pjwvc3ZnPg==", "alt": "Map of the North Atlantic showing the North East Atlantic fishing ground with the North Sea and Dogger Bank marked."}}]}, {"id": "automobile-industry-11", "title": "Automobile Industry", "emoji": "🚗", "questions": [{"id": "chunk3-q7", "section": "Automobile Industry", "question": "About how long has the automobile industry been developing?", "options": ["10 years", "50 years", "100 years", "200 years"], "correctIndex": 2, "explanation": "The text says this industry has been developed over the past hundred years.", "suggestImage": false, "imageNote": "", "image": null}]}, {"id": "information-technology-12", "title": "Information Technology", "emoji": "💻", "questions": [{"id": "chunk3-q10", "section": "Information Technology", "question": "What is Information Technology (IT)?", "options": ["Using computers to store, retrieve, transmit and handle data or information", "Using computers only for playing games", "Repairing cycles and sewing clothes by hand", "Growing food crops on farms"], "correctIndex": 0, "explanation": "IT means using computers to store, find, send and work with data or information.", "suggestImage": false, "imageNote": "", "image": null}]}, {"id": "water-pollution-13", "title": "Water Pollution", "emoji": "🌊", "questions": [{"id": "chunk4-q1", "section": "Water Pollution", "question": "Which disease is caused by drinking water that is contaminated with mercury?", "options": ["Minamata disease", "Malaria", "Dengue fever", "Scurvy"], "correctIndex": 0, "explanation": "Mercury in polluted water causes Minamata disease in people who drink or eat from it.", "suggestImage": false, "imageNote": "", "image": null}]}, {"id": "air-pollution-14", "title": "Air Pollution", "emoji": "🌬️", "questions": [{"id": "chunk4-q5", "section": "Air Pollution", "question": "Which of these pollutants is released into the air by automobiles?", "options": ["Lead oxide", "Sulphur dioxide", "Carbon monoxide", "Nitrogen oxide"], "correctIndex": 0, "explanation": "Smoke from automobiles contains lead oxide, one of the major air pollutants.", "suggestImage": true, "imageNote": "A car and a factory chimney releasing smoke, labelled 'lead oxide from automobiles'.", "image": {"type": "svg", "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2MDAgMzI4IiB3aWR0aD0iNjAwIiBoZWlnaHQ9IjMyOCIgZm9udC1mYW1pbHk9IkNvbWljIFNhbnMgTVMsIENoYWxrYm9hcmQgU0UsIE1hcmtlciBGZWx0LCBTZWdvZSBVSSwgc2Fucy1zZXJpZiI+PHJlY3Qgd2lkdGg9IjYwMCIgaGVpZ2h0PSIzMjgiIHJ4PSIxOCIgZmlsbD0iI2ZmZjhlMSIvPjx0ZXh0IHg9IjMwMCIgeT0iMzAiIGZvbnQtc2l6ZT0iMTkiIGZpbGw9IiMyZDM0MzYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtd2VpZ2h0PSJib2xkIj5BaXIgcG9sbHV0aW9uPC90ZXh0PjxyZWN0IHg9IjAiIHk9IjIxNiIgd2lkdGg9IjYwMCIgaGVpZ2h0PSI4NCIgZmlsbD0iI2RmZjNlMCIvPjxwYXRoIGQ9Ik03NCwyMTYgTDg0LDE4MiBDOTAsMTcwIDEwMiwxNjQgMTE4LDE2NCBMMTgyLDE2NCBDMjAwLDE2NCAyMTIsMTcyIDIyMCwxODYgTDIzNCwyMTYgWiIgZmlsbD0iI2ZmNmI2YiIgc3Ryb2tlPSIjMmQzNDM2IiBzdHJva2Utd2lkdGg9IjIuNSIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjxwYXRoIGQ9Ik0xMDQsMTY4IEwxMzQsMTY4IEwxMjgsMTg2IEw5OCwxODYgWiIgZmlsbD0iI2ZmZmZmZiIgc3Ryb2tlPSIjMmQzNDM2IiBzdHJva2Utd2lkdGg9IjIiLz48cGF0aCBkPSJNMTQyLDE2OCBMMTc2LDE2OCBMMTkyLDE4NiBMMTQyLDE4NiBaIiBmaWxsPSIjZmZmZmZmIiBzdHJva2U9IiMyZDM0MzYiIHN0cm9rZS13aWR0aD0iMiIvPjxjaXJjbGUgY3g9IjExNCIgY3k9IjIyMCIgcj0iMTgiIGZpbGw9IiMyZDM0MzYiIHN0cm9rZT0iIzJkMzQzNiIgc3Ryb2tlLXdpZHRoPSIyLjUiLz48Y2lyY2xlIGN4PSIyMDAiIGN5PSIyMjAiIHI9IjE4IiBmaWxsPSIjMmQzNDM2IiBzdHJva2U9IiMyZDM0MzYiIHN0cm9rZS13aWR0aD0iMi41Ii8+PGNpcmNsZSBjeD0iMTE0IiBjeT0iMjIwIiByPSI3IiBmaWxsPSIjYjJiZWMzIiBzdHJva2U9IiMyZDM0MzYiIHN0cm9rZS13aWR0aD0iMi41Ii8+PGNpcmNsZSBjeD0iMjAwIiBjeT0iMjIwIiByPSI3IiBmaWxsPSIjYjJiZWMzIiBzdHJva2U9IiMyZDM0MzYiIHN0cm9rZS13aWR0aD0iMi41Ii8+PGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMzc2LDE1MCkgc2NhbGUoMS4wNSkiPjxyZWN0IHg9IjAiIHk9IjIwIiB3aWR0aD0iMTEwIiBoZWlnaHQ9IjUwIiByeD0iNiIgZmlsbD0iI2IyYmVjMyIgc3Ryb2tlPSIjMmQzNDM2IiBzdHJva2Utd2lkdGg9IjIuNSIvPjxwYXRoIGQ9Ik0tNiwyMCBMNTUsLTYgTDExNiwyMCB6IiBmaWxsPSIjMmQzNDM2IiBzdHJva2U9IiMyZDM0MzYiIHN0cm9rZS13aWR0aD0iMi41IiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PHJlY3QgeD0iMTYiIHk9Ii0yNiIgd2lkdGg9IjE2IiBoZWlnaHQ9IjQ4IiByeD0iNCIgZmlsbD0iI2IyYmVjMyIgc3Ryb2tlPSIjMmQzNDM2IiBzdHJva2Utd2lkdGg9IjIuNSIvPjxyZWN0IHg9IjY0IiB5PSItMjAiIHdpZHRoPSIxNCIgaGVpZ2h0PSI0MiIgcng9IjQiIGZpbGw9IiNiMmJlYzMiIHN0cm9rZT0iIzJkMzQzNiIgc3Ryb2tlLXdpZHRoPSIyLjUiLz48cmVjdCB4PSIyNiIgeT0iMzgiIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNCIgcng9IjMiIGZpbGw9IiNmZjZiNmIiLz48cmVjdCB4PSI1NCIgeT0iMzgiIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNCIgcng9IjMiIGZpbGw9IiNmZjZiNmIiLz48cmVjdCB4PSI4MiIgeT0iMzgiIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNCIgcng9IjMiIGZpbGw9IiNmZjZiNmIiLz48L2c+PGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMzk4LDEwOCkgc2NhbGUoMC45KSIgZmlsbD0iI2IyYmVjMyIgb3BhY2l0eT0iMC44NSI+PGNpcmNsZSBjeD0iMCIgY3k9IjAiIHI9IjExIi8+PGNpcmNsZSBjeD0iMTciIGN5PSItOSIgcj0iMTQiLz48Y2lyY2xlIGN4PSIzNSIgY3k9IjIiIHI9IjEwIi8+PGNpcmNsZSBjeD0iMTAiIGN5PSIxNiIgcj0iMTMiLz48Y2lyY2xlIGN4PSIzMCIgY3k9IjE4IiByPSIxMSIvPjwvZz48ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSg0NTIsMTE0KSBzY2FsZSgwLjg1KSIgZmlsbD0iI2IyYmVjMyIgb3BhY2l0eT0iMC44NSI+PGNpcmNsZSBjeD0iMCIgY3k9IjAiIHI9IjExIi8+PGNpcmNsZSBjeD0iMTciIGN5PSItOSIgcj0iMTQiLz48Y2lyY2xlIGN4PSIzNSIgY3k9IjIiIHI9IjEwIi8+PGNpcmNsZSBjeD0iMTAiIGN5PSIxNiIgcj0iMTMiLz48Y2lyY2xlIGN4PSIzMCIgY3k9IjE4IiByPSIxMSIvPjwvZz48ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSg5NiwxNTApIHNjYWxlKDAuNjIpIiBmaWxsPSIjYjBiOGJkIiBvcGFjaXR5PSIwLjg1Ij48Y2lyY2xlIGN4PSIwIiBjeT0iMCIgcj0iMTEiLz48Y2lyY2xlIGN4PSIxNyIgY3k9Ii05IiByPSIxNCIvPjxjaXJjbGUgY3g9IjM1IiBjeT0iMiIgcj0iMTAiLz48Y2lyY2xlIGN4PSIxMCIgY3k9IjE2IiByPSIxMyIvPjxjaXJjbGUgY3g9IjMwIiBjeT0iMTgiIHI9IjExIi8+PC9nPjxyZWN0IHg9IjI4IiB5PSIyNTAiIHdpZHRoPSIxOTAiIGhlaWdodD0iMzQiIHJ4PSI4IiBmaWxsPSIjZmZmZmZmIiBzdHJva2U9IiMyZDM0MzYiIHN0cm9rZS13aWR0aD0iMi41Ii8+PHRleHQgeD0iMTIzIiB5PSIyNzMiIGZvbnQtc2l6ZT0iMTMiIGZpbGw9IiMyZDM0MzYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtd2VpZ2h0PSJib2xkIj5DYXIgZXhoYXVzdDwvdGV4dD48bGluZSB4MT0iMTIzIiB5MT0iMjUwIiB4Mj0iMTIzIiB5Mj0iMjM2IiBzdHJva2U9IiMyZDM0MzYiIHN0cm9rZS13aWR0aD0iMiIvPjxyZWN0IHg9IjM3NCIgeT0iMjUwIiB3aWR0aD0iMTkwIiBoZWlnaHQ9IjM0IiByeD0iOCIgZmlsbD0iI2ZmZmZmZiIgc3Ryb2tlPSIjMmQzNDM2IiBzdHJva2Utd2lkdGg9IjIuNSIvPjx0ZXh0IHg9IjQ2OSIgeT0iMjczIiBmb250LXNpemU9IjEzIiBmaWxsPSIjMmQzNDM2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXdlaWdodD0iYm9sZCI+RmFjdG9yeSBzbW9rZTwvdGV4dD48bGluZSB4MT0iNDY5IiB5MT0iMjUwIiB4Mj0iNDY5IiB5Mj0iMjM2IiBzdHJva2U9IiMyZDM0MzYiIHN0cm9rZS13aWR0aD0iMiIvPjx0ZXh0IHg9IjMwMCIgeT0iMzEyIiBmb250LXNpemU9IjE1IiBmaWxsPSIjMmQzNDM2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXdlaWdodD0iYm9sZCI+QXV0b21vYmlsZXMgcmVsZWFzZSBsZWFkIG94aWRlIGludG8gdGhlIGFpcjwvdGV4dD48L3N2Zz4=", "alt": "A car and a factory chimney releasing smoke, labelled 'lead oxide from automobiles'."}}]}, {"id": "protection-measures-15", "title": "Protection Measures", "emoji": "🛡️", "questions": [{"id": "chunk4-q3", "section": "Protection Measures", "question": "What should big industries do with their liquid waste after treating it?", "options": ["Reuse the treated water", "Pour it back into rivers", "Store it in closed cans forever", "Mix it with drinking water"], "correctIndex": 0, "explanation": "Big industries should reuse their liquid waste after treatment instead of throwing it away.", "suggestImage": false, "imageNote": "", "image": null}]}, {"id": "terms-revision-16", "title": "Terms & Revision", "emoji": "📘", "questions": [{"id": "chunk4-q9", "section": "Terms & Revision", "question": "What are estuaries?", "options": ["Partly enclosed coastal water bodies where river water mixes with sea water", "Very deep parts of the ocean far from land", "Large cities built near the sea", "Farms where fish are specially bred"], "correctIndex": 0, "explanation": "In an estuary, fresh water from rivers mixes with salt water of the ocean.", "suggestImage": true, "imageNote": "Map or drawing of a river meeting the sea, showing the mixing zone called an estuary.", "image": {"type": "svg", "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2MDAgMzM4IiB3aWR0aD0iNjAwIiBoZWlnaHQ9IjMzOCIgZm9udC1mYW1pbHk9IkNvbWljIFNhbnMgTVMsIENoYWxrYm9hcmQgU0UsIE1hcmtlciBGZWx0LCBTZWdvZSBVSSwgc2Fucy1zZXJpZiI+PHJlY3Qgd2lkdGg9IjYwMCIgaGVpZ2h0PSIzMzgiIHJ4PSIxOCIgZmlsbD0iI2ZmZjhlMSIvPjx0ZXh0IHg9IjMwMCIgeT0iMzAiIGZvbnQtc2l6ZT0iMTkiIGZpbGw9IiMyZDM0MzYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtd2VpZ2h0PSJib2xkIj5BbiBlc3R1YXJ5PC90ZXh0PjxyZWN0IHg9IjAiIHk9IjQ2IiB3aWR0aD0iNjAwIiBoZWlnaHQ9IjEyMCIgZmlsbD0iI2VhZjZmZiIvPjxyZWN0IHg9IjMzMCIgeT0iMTUwIiB3aWR0aD0iMjcwIiBoZWlnaHQ9IjEzMCIgZmlsbD0iIzRmOWRlOCIgb3BhY2l0eT0iMC41NSIvPjxwYXRoIGQ9Ik0wLDE1MCBMMzMwLDE1MCBMMzMwLDI4MCBMMCwyODAgWiIgZmlsbD0iI2U4ZGNjOCIgc3Ryb2tlPSIjMmQzNDM2IiBzdHJva2Utd2lkdGg9IjIuNSIvPjxwYXRoIGQ9Ik05NiwxNTAgTDI1MCwxNTAgQzI2OCwxNTAgMjc4LDE2NCAyNzgsMTgyIEMyNzgsMjA2IDMwMCwyMTQgMzMwLDIxNCBMMzMwLDI1MCBDMjgwLDI1MCAyNDAsMjM4IDIzNiwyMDAgQzIzMiwxNjggMjE0LDE2NCAyMDAsMTY0IEw5NiwxNjQgWiIgZmlsbD0iIzRmOWRlOCIgb3BhY2l0eT0iMC44IiBzdHJva2U9IiMyZTg2YzEiIHN0cm9rZS13aWR0aD0iMi41IiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PGVsbGlwc2UgY3g9IjMwMCIgY3k9IjIzMiIgcng9IjU0IiByeT0iNDAiIGZpbGw9IiM0ZWNkYzQiIG9wYWNpdHk9IjAuNiIgc3Ryb2tlPSIjNGVjZGM0IiBzdHJva2Utd2lkdGg9IjMiIHN0cm9rZS1kYXNoYXJyYXk9IjggNiIvPjx0ZXh0IHg9IjMwMCIgeT0iMjI4IiBmb250LXNpemU9IjEzIiBmaWxsPSIjMmQzNDM2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXdlaWdodD0iYm9sZCI+bWl4aW5nPC90ZXh0Pjx0ZXh0IHg9IjMwMCIgeT0iMjQ2IiBmb250LXNpemU9IjEzIiBmaWxsPSIjMmQzNDM2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXdlaWdodD0iYm9sZCI+em9uZTwvdGV4dD48dGV4dCB4PSI2NiIgeT0iMTMyIiBmb250LXNpemU9IjEzIiBmaWxsPSIjMWI2Y2E4IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXdlaWdodD0iYm9sZCI+ZnJlc2ggd2F0ZXI8L3RleHQ+PHRleHQgeD0iMTYwIiB5PSIxMzIiIGZvbnQtc2l6ZT0iMTIiIGZpbGw9IiMxYjZjYTgiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtd2VpZ2h0PSJib2xkIj5mcm9tIHRoZSByaXZlcjwvdGV4dD48dGV4dCB4PSI0NTIiIHk9IjEzMiIgZm9udC1zaXplPSIxMyIgZmlsbD0iIzFiNGE2YiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC13ZWlnaHQ9ImJvbGQiPnNhbHQgd2F0ZXI8L3RleHQ+PHRleHQgeD0iNDUyIiB5PSIxNTAiIGZvbnQtc2l6ZT0iMTIiIGZpbGw9IiMxYjRhNmIiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtd2VpZ2h0PSJib2xkIj5mcm9tIHRoZSBvY2VhbjwvdGV4dD48dGV4dCB4PSIzMDAiIHk9IjMwMCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzJkMzQzNiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC13ZWlnaHQ9ImJvbGQiPlBhcnRseSBlbmNsb3NlZCBjb2FzdGFsIHdhdGVyIHdoZXJlIHJpdmVyIHdhdGVyIG1peGVzIHdpdGggc2VhIHdhdGVyPC90ZXh0Pjx0ZXh0IHg9IjMwMCIgeT0iMzIyIiBmb250LXNpemU9IjEzIiBmaWxsPSIjMmQzNDM2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXdlaWdodD0ibm9ybWFsIj5TaGlweWFyZHMgYXJlIG9mdGVuIGJ1aWx0IGluIHNoZWx0ZXJlZCBlc3R1YXJpZXM8L3RleHQ+PC9zdmc+", "alt": "Map or drawing of a river meeting the sea, showing the mixing zone called an estuary."}}]}]}</script>
+
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <linearGradient id="gradA" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4ecdc4"/><stop offset="100%" stop-color="#4f9de8"/>
+    </linearGradient>
+  </defs>
+</svg>
+
+<script>
+(() => {
+"use strict";
+/* ══════════════════════════════════════════════════════════════
+   html-quiz runtime — self-contained, no libraries, no network.
+   Question data is parsed from the #quiz-data script tag.
+   ══════════════════════════════════════════════════════════════ */
+
+// ── Data & config ─────────────────────────────────────────────
+const QUIZ = JSON.parse(document.getElementById('quiz-data').textContent.trim());
+const params = new URLSearchParams(location.search);
+const cfg = {
+  secs: parseTimerSecs(),                 // 0 = no timer (unlimited); ?secs=N (2-60) restores a timer
+  max:  clampInt(params.get('max'), 25, 1, 100),   // (informational only; cap applied at build)
+  tts:  params.get('tts') !== 'off' && params.get('tts') !== '0'
+};
+function clampInt(v, d, lo, hi){ const n = parseInt(v,10); return Number.isFinite(n) ? Math.min(hi, Math.max(lo, n)) : d; }
+function parseTimerSecs(){
+  const raw = params.get('secs');
+  if (raw === null || raw === '' || raw === '0') return 0;   // default: unlimited time
+  const n = parseInt(raw, 10);
+  return Number.isFinite(n) ? Math.min(60, Math.max(2, n)) : 0;
+}
+
+// Build a flat ordered question list across all sections.
+const FLAT = [];
+QUIZ.sections.forEach(s => {
+  s.questions.forEach(q => {
+    FLAT.push({ q, sectionId: s.id, sectionTitle: s.title });
+  });
+});
+const TOTAL = FLAT.length;
+
+// ── State machine ─────────────────────────────────────────────
+let state = {
+  mode: 'intro',        // intro | question | revealed | results
+  scope: null,          // null = all sections, else sectionId
+  list: [],             // ordered [{q, sectionId, sectionTitle}] for current scope
+  iq: 0,
+  answers: [],          // {qid, chosen(-1=timeout), status, pts}
+  score: 0,
+  runToken: 0,
+  transitioning: false
+};
+
+const elStage  = document.getElementById('stage');
+const elScore  = document.getElementById('score-chip');
+const elProg   = document.getElementById('progress-fill');
+const elTree   = document.getElementById('tree');
+const elSide   = document.getElementById('sidebar');
+const overlay  = document.getElementById('overlay');
+const elMute   = document.getElementById('mute-btn');
+let muted = false;
+
+// ── DOM helpers (NO innerHTML anywhere) ───────────────────────
+const h = (tag, cls, text) => {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (text !== undefined) e.textContent = text;   // untrusted text → textContent only
+  return e;
+};
+function clear(node){ while(node.firstChild) node.removeChild(node.firstChild); }
+
+// ── Sound (WebAudio, synthesised; lazy context for autoplay) ─
+let AC = null;
+function ensureAudio(){
+  if (!AC){ try{ AC = new (window.AudioContext || window.webkitAudioContext)(); }catch(e){ return null; } }
+  if (AC.state === 'suspended') AC.resume();
+  return AC;
+}
+function blip(freq, dur, type, delay, vol){
+  const ac = AC || ensureAudio();
+  if (!ac) return;
+  const t0 = ac.currentTime + (delay || 0);
+  const o = ac.createOscillator(), g = ac.createGain();
+  o.type = type || 'sine'; o.frequency.value = freq;
+  g.gain.setValueAtTime(vol || 0.14, t0);
+  g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+  o.connect(g); g.connect(ac.destination);
+  o.start(t0); o.stop(t0 + dur + 0.03);
+}
+const sTick   = () => blip(880, 0.06, 'square');
+const sCorrect= () => { blip(523,0.12,'sine',0); blip(659,0.12,'sine',0.11); blip(784,0.2,'sine',0.22); };
+const sWrong  = () => { blip(220,0.22,'triangle',0); blip(170,0.28,'triangle',0.14); };
+const sTimesUp= () => { blip(440,0.18,'triangle',0); blip(330,0.3,'triangle',0.16); };
+const sPop    = () => { blip(660,0.09,'sine',0,0.1); blip(880,0.1,'sine',0.07,0.08); };
+
+// ── TTS (Web Speech API) ──────────────────────────────────────
+function ttsAvailable(){ return 'speechSynthesis' in window; }
+function pickVoice(){
+  if (!ttsAvailable()) return null;
+  const vs = speechSynthesis.getVoices();
+  return vs.find(v => /^en/i.test(v.lang)) || vs[0] || null;
+}
+function speak(text, onEnd){
+  if (!cfg.tts || muted || !ttsAvailable() || !text) { if (onEnd) onEnd(); return; }
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.rate = 1; u.pitch = 1.05;
+  const v = pickVoice(); if (v) u.voice = v;
+  if (onEnd) u.onend = onEnd;
+  speechSynthesis.speak(u);
+}
+if ('speechSynthesis' in window){
+  speechSynthesis.onvoiceschanged = () => {};   // warm the voice list
+}
+
+// ── Timer ring ────────────────────────────────────────────────
+let rafId = 0;
+function stopTimer(){ if (rafId){ cancelAnimationFrame(rafId); rafId = 0; } }
+function startTimer(secs, token){
+  stopTimer();
+  const C = 2 * Math.PI * 30;                    // r=30 ring
+  const ring = document.getElementById('ring-fg');
+  const count = document.getElementById('t-count');
+  const wrap = document.getElementById('timer-wrap');
+  ring.setAttribute('stroke-dasharray', C);
+  ring.setAttribute('stroke-dashoffset', 0);
+  const deadline = performance.now() + secs * 1000;
+  let lastSec = Math.ceil(secs);
+  const loop = (now) => {
+    if (state.runToken !== token) return;        // stale — question changed
+    const remMs = deadline - now;
+    const remSec = Math.max(0, Math.ceil(remMs / 1000));
+    const frac = Math.max(0, Math.min(1, remMs / (secs * 1000)));
+    ring.setAttribute('stroke-dashoffset', String(C * (1 - frac)));   // SVG attr, not CSS
+    count.textContent = String(remSec);
+    wrap.classList.toggle('low', remSec <= 3);
+    if (remSec < lastSec){ lastSec = remSec; if (remSec > 0 && remSec <= 3 && state.mode === 'question') sTick(); }
+    if (remMs <= 0){ onTimeout(token); return; }
+    rafId = requestAnimationFrame(loop);
+  };
+  rafId = requestAnimationFrame(loop);
+}
+
+// ── Timer markup builder (returned to slot in question card) ──
+function timerMarkup(){
+  if (cfg.secs <= 0) return null;          // no-timer mode: no ring, no countdown
+  const wrap = h('div', 'timer-wrap'); wrap.id = 'timer-wrap';
+  const ns = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(ns, 'svg');
+  svg.setAttribute('viewBox', '0 0 74 74');
+  const bg = document.createElementNS(ns, 'circle');
+  bg.setAttribute('cx','37'); bg.setAttribute('cy','37'); bg.setAttribute('r','30'); bg.setAttribute('class','circle-bg');
+  const fg = document.createElementNS(ns, 'circle');
+  fg.setAttribute('cx','37'); fg.setAttribute('cy','37'); fg.setAttribute('r','30'); fg.setAttribute('class','circle-fg');
+  fg.id = 'ring-fg';
+  svg.appendChild(bg); svg.appendChild(fg);
+  const c = h('div', 't-count', String(cfg.secs)); c.id = 't-count';
+  wrap.appendChild(svg); wrap.appendChild(c);
+  return wrap;
+}
+
+// ── Confetti ──────────────────────────────────────────────────
+const CONF_COLORS = ['#ff6b6b','#ffd93d','#2ecc71','#4f9de8','#9b59b6','#ff9d2e'];
+function burstConfetti(n){
+  const layer = document.getElementById('confetti');
+  for (let i = 0; i < n; i++){
+    const c = h('div', 'confetti');
+    c.style.left = (Math.random() * 100) + 'vw';
+    c.style.background = CONF_COLORS[i % CONF_COLORS.length];
+    c.style.setProperty('--rx', (Math.random() * 540 - 270) + 'deg');
+    c.style.animationDuration = (1.6 + Math.random() * 1.6) + 's';
+    c.style.animationDelay = (Math.random() * 0.5) + 's';
+    c.style.width = (7 + Math.random() * 8) + 'px';
+    c.style.height = (7 + Math.random() * 8) + 'px';
+    c.addEventListener('animationend', () => c.remove());
+    layer.appendChild(c);
+  }
+}
+
+// ── Tree building ─────────────────────────────────────────────
+function renderTree(){
+  clear(elTree);
+  QUIZ.sections.forEach(sec => {
+    const node = h('div', 'tree-node');
+    node.setAttribute('data-sec', sec.id);
+    const arrow = h('span', 'arrow', '▶');
+    const dot = h('span', 'dot');
+    dot.style.background = sectionColor(sec.id);
+    const label = h('span', null, sec.emoji + ' ' + sec.title);
+    const badge = h('span', 'badge', String(sec.questions.length));
+    node.appendChild(arrow); node.appendChild(dot); node.appendChild(label); node.appendChild(badge);
+    node.addEventListener('click', () => {
+      arrow.classList.toggle('open');
+      const kids = document.getElementById('children-' + sec.id);
+      if (kids) kids.classList.toggle('open');
+    });
+    elTree.appendChild(node);
+
+    const kids = h('div', 'tree-children');
+    kids.id = 'children-' + sec.id;
+    sec.questions.forEach(q => {
+      const leaf = h('div', 'tree-node tree-leaf');
+      leaf.setAttribute('data-qid', q.id);
+      const qn = h('span', null, 'Q' + (FLAT.length ? '' : '') + q.id.split('-q')[1]);
+      const st = h('span', 'st');
+      leaf.appendChild(h('span', 'arrow', '•'));
+      leaf.appendChild(qn); leaf.appendChild(st);
+      leaf.addEventListener('click', () => startAtSection(sec.id, q.id));
+      kids.appendChild(leaf);
+    });
+    elTree.appendChild(kids);
+  });
+}
+function sectionColor(id){
+  const pal = ['#4ecdc4','#ffb300','#9b59b6','#4f9de8','#ff6b6b','#2ecc71','#e67e22','#e84393'];
+  let x = 0; for (const ch of id) x = (x + ch.charCodeAt(0)) % pal.length;
+  return pal[x];
+}
+function updateTreeStatus(){
+  const answered = new Map(state.answers.map(a => [a.qid, a.status]));
+  document.querySelectorAll('#tree .tree-leaf').forEach(leaf => {
+    const st = leaf.querySelector('.st');
+    const qid = leaf.getAttribute('data-qid');
+    const s = answered.get(qid);
+    st.textContent = '';
+    st.className = 'st';
+    if (s === 'correct'){ st.textContent = '✓'; st.classList.add('good'); }
+    else if (s === 'wrong'){ st.textContent = '✗'; st.classList.add('bad'); }
+    else if (s === 'timeout'){ st.textContent = '⏰'; st.classList.add('slow'); }
+  });
+  // highlight active section node
+  document.querySelectorAll('#tree .tree-node[data-sec]').forEach(n => {
+    n.classList.toggle('active', state.scope === null || n.getAttribute('data-sec') === state.scope);
+  });
+}
+
+// ── Scope / nav ───────────────────────────────────────────────
+function shuffle(arr){
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--){ const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+  return a;
+}
+function startScope(scopeId){
+  state.scope = scopeId || null;
+  if (state.scope) {
+    state.list = FLAT.filter(f => f.sectionId === state.scope);
+  } else {
+    // group by section, shuffle sections, keep questions in source order within each
+    const bySec = [];
+    const secOrder = [];
+    FLAT.forEach(f => { if (!secOrder.includes(f.sectionId)) secOrder.push(f.sectionId); });
+    secOrder.forEach(sid => bySec.push(FLAT.filter(f => f.sectionId === sid)));
+    state.list = shuffle(bySec).flat();
+  }
+  state.iq = 0; state.answers = []; state.score = 0; state.runToken++;
+  updateScore();
+  if (state.list.length === 0){ renderIntro(); return; }
+  renderQuestion();
+}
+function startAtSection(secId, qid){
+  state.scope = secId;
+  state.list = FLAT.filter(f => f.sectionId === secId);
+  const idx = state.list.findIndex(f => f.q.id === qid);
+  state.iq = idx >= 0 ? idx : 0;
+  state.answers = []; state.score = 0; state.runToken++;
+  updateScore();
+  closeDrawer();
+  renderQuestion();
+}
+function currentQ(){
+  const f = state.list[state.iq];
+  return f ? f.q : null;
+}
+
+// ── Views ─────────────────────────────────────────────────────
+function renderIntro(){
+  state.mode = 'intro';
+  clear(elStage);
+  const card = h('div', 'card intro card-in');
+  const big = h('div', 'big-emoji', QUIZ.emoji || '🧠');
+  const title = h('h1', null, QUIZ.title || 'Industries — Class 7 Geography');
+  const sub = h('div', 'sub', QUIZ.subtitle || 'Test yourself & learn with fun quiz!');
+  const meta = h('div', 'meta-chip', '🎯 ' + TOTAL + ' questions · ⭐ up to ' + (TOTAL * 10) + ' points · ' + (cfg.secs > 0 ? '⏱️ ' + cfg.secs + 's each' : '⏱️ no time limit'));
+  const start = h('button', 'big-btn', '▶ Start Quiz');
+  start.addEventListener('click', () => { ensureAudio(); state.runToken++; startScope(null); });
+  card.appendChild(big); card.appendChild(title); card.appendChild(sub);
+  const row = h('div', 'ghost-row');
+  const samp = h('button', 'big-btn ghost', '🔊 Hear me');
+  samp.addEventListener('click', () => { ensureAudio(); speak('Hello friend! Let’s play and learn together!'); });
+  const imgAll = h('div', 'hint-line', 'Open a section in the left menu to play a single topic.');
+  row.appendChild(samp);
+  card.appendChild(meta); card.appendChild(start); card.appendChild(row); card.appendChild(imgAll);
+  elStage.appendChild(card);
+  updateProgress(0);
+}
+function speakQuestion(q, onEnd){
+  const all = 'Question ' + q.question + '. Options: ' +
+    q.options.map((o, i) => String.fromCharCode(65 + i) + '. ' + o).join('. ') + '.';
+  speak(all, onEnd);
+}
+function renderQuestion(){
+  state.mode = 'question';
+  const q = currentQ();
+  if (!q){ renderResults(); return; }
+  const token = ++state.runToken;
+  stopTimer();
+  clear(elStage);
+  const card = h('div', 'card card-in');
+  const head = h('div', 'q-head');
+  head.appendChild(h('div', 'q-progress', 'Question ' + (state.iq + 1) + ' of ' + state.list.length));
+  const tm = timerMarkup();
+  if (tm) head.appendChild(tm);
+  card.appendChild(head);
+
+  // question text
+  card.appendChild(h('div', 'q-text', q.question));
+
+  // optional image
+  if (q.image){
+    const iw = h('div', 'qimg-wrap');
+    if (q.image.type === 'emoji'){
+      iw.appendChild(h('div', 'emoji-big', q.image.src));
+    } else {
+      const img = h('img', 'qimg');
+      img.setAttribute('src', q.image.src);
+      img.setAttribute('alt', q.image.alt || '');
+      iw.appendChild(img);
+    }
+    if (q.image.caption) iw.appendChild(h('div', 'caption', q.image.caption));
+    card.appendChild(iw);
+  }
+
+  // options
+  const opts = h('div', 'options');
+  q.options.forEach((text, i) => {
+    const b = h('button', 'opt');
+    b.setAttribute('data-idx', String(i));
+    b.appendChild(h('span', 'key', String.fromCharCode(65 + i)));
+    b.appendChild(h('span', null, text));
+    b.appendChild(h('span', 'mark'));
+    b.addEventListener('click', () => { ensureAudio(); if (state.mode === 'question') answer(i); });
+    opts.appendChild(b);
+  });
+  card.appendChild(opts);
+
+  // speak button
+  const foot = h('div', 'q-foot');
+  const spk = h('button', 'speak-btn', '🔊 Read aloud');
+  spk.addEventListener('click', () => { ensureAudio(); speakQuestion(q); });
+  foot.appendChild(spk);
+  card.appendChild(foot);
+  elStage.appendChild(card);
+
+  updateProgress(state.iq / state.list.length);
+  speakQuestion(q, () => {
+    if (state.runToken === token && state.mode === 'question' && cfg.secs > 0) startTimer(cfg.secs, token);
+  });
+}
+function reveal(q, status, chosen){
+  state.mode = 'revealed';
+  stopTimer();
+  state.answers.push({ qid: q.id, chosen, status, pts: status === 'correct' ? 10 : 0 });
+  if (status === 'correct') state.score += 10;
+  updateScore();
+  updateTreeStatus();
+  burstConfetti(status === 'correct' ? 60 : 0);
+
+  const card = document.querySelector('#stage .card');
+  // banner
+  const banner = h('div', 'reveal-banner ' + (status === 'correct' ? 'good' : status === 'wrong' ? 'bad' : 'slow'));
+  const icon = status === 'correct' ? '✅' : status === 'wrong' ? '❌' : '⏰';
+  const msg = status === 'correct' ? 'Correct! Great job!' : status === 'wrong' ? 'Oops! Not quite.' : "Time's up!";
+  banner.appendChild(h('span', null, icon + ' ' + msg));
+  card.appendChild(banner);
+  // explanation
+  const exp = h('div', 'reveal-exp');
+  const b = h('b', null, '💡 '); b.textContent = '💡 ' + q.options[q.correctIndex];
+  exp.appendChild(b);
+  exp.appendChild(h('div', null, q.explanation));
+  card.appendChild(exp);
+  // highlight options
+  const buttons = card.querySelectorAll('.opt');
+  buttons.forEach((btn, i) => {
+    btn.disabled = true;
+    const mark = btn.querySelector('.mark');
+    if (i === q.correctIndex){ btn.classList.add('correct'); mark.textContent = '✓'; }
+    else if (i === chosen){ btn.classList.add('wrong-chosen'); mark.textContent = '✗'; }
+    else btn.classList.add('dim');
+  });
+  // next row
+  const row = h('div', 'next-row');
+  const pts = h('div', 'pts-gain ' + (status === 'correct' ? 'gain' : 'none'),
+                status === 'correct' ? '+10 points' : '+0 points');
+  const nb = h('button', 'next-btn', state.iq + 1 >= state.list.length ? 'See results 🏆' : 'Next ➡️');
+  nb.addEventListener('click', () => { state.iq++; if (state.iq >= state.list.length) renderResults(); else renderQuestion(); });
+  row.appendChild(pts); row.appendChild(nb);
+  const head = card.querySelector('.q-head');
+  if (head) head.appendChild(row); else card.appendChild(row);
+  // duplicate next-row at bottom for easy access
+  const row2 = h('div', 'next-row');
+  row2.appendChild(h('div', 'pts-gain ' + (status === 'correct' ? 'gain' : 'none'),
+                status === 'correct' ? '+10 points' : '+0 points'));
+  const nb2 = h('button', 'next-btn', state.iq + 1 >= state.list.length ? 'See results 🏆' : 'Next ➡️');
+  nb2.addEventListener('click', () => { state.iq++; if (state.iq >= state.list.length) renderResults(); else renderQuestion(); });
+  row2.appendChild(nb2);
+  card.appendChild(row2);
+}
+function answer(i){
+  const q = currentQ();
+  ensureAudio();
+  if (i === q.correctIndex) sCorrect(); else sWrong();
+  reveal(q, i === q.correctIndex ? 'correct' : 'wrong', i);
+}
+function onTimeout(token){
+  if (state.runToken !== token) return;   // stale
+  const q = currentQ();
+  ensureAudio(); sTimesUp();
+  reveal(q, 'timeout', -1);
+  speak(q.explanation);
+}
+function renderResults(){
+  state.mode = 'results';
+  stopTimer();
+  clear(elStage);
+  const card = h('div', 'card results card-in');
+  const count = state.list.length;
+  const maxPts = count * 10;
+  const words = pctWord(state.score / maxPts);
+  card.appendChild(h('div', 'big-emoji', words.emoji));
+  card.appendChild(h('h2', null, words.title));
+  card.appendChild(h('div', 'sub', 'You scored ' + state.score + ' of ' + maxPts + ' points'));
+
+  // score ring
+  const rw = h('div', 'ring-wrap');
+  const ns = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(ns, 'svg');
+  svg.setAttribute('viewBox', '0 0 120 120');
+  const bg = document.createElementNS(ns, 'circle');
+  bg.setAttribute('cx','60'); bg.setAttribute('cy','60'); bg.setAttribute('r','45'); bg.setAttribute('class','rbg');
+  const fg = document.createElementNS(ns, 'circle');
+  fg.setAttribute('cx','60'); fg.setAttribute('cy','60'); fg.setAttribute('r','45'); fg.setAttribute('class','rfg');
+  fg.id = 'ring-fg-r';
+  svg.appendChild(bg); svg.appendChild(fg);
+  rw.appendChild(svg);
+  const rs = h('div', 'rscore');
+  const n = h('div', 'n', String(state.score)); n.id = 'rscore-n'; n.className = 'n rscore-n';
+  rs.appendChild(n); rs.appendChild(h('div', 'pts', 'points'));
+  rw.appendChild(rs);
+  card.appendChild(rw);
+
+  const stars = h('div', 'stars', '⭐'.repeat(words.stars) + '☆'.repeat(5 - words.stars));
+  card.appendChild(stars);
+
+  // review
+  const review = h('div', 'review');
+  state.answers.forEach((a, i) => {
+    const f = state.list[i];
+    const row = h('div', 'review-row');
+    row.appendChild(h('div', 'qi', 'Q' + (i + 1)));
+    const body = h('div', 'qbody');
+    body.appendChild(h('div', 'qq', f.q.question));
+    const your = a.chosen >= 0 ? f.q.options[a.chosen] : 'No answer';
+    body.appendChild(h('div', 'aa', 'Your answer: ' + your));
+    body.appendChild(h('div', 'aa', '✅ ' + f.q.options[f.q.correctIndex]));
+    row.appendChild(body);
+    row.appendChild(h('div', 'pts ' + (a.pts ? 'gain' : 'none'), (a.pts ? '+' : '') + a.pts));
+    review.appendChild(row);
+  });
+  card.appendChild(review);
+
+  if (QUIZ.truncated){
+    card.appendChild(h('div', 'hint-line', 'Showing ' + QUIZ.truncated.shown + ' of ' + QUIZ.truncated.total + ' questions.'));
+  }
+
+  const row2 = h('div', 'ghost-row');
+  const again = h('button', 'big-btn ghost', '🔄 Play again');
+  again.addEventListener('click', () => { burstConfetti(0); startScope(state.scope); });
+  const menu = h('button', 'big-btn ghost', '🏠 Menu');
+  menu.addEventListener('click', () => renderIntro());
+  row2.appendChild(again); row2.appendChild(menu);
+  card.appendChild(row2);
+  elStage.appendChild(card);
+
+  // deferred: animate ring + settle score number + confetti
+  setTimeout(() => {
+    const C = 283;
+    const fgR = document.getElementById('ring-fg-r');
+    fgR.setAttribute('stroke-dashoffset', String(C * (1 - (state.score / maxPts))));
+    const num = document.getElementById('rscore-n');
+    if (num) num.textContent = String(state.score);   // settle immediately so chip & ring always agree
+    burstConfetti(140);
+    sPop();
+  }, 60);
+}
+function pctWord(p){
+  if (p >= 0.9)  return { emoji:'🏆', title:'Amazing!', stars:5 };
+  if (p >= 0.7)  return { emoji:'🌟', title:'Great job!', stars:4 };
+  if (p >= 0.5)  return { emoji:'😄', title:'Good try!', stars:3 };
+  if (p >= 0.3)  return { emoji:'🙂', title:'Keep going!', stars:2 };
+  return { emoji:'💪', title:'Practice makes better!', stars:1 };
+}
+function updateScore(){ elScore.textContent = '⭐ Score: ' + state.score; }
+function updateProgress(p){
+  if (elProg) elProg.style.width = Math.round(Math.max(0, Math.min(1, p)) * 100) + '%';
+  // track is shared for all-scope run; on intro show 0
+}
+
+// ── Mobile drawer ─────────────────────────────────────────────
+function closeDrawer(){
+  elSide.classList.remove('open'); overlay.classList.remove('open');
+}
+document.getElementById('hamburger').addEventListener('click', () => {
+  elSide.classList.toggle('open'); overlay.classList.toggle('open');
+});
+overlay.addEventListener('click', closeDrawer);
+document.getElementById('sidebar-home').addEventListener('click', () => { closeDrawer(); renderIntro(); });
+elMute.addEventListener('click', () => {
+  muted = !muted;
+  elMute.textContent = muted ? '🔇' : '🔊';
+  if (muted && 'speechSynthesis' in window) speechSynthesis.cancel();
+});
+
+// ── Boot ──────────────────────────────────────────────────────
+renderTree();
+renderIntro();
+})();
+</script>
+</body>
+</html>
