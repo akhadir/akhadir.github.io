@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0MDAgNDIwIj48cG9seWdvbiBwb2ludHM9Ijk1LDU1IDEzMCw1OCAxNzAsNjggMjAwLDc2IDIzMiw3OCAyNTIsOTIgMjYyLDExMiAyNzAsMTQwIDMwMCwxNjggMzE4LDE4MiAzMDgsMTk2IDI4NiwxOTggMjgyLDIyMCAyOTAsMjQ4IDMwMCwyNzIgMzA2LDMwMCAzMDAsMzMwIDI4OCwzNTggMjY4LDM4MiAyNTYsMzkwIDI0MCwzNzIgMjI2LDM0NiAyMTAsMzIyIDE5OCwyOTYgMTkwLDI2OCAxODYsMjQyIDE3NiwyMTYgMTYwLDE5MiAxNTAsMTcyIDEyOCwxNjIgMTA0LDE1NiA4NCwxNTAgNzIsMTM2IDc4LDExNiA5MCw5NiA4Niw3NCIgZmlsbD0iI2E4ZTZhMyIgc3Ryb2tlPSIjMmY2YjM0IiBzdHJva2Utd2lkdGg9IjEwIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PC9zdmc+"><title>Africa — Geography — Quiz</title>
+<style>
+  /* ══════════════ KID-FRIENDLY PALETTE (bright daylight) ══════════════ */
+  :root {
+    --bg: linear-gradient(160deg, #fff8e1 0%, #e0f7fa 60%, #dff4ff 100%);
+    --panel: #ffffff;
+    --ink: #2d3436;
+    --ink-soft: #6b7a85;
+    --coral: #ff6b6b;
+    --sunny: #ffd93d;
+    --teal: #4ecdc4;
+    --sky: #4f9de8;
+    --violet: #9b59b6;
+    --green: #2ecc71;
+    --amber: #ffb300;
+    --red: #ff6b6b;
+    --sidebar-w: 264px;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { height:100%; }
+  body {
+    background: var(--bg); color: var(--ink); overflow:hidden;
+    font-family: 'Comic Sans MS','Chalkboard SE','Marker Felt','Segoe UI','Trebuchet MS',sans-serif;
+    display:flex;
+  }
+
+  /* ── Sidebar tree ── */
+  .sidebar {
+    width: var(--sidebar-w); min-width: var(--sidebar-w); height:100vh;
+    background: rgba(255,255,255,0.82); border-right:1px solid rgba(0,0,0,0.08);
+    display:flex; flex-direction:column; z-index:20; overflow-y:auto;
+    backdrop-filter: blur(4px);
+    transition: transform .3s ease;
+  }
+  .sidebar-header {
+    padding:1.1rem 1rem .8rem; border-bottom:1px solid rgba(0,0,0,0.08);
+    font-size:1.05rem; font-weight:bold; cursor:pointer; display:flex; gap:.4rem; align-items:center;
+    flex-shrink:0;
+  }
+  .sidebar-header .ticker { color:var(--sky); }
+  .tree { flex:1; padding:.5rem 0; overflow-y:auto; }
+  .tree-node {
+    padding:.5rem .8rem .5rem 1rem; cursor:pointer; display:flex; align-items:center; gap:.45rem;
+    font-size:.86rem; transition: background .15s; border-left:3px solid transparent;
+    user-select:none; color:var(--ink);
+  }
+  .tree-node:hover { background:rgba(79,157,232,0.1); }
+  .tree-node.active { border-left-color: var(--amber); background:rgba(255,217,61,0.14); }
+  .tree-node .arrow { font-size:.65rem; width:12px; text-align:center; flex-shrink:0; transition:transform .2s; color:var(--ink-soft); }
+  .tree-node .arrow.open { transform:rotate(90deg); }
+  .tree-node .dot { width:11px; height:11px; border-radius:50%; flex-shrink:0; }
+  .tree-node .badge {
+    margin-left:auto; font-size:.68rem; background:rgba(78,205,196,0.2); color:var(--teal);
+    border-radius:999px; padding:.05rem .5rem; flex-shrink:0;
+  }
+  .tree-children { overflow:hidden; max-height:0; transition:max-height .3s ease; }
+  .tree-children.open { max-height:600px; }
+  .tree-children .tree-node { padding-left:2.2rem; font-size:.8rem; }
+  .tree-leaf .st {
+    margin-left:auto; font-size:.72rem; width:1.1rem; text-align:center; flex-shrink:0;
+  }
+  .st.good { color:var(--green); }
+  .st.bad { color:var(--red); }
+  .st.slow { color:var(--amber); }
+
+  /* ── Main column ── */
+  .main { flex:1; display:flex; flex-direction:column; position:relative; z-index:5; min-width:0; }
+  .topbar {
+    padding:.6rem 1.1rem; display:flex; align-items:center; gap:.8rem; flex-shrink:0;
+    background:rgba(255,255,255,0.6); border-bottom:1px solid rgba(0,0,0,0.08);
+  }
+  .topbar .app-title { font-size:1.05rem; font-weight:bold; display:flex; gap:.4rem; align-items:center; }
+  .topbar .spacer { flex:1; }
+  .score-chip {
+    background:#fff; border:2px solid var(--sunny); color:var(--ink); border-radius:999px;
+    padding:.3rem .9rem; font-size:.9rem; font-weight:bold; box-shadow:0 2px 8px rgba(0,0,0,0.08);
+  }
+  .mute-btn {
+    background:#fff; border:2px solid rgba(0,0,0,0.12); border-radius:999px; cursor:pointer;
+    font-size:1rem; padding:.25rem .6rem; font-family:inherit;
+  }
+  .mute-btn:hover { border-color:var(--sky); }
+  .progress-track {
+    height:8px; border-radius:99px; background:rgba(0,0,0,0.08); overflow:hidden; flex:1; max-width:260px;
+  }
+  .progress-fill { height:100%; width:0%; background:linear-gradient(90deg,var(--teal),var(--sky)); border-radius:99px; transition:width .4s ease; }
+
+  /* ── Stage / views ── */
+  .stage { flex:1; display:flex; justify-content:center; align-content:center; padding:1.4rem; overflow:auto; min-height:0; }
+  .card {
+    background:var(--panel); border-radius:22px; box-shadow:0 14px 44px rgba(45,52,54,0.16);
+    width:100%; max-width:720px; padding:1.8rem 2rem 2rem; position:relative;
+    border:1px solid rgba(0,0,0,0.05); margin:auto;
+  }
+
+  /* Intro */
+  .intro { text-align:center; }
+  .intro .big-emoji { font-size:4rem; animation: bob 3s ease-in-out infinite; display:inline-block; }
+  .intro h1 { font-size:2rem; margin:.4rem 0 .3rem; background:linear-gradient(135deg,var(--sky),var(--violet)); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
+  .intro .sub { color:var(--ink-soft); margin-bottom:1.2rem; }
+  .intro .meta-chip { color:var(--ink-soft); font-size:.9rem; margin-bottom:1.4rem; }
+  .big-btn {
+    font-family:inherit; font-size:1.15rem; font-weight:bold; color:#fff; cursor:pointer;
+    background:linear-gradient(135deg,var(--green),#27ae60); border:none; border-radius:999px;
+    padding:.85rem 2.2rem; box-shadow:0 6px 18px rgba(46,204,113,0.4); transition:transform .15s, box-shadow .15s;
+  }
+  .big-btn:hover { transform:translateY(-2px); }
+  .big-btn.ghost { background:#fff; color:var(--ink); box-shadow:0 2px 8px rgba(0,0,0,0.1); border:2px solid rgba(0,0,0,0.1); margin-left:.7rem; }
+  .ghost-row { margin-top:1.1rem; display:flex; justify-content:center; gap:.4rem; flex-wrap:wrap; }
+  .hint-line { font-size:.82rem; color:var(--ink-soft); margin-top:1rem; }
+
+  /* Question */
+  .q-head { display:flex; justify-content:space-between; align-items:center; gap:.6rem; flex-wrap:wrap; }
+  .q-progress { font-size:.82rem; color:var(--ink-soft); font-weight:bold; padding:.2rem 0; }
+  .timer-wrap { position:relative; width:74px; height:74px; flex-shrink:0; }
+  .timer-wrap svg { width:74px; height:74px; transform:rotate(-90deg); }
+  .timer-wrap .circle-bg { fill:none; stroke:rgba(0,0,0,0.08); stroke-width:7; }
+  .timer-wrap .circle-fg { fill:none; stroke:var(--sky); stroke-width:7; stroke-linecap:round; }
+  .timer-wrap .t-count {
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    font-size:1.5rem; font-weight:bold; color:var(--ink);
+  }
+  .timer-wrap.low .circle-fg { stroke:var(--red); }
+  .timer-wrap.low .t-count { color:var(--red); }
+  .q-text { font-size:1.35rem; line-height:1.45; margin:.7rem 0 1rem; font-weight:bold; }
+  .qimg-wrap { text-align:center; margin:.2rem 0 1rem; }
+  .qimg-wrap img.qimg {
+    max-width:100%; max-height:240px; border-radius:14px; object-fit:contain;
+    border:1px solid rgba(0,0,0,0.08);
+  }
+  .qimg-wrap .emoji-big { font-size:4.2rem; animation: pop 0.5s ease; }
+  .qimg-wrap .caption { font-size:.78rem; color:var(--ink-soft); margin-top:.35rem; }
+
+  .options { display:flex; flex-direction:column; gap:.7rem; }
+  .opt {
+    display:flex; align-items:center; gap:.8rem; width:100%; text-align:left;
+    font-family:inherit; font-size:1.02rem; color:var(--ink); cursor:pointer;
+    background:#f7fbfc; border:2px solid rgba(0,0,0,0.08); border-radius:14px;
+    padding:.72rem 1rem; min-height:48px; transition:border-color .15s, background .15s, transform .1s;
+    position:relative; overflow:hidden;
+  }
+  .opt:hover { border-color:var(--sky); background:#eef6ff; transform:translateY(-1px); }
+  .opt .key {
+    width:30px; height:30px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center;
+    background:#fff; border:2px solid rgba(0,0,0,0.14); font-size:.9rem; font-weight:bold; color:var(--ink-soft);
+  }
+  .opt.correct { border-color:var(--green); background:#eafaf1; }
+  .opt.correct .key { border-color:var(--green); color:var(--green); background:#d5f5e3; }
+  .opt.wrong-chosen { border-color:var(--red); background:#fdecea; }
+  .opt.wrong-chosen .key { border-color:var(--red); color:var(--red); background:#fadbd8; }
+  .opt.dim { opacity:.55; }
+  .opt .mark { margin-left:auto; font-size:1.1rem; }
+
+  /* Reveal banner */
+  .reveal-banner {
+    margin-top:1rem; border-radius:14px; padding:.8rem 1rem; font-size:1.02rem; font-weight:bold;
+    display:flex; gap:.6rem; align-items:center; animation: slideUp .35s ease both;
+  }
+  .reveal-banner.good { background:#eafaf1; color:#1e8449; }
+  .reveal-banner.bad { background:#fdecea; color:#c0392b; }
+  .reveal-banner.slow { background:#fef5e7; color:#b9770e; }
+  .reveal-exp { margin-top:.6rem; background:#f4f8fa; border-radius:12px; padding:.8rem 1rem; font-size:.95rem; color:var(--ink-soft); line-height:1.5; }
+  .reveal-exp b { color:var(--ink); }
+  .next-row { display:flex; align-items:center; justify-content:space-between; gap:.6rem; }
+  .pts-gain { font-weight:bold; font-size:1rem; }
+  .pts-gain.gain { color:var(--green); }
+  .pts-gain.none { color:var(--ink-soft); }
+  .next-btn {
+    font-family:inherit; font-size:1.02rem; font-weight:bold; cursor:pointer; color:#fff;
+    background:linear-gradient(135deg,var(--sky),#2e86de); border:none; border-radius:999px;
+    padding:.7rem 1.7rem; box-shadow:0 4px 14px rgba(79,157,232,0.4); transition:transform .15s;
+  }
+  .next-btn:hover { transform:translateY(-2px); }
+
+  .q-foot { display:flex; justify-content:center; margin-top:1rem; }
+  .speak-btn {
+    font-family:inherit; font-size:.9rem; color:var(--ink-soft); cursor:pointer; background:none;
+    border:1px solid rgba(0,0,0,0.1); border-radius:999px; padding:.35rem 1rem;
+  }
+  .speak-btn:hover { border-color:var(--sky); color:var(--sky); }
+
+  /* Results */
+  .results { text-align:center; }
+  .results h2 { font-size:1.7rem; margin-bottom:.3rem; }
+  .results .sub { color:var(--ink-soft); margin-bottom:1rem; }
+  .ring-wrap { width:150px; height:150px; margin:0 auto .6rem; position:relative; }
+  .ring-wrap svg { width:150px; height:150px; transform:rotate(-90deg); }
+  .ring-wrap .rbg { fill:none; stroke:rgba(0,0,0,0.08); stroke-width:12; }
+  .ring-wrap .rfg { fill:none; stroke:url(#gradA); stroke-width:12; stroke-linecap:round;
+    stroke-dasharray:283; stroke-dashoffset:283; transition:stroke-dashoffset 1s ease; }
+  .ring-wrap .rscore {
+    position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
+  }
+  .ring-wrap .rscore .n { font-size:2rem; font-weight:bold; }
+  .ring-wrap .rscore .pts { font-size:.8rem; color:var(--ink-soft); }
+  .stars { font-size:1.9rem; letter-spacing:.15rem; margin:.2rem 0 .9rem; }
+  .review { text-align:left; margin:1rem 0; }
+  .review-row { display:flex; gap:.7rem; padding:.6rem .4rem; border-bottom:1px solid rgba(0,0,0,0.06); font-size:.86rem; align-items:flex-start; }
+  .review-row .qi { font-weight:bold; color:var(--ink-soft); min-width:1.6rem; }
+  .review-row .qbody { flex:1; }
+  .review-row .qbody .qq { font-weight:bold; margin-bottom:.15rem; }
+  .review-row .qbody .aa { color:var(--ink-soft); }
+  .review-row .pts { font-weight:bold; flex-shrink:0; }
+  .review-row .pts.gain { color:var(--green); }
+  .review-row .pts.none { color:var(--ink-soft); }
+
+  /* Confetti */
+  #confetti { position:fixed; inset:0; pointer-events:none; z-index:200; overflow:hidden; }
+  .confetti {
+    position:absolute; top:-3vh; width:12px; height:12px; border-radius:2px;
+    animation: confetti-fall linear forwards;
+  }
+
+  /* Hamburger / overlay (mobile) */
+  .hamburger { display:none; position:fixed; top:.7rem; left:.7rem; z-index:40;
+    background:#fff; border:1px solid rgba(0,0,0,0.15); border-radius:10px;
+    padding:.35rem .65rem; font-size:1.25rem; cursor:pointer; font-family:inherit; }
+  .overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:19; }
+  .overlay.open { display:block; }
+
+  /* Keyframes */
+  @keyframes bob { 0%,100%{ transform:translateY(0);} 50%{ transform:translateY(-8px);} }
+  @keyframes pop { 0%{ transform:scale(0.4); opacity:0;} 100%{ transform:scale(1); opacity:1;} }
+  @keyframes slideUp { from{ opacity:0; transform:translateY(14px);} to{ opacity:1; transform:translateY(0);} }
+  @keyframes cardIn { from{ opacity:0; transform:translateY(20px) scale(0.97);} to{ opacity:1; transform:none;} }
+  @keyframes confetti-fall { to { transform:translateY(108vh) rotate(var(--rx,180deg)); opacity:.9; } }
+  .card-in { animation:cardIn .35s ease both; }
+
+  @media (max-width:768px) {
+    .sidebar { position:fixed; left:0; top:0; bottom:0; transform:translateX(-100%); z-index:100; box-shadow:0 0 40px rgba(0,0,0,0.2); }
+    .sidebar.open { transform:translateX(0); }
+    .hamburger { display:block; }
+    .card { padding:1.4rem 1.2rem 1.6rem; }
+    .q-text { font-size:1.15rem; }
+  }
+</style>
+</head>
+<body>
+
+<div id="confetti"></div>
+
+<button class="hamburger" id="hamburger">☰</button>
+<div class="overlay" id="overlay"></div>
+
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header" id="sidebar-home"><span class="ticker">🧠</span> <span id="side-title">Africa — Geography</span></div>
+  <div class="tree" id="tree"></div>
+</aside>
+
+<main class="main">
+  <div class="topbar">
+    <span class="app-title"><span>🧠</span><span id="top-title" title="Africa — Geography">Africa — Geography</span></span>
+    <span class="spacer"></span>
+    <div class="progress-track" title="Progress"><div class="progress-fill" id="progress-fill"></div></div>
+    <span class="score-chip" id="score-chip">⭐ Score: 0</span>
+    <button class="mute-btn" id="mute-btn" title="Toggle read-aloud (TTS)">🔊</button>
+  </div>
+  <div class="stage" id="stage"></div>
+</main>
+
+<script type="application/json" id="quiz-data">{"title":"Africa — Geography","sections":[{"id":"africa-introduction","title":"Africa Introduction","emoji":"🌍","questions":[{"id":"africa-geography-q1","section":"Africa - Introduction","question":"Africa is the second largest continent on Earth. Which continent is the largest?","options":["Asia","Europe","North America","South America"],"correctIndex":0,"explanation":"Africa comes second in size only to Asia, which is the biggest continent.","suggestImage":true,"imageNote":"World map with Asia and Africa highlighted to compare their sizes.","image":{"id":"africa-geography-q1","type":"svg","src":"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0MDAgMzAwIiB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCI+PHJlY3Qgd2lkdGg9IjQwMCIgaGVpZ2h0PSIzMDAiIGZpbGw9IiNiZmU2ZjUiLz48cGF0aCBkPSJNNDAsODAgQzYwLDQwIDE1MCwyOCAyMDAsNDQgQzI1MCw2MCAyNjgsOTAgMjUwLDEyMCBDMjMwLDE1MiAxNTAsMTY4IDk2LDE1MCBDNDgsMTM0IDI2LDEwNCA0MCw4MCBaIiBmaWxsPSIjZmZkOWEwIiBzdHJva2U9IiMzYjJmMmYiIHN0cm9rZS13aWR0aD0iNCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjx0ZXh0IHg9IjE0MCIgeT0iMTA1IiBmb250LXNpemU9IjMwIiBmaWxsPSIjM2IyZjJmIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXdlaWdodD0iYm9sZCIgZm9udC1mYW1pbHk9IkNvbWljIFNhbnMgTVMsIGN1cnNpdmUiPkFTSUE8L3RleHQ+PHRleHQgeD0iMTQwIiB5PSIxMzMiIGZvbnQtc2l6ZT0iMTYiIGZpbGw9IiM4YTVhMmIiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtd2VpZ2h0PSJib2xkIiBmb250LWZhbWlseT0iQ29taWMgU2FucyBNUywgY3Vyc2l2ZSI+bGFyZ2VzdDwvdGV4dD48cGF0aCBkPSJNOTYsMTk2IEMxMTIsMTY4IDE3OCwxNjQgMjEwLDE4MiBDMjQyLDIwMCAyNDYsMjMwIDIyMiwyNTAgQzE5OCwyNzAgMTMyLDI3MiAxMDgsMjUwIEM4NiwyMzAgODIsMjE0IDk2LDE5NiBaIiBmaWxsPSIjYThlNmEzIiBzdHJva2U9IiMzYjJmMmYiIHN0cm9rZS13aWR0aD0iNCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjx0ZXh0IHg9IjE2NCIgeT0iMjE4IiBmb250LXNpemU9IjIyIiBmaWxsPSIjM2IyZjJmIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXdlaWdodD0iYm9sZCIgZm9udC1mYW1pbHk9IkNvbWljIFNhbnMgTVMsIGN1cnNpdmUiPkFGUklDQTwvdGV4dD48dGV4dCB4PSIxNjQiIHk9IjI0MiIgZm9udC1zaXplPSIxNSIgZmlsbD0iIzJmNmIzNCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC13ZWlnaHQ9ImJvbGQiIGZvbnQtZmFtaWx5PSJDb21pYyBTYW5zIE1TLCBjdXJzaXZlIj4ybmQgbGFyZ2VzdDwvdGV4dD48L3N2Zz4=","alt":"Asia is the largest continent, Africa the second","caption":"Asia vs Africa size"}},{"id":"africa-geography-q2","section":"Africa - Introduction","question":"How many countries are there in Africa, according to this chapter?","options":["54","42","25","60"],"correctIndex":0,"explanation":"The chapter says that Africa has 54 countries.","suggestImage":false},{"id":"africa-geography-q3","section":"Africa - Introduction","question":"In Latin, Africa is called 'Aprica'. What does that word mean?","options":["Sunny","Without cold","Dark and shady","Very high"],"correctIndex":0,"explanation":"Aprica means sunny, a land where the sun shines for most of the year.","suggestImage":true,"imageNote":"Bright hot sun shining over the African savanna, captioned 'Aprica means sunny'.","image":{"id":"africa-geography-q3","type":"svg","src":"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0MDAgMjgwIiB3aWR0aD0iNDAwIiBoZWlnaHQ9IjI4MCI+PHJlY3Qgd2lkdGg9IjQwMCIgaGVpZ2h0PSIyODAiIGZpbGw9IiNmZmU5YjgiLz48Y2lyY2xlIGN4PSIyMDAiIGN5PSI4OCIgcj0iNDIiIGZpbGw9IiNmZmMyMzMiIHN0cm9rZT0iIzNiMmYyZiIgc3Ryb2tlLXdpZHRoPSI0IiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PGxpbmUgeDE9IjI1MiIgeTE9Ijg4IiB4Mj0iMjY4IiB5Mj0iODgiIHN0cm9rZT0iI2YyYTAwNyIgc3Ryb2tlLXdpZHRoPSI3IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48bGluZSB4MT0iMjM3IiB5MT0iMTI1IiB4Mj0iMjQ4IiB5Mj0iMTM2IiBzdHJva2U9IiNmMmEwMDciIHN0cm9rZS13aWR0aD0iNyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+PGxpbmUgeDE9IjIwMCIgeTE9IjE0MCIgeDI9IjIwMCIgeTI9IjE1NiIgc3Ryb2tlPSIjZjJhMDA3IiBzdHJva2Utd2lkdGg9IjciIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPjxsaW5lIHgxPSIxNjMiIHkxPSIxMjUiIHgyPSIxNTIiIHkyPSIxMzYiIHN0cm9rZT0iI2YyYTAwNyIgc3Ryb2tlLXdpZHRoPSI3IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48bGluZSB4MT0iMTQ4IiB5MT0iODgiIHgyPSIxMzIiIHkyPSI4OCIgc3Ryb2tlPSIjZjJhMDA3IiBzdHJva2Utd2lkdGg9IjciIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPjxsaW5lIHgxPSIxNjMiIHkxPSI1MSIgeDI9IjE1MiIgeTI9IjQwIiBzdHJva2U9IiNmMmEwMDciIHN0cm9rZS13aWR0aD0iNyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+PGxpbmUgeDE9IjIwMCIgeTE9IjM2IiB4Mj0iMjAwIiB5Mj0iMjAiIHN0cm9rZT0iI2YyYTAwNyIgc3Ryb2tlLXdpZHRoPSI3IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48bGluZSB4MT0iMjM3IiB5MT0iNTEiIHgyPSIyNDgiIHkyPSI0MCIgc3Ryb2tlPSIjZjJhMDA3IiBzdHJva2Utd2lkdGg9IjciIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPjxyZWN0IHg9IjAiIHk9IjE5NiIgd2lkdGg9IjQwMCIgaGVpZ2h0PSI4NCIgZmlsbD0iI2U2YzA3YSIgc3Ryb2tlPSIjM2IyZjJmIiBzdHJva2Utd2lkdGg9IjQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48cmVjdCB4PSI4NiIgeT0iMTUwIiB3aWR0aD0iMTIiIGhlaWdodD0iNDgiIGZpbGw9IiM4YjVlMzQiIHN0cm9rZT0iIzNiMmYyZiIgc3Ryb2tlLXdpZHRoPSI0IiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PHBhdGggZD0iTTQ2LDE1MiBDNzAsMTI2IDExOCwxMjYgMTQyLDE1MiBaIiBmaWxsPSIjNmZiZjVmIiBzdHJva2U9IiMzYjJmMmYiIHN0cm9rZS13aWR0aD0iNCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjxwYXRoIGQ9Ik02MiwxNTIgQzgyLDE0MCAxMDgsMTQwIDEyNiwxNTIgWiIgZmlsbD0iIzhlZDM3YyIvPjxlbGxpcHNlIGN4PSIyODYiIGN5PSIyMTIiIHJ4PSIzNCIgcnk9IjIyIiBmaWxsPSIjYzk4YjRiIiBzdHJva2U9IiMzYjJmMmYiIHN0cm9rZS13aWR0aD0iNCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjxyZWN0IHg9IjI3MiIgeT0iMjI4IiB3aWR0aD0iOCIgaGVpZ2h0PSIyMCIgZmlsbD0iI2M5OGI0YiIgc3Ryb2tlPSIjM2IyZjJmIiBzdHJva2Utd2lkdGg9IjQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48cmVjdCB4PSIyOTQiIHk9IjIyOCIgd2lkdGg9IjgiIGhlaWdodD0iMjAiIGZpbGw9IiNjOThiNGIiIHN0cm9rZT0iIzNiMmYyZiIgc3Ryb2tlLXdpZHRoPSI0IiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PHRleHQgeD0iMjAwIiB5PSIyNjIiIGZvbnQtc2l6ZT0iMjIiIGZpbGw9IiM4YTVhMmIiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtd2VpZ2h0PSJib2xkIiBmb250LWZhbWlseT0iQ29taWMgU2FucyBNUywgY3Vyc2l2ZSI+IkFwcmljYSIgbWVhbnMgU1VOTlk8L3RleHQ+PC9zdmc+","alt":"Bright sun over the African savanna","caption":"Aprica means sunny"}}]},{"id":"political-divisions","title":"Political Divisions","emoji":"🗺️","questions":[{"id":"africa-geography-q4","section":"Political Divisions","question":"In which year did South Africa gain full independence from white minority rule?","options":["1994","1960","1910","2000"],"correctIndex":0,"explanation":"The chapter says South Africa became fully independent from white minority rule in 1994.","suggestImage":false},{"id":"africa-geography-q5","section":"Political Divisions","question":"The six countries in the north of Africa are called the Barbary States. Which region do they belong to?","options":["Middle East and North Africa (MENA)","Sub-Saharan Africa","Inter-tropical Africa","Southern Africa"],"correctIndex":0,"explanation":"Morocco, Algeria, Tunisia, Libya and Egypt together form part of the MENA region.","suggestImage":true,"imageNote":"Map of Africa shading the six Barbary States of north Africa and the Sub-Saharan region below the Sahara.","image":{"id":"africa-geography-q5","type":"svg","src":"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0MDAgNDIwIiB3aWR0aD0iNDAwIiBoZWlnaHQ9IjQyMCI+PHJlY3Qgd2lkdGg9IjQwMCIgaGVpZ2h0PSI0MjAiIGZpbGw9IiNiZmU2ZjUiLz48Y2xpcFBhdGggaWQ9ImFmIj48cG9seWdvbiBwb2ludHM9Ijk1LDU1IDEzMCw1OCAxNzAsNjggMjAwLDc2IDIzMiw3OCAyNTIsOTIgMjYyLDExMiAyNzAsMTQwIDMwMCwxNjggMzE4LDE4MiAzMDgsMTk2IDI4NiwxOTggMjgyLDIyMCAyOTAsMjQ4IDMwMCwyNzIgMzA2LDMwMCAzMDAsMzMwIDI4OCwzNTggMjY4LDM4MiAyNTYsMzkwIDI0MCwzNzIgMjI2LDM0NiAyMTAsMzIyIDE5OCwyOTYgMTkwLDI2OCAxODYsMjQyIDE3NiwyMTYgMTYwLDE5MiAxNTAsMTcyIDEyOCwxNjIgMTA0LDE1NiA4NCwxNTAgNzIsMTM2IDc4LDExNiA5MCw5NiA4Niw3NCIvPjwvY2xpcFBhdGg+PHBvbHlnb24gcG9pbnRzPSI5NSw1NSAxMzAsNTggMTcwLDY4IDIwMCw3NiAyMzIsNzggMjUyLDkyIDI2MiwxMTIgMjcwLDE0MCAzMDAsMTY4IDMxOCwxODIgMzA4LDE5NiAyODYsMTk4IDI4MiwyMjAgMjkwLDI0OCAzMDAsMjcyIDMwNiwzMDAgMzAwLDMzMCAyODgsMzU4IDI2OCwzODIgMjU2LDM5MCAyNDAsMzcyIDIyNiwzNDYgMjEwLDMyMiAxOTgsMjk2IDE5MCwyNjggMTg2LDI0MiAxNzYsMjE2IDE2MCwxOTIgMTUwLDE3MiAxMjgsMTYyIDEwNCwxNTYgODQsMTUwIDcyLDEzNiA3OCwxMTYgOTAsOTYgODYsNzQiIGZpbGw9IiNmZmU2YTgiIHN0cm9rZT0iIzNiMmYyZiIgc3Ryb2tlLXdpZHRoPSI0IiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PGcgY2xpcC1wYXRoPSJ1cmwoI2FmKSI+PHJlY3QgeD0iMCIgeT0iMCIgd2lkdGg9IjQwMCIgaGVpZ2h0PSIxNTAiIGZpbGw9IiNmN2Q5YTAiLz48cmVjdCB4PSIwIiB5PSIxNTAiIHdpZHRoPSI0MDAiIGhlaWdodD0iMjcwIiBmaWxsPSIjYThlNmEzIi8+PHJlY3QgeD0iMCIgeT0iMTQwIiB3aWR0aD0iNDAwIiBoZWlnaHQ9IjEyIiBmaWxsPSIjZTBiNzZhIi8+PC9nPjxjaXJjbGUgY3g9Ijk2IiBjeT0iNjYiIHI9IjciIGZpbGw9IiNlNTUzM2QiIHN0cm9rZT0iIzNiMmYyZiIgc3Ryb2tlLXdpZHRoPSIzIi8+PGNpcmNsZSBjeD0iMTQwIiBjeT0iNjYiIHI9IjciIGZpbGw9IiNlNTUzM2QiIHN0cm9rZT0iIzNiMmYyZiIgc3Ryb2tlLXdpZHRoPSIzIi8+PGNpcmNsZSBjeD0iMTc2IiBjeT0iNzgiIHI9IjciIGZpbGw9IiNlNTUzM2QiIHN0cm9rZT0iIzNiMmYyZiIgc3Ryb2tlLXdpZHRoPSIzIi8+PGNpcmNsZSBjeD0iMjA2IiBjeT0iODIiIHI9IjciIGZpbGw9IiNlNTUzM2QiIHN0cm9rZT0iIzNiMmYyZiIgc3Ryb2tlLXdpZHRoPSIzIi8+PGNpcmNsZSBjeD0iMjQwIiBjeT0iODYiIHI9IjciIGZpbGw9IiNlNTUzM2QiIHN0cm9rZT0iIzNiMmYyZiIgc3Ryb2tlLXdpZHRoPSIzIi8+PHRleHQgeD0iMTcwIiB5PSI0MCIgZm9udC1zaXplPSIxOSIgZmlsbD0iI2IwM2EyYSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC13ZWlnaHQ9ImJvbGQiIGZvbnQtZmFtaWx5PSJDb21pYyBTYW5zIE1TLCBjdXJzaXZlIj5NRU5BIHJlZ2lvbjwvdGV4dD48dGV4dCB4PSIyMDAiIHk9IjE5MCIgZm9udC1zaXplPSIxOSIgZmlsbD0iIzJmNmIzNCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC13ZWlnaHQ9ImJvbGQiIGZvbnQtZmFtaWx5PSJDb21pYyBTYW5zIE1TLCBjdXJzaXZlIj5TdWItU2FoYXJhbiBBZnJpY2E8L3RleHQ+PHRleHQgeD0iMjAwIiB5PSIyMTYiIGZvbnQtc2l6ZT0iMTUiIGZpbGw9IiMyZjZiMzQiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtd2VpZ2h0PSJib2xkIiBmb250LWZhbWlseT0iQ29taWMgU2FucyBNUywgY3Vyc2l2ZSI+KFNvdXRoIG9mIHRoZSBTYWhhcmEpPC90ZXh0Pjx0ZXh0IHg9IjIwMCIgeT0iNDEyIiBmb250LXNpemU9IjE0IiBmaWxsPSIjM2IyZjJmIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXdlaWdodD0iYm9sZCIgZm9udC1mYW1pbHk9IkNvbWljIFNhbnMgTVMsIGN1cnNpdmUiPkJhcmJhcnkgU3RhdGVzOiBNb3JvY2NvLCBBbGdlcmlhLCBUdW5pc2lhLDwvdGV4dD48dGV4dCB4PSIyMDAiIHk9IjQzMCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzNiMmYyZiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC13ZWlnaHQ9ImJvbGQiIGZvbnQtZmFtaWx5PSJDb21pYyBTYW5zIE1TLCBjdXJzaXZlIj5MaWJ5YSwgRWd5cHQgIOKAoiAgc2hhZGVkIGRvdHMgaW4gcmVkPC90ZXh0Pjwvc3ZnPg==","alt":"Map of Africa with the Barbary States marked","caption":"The Barbary States"}}]},{"id":"location-and-extent","title":"Location and Extent","emoji":"📍","questions":[{"id":"africa-geography-q6","section":"Location and Extent","question":"About how much of the earth's total land surface does Africa cover?","options":["One-fifth (1/5)","One-third (1/3)","One-tenth (1/10)","One-half (1/2)"],"correctIndex":0,"explanation":"Africa covers about 1/5 of all the land surface of the earth.","suggestImage":false},{"id":"africa-geography-q7","section":"Location and Extent","question":"Which point is the southernmost point of Africa?","options":["Cape Agulhas","Cape of Good Hope","Cape Verde","Cape of Bangladesh"],"correctIndex":0,"explanation":"Africa stretches down to 35 degrees south, and Cape Agulhas is that southern tip.","suggestImage":true,"imageNote":"Map of Africa showing the southern tip labelled Cape Agulhas, as in Fig. 8.3.","image":{"id":"africa-geography-q7","type":"svg","src":"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0MDAgNDMwIiB3aWR0aD0iNDAwIiBoZWlnaHQ9IjQzMCI+PHJlY3Qgd2lkdGg9IjQwMCIgaGVpZ2h0PSI0MzAiIGZpbGw9IiNiZmU2ZjUiLz48cG9seWdvbiBwb2ludHM9Ijk1LDU1IDEzMCw1OCAxNzAsNjggMjAwLDc2IDIzMiw3OCAyNTIsOTIgMjYyLDExMiAyNzAsMTQwIDMwMCwxNjggMzE4LDE4MiAzMDgsMTk2IDI4NiwxOTggMjgyLDIyMCAyOTAsMjQ4IDMwMCwyNzIgMzA2LDMwMCAzMDAsMzMwIDI4OCwzNTggMjY4LDM4MiAyNTYsMzkwIDI0MCwzNzIgMjI2LDM0NiAyMTAsMzIyIDE5OCwyOTYgMTkwLDI2OCAxODYsMjQyIDE3NiwyMTYgMTYwLDE5MiAxNTAsMTcyIDEyOCwxNjIgMTA0LDE1NiA4NCwxNTAgNzIsMTM2IDc4LDExNiA5MCw5NiA4Niw3NCIgZmlsbD0iI2ZmZTZhOCIgc3Ryb2tlPSIjM2IyZjJmIiBzdHJva2Utd2lkdGg9IjQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgyNTYsMzkwKSI+PHBhdGggZD0iTTAsLTE2IEw0LC01IEwxNiwtNSBMNywzIEwxMSwxNSBMMCw4IEwtMTEsMTUgTC03LDMgTC0xNiwtNSBMLTQsLTUgWiIgZmlsbD0iI2U1NTMzZCIgc3Ryb2tlPSIjOGEyYjFjIiBzdHJva2Utd2lkdGg9IjMiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48L2c+PHBhdGggZD0iTTMwMCwzNTIgTDI2MiwzODgiIHN0cm9rZT0iI2U1NTMzZCIgc3Ryb2tlLXdpZHRoPSIzIiBzdHJva2UtZGFzaGFycmF5PSI3IDYiIGZpbGw9Im5vbmUiLz48dGV4dCB4PSIyNTgiIHk9IjM3MiIgZm9udC1zaXplPSIxNyIgZmlsbD0iI2IwM2EyYSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC13ZWlnaHQ9ImJvbGQiIGZvbnQtZmFtaWx5PSJDb21pYyBTYW5zIE1TLCBjdXJzaXZlIj5DYXBlPC90ZXh0Pjx0ZXh0IHg9IjI1OCIgeT0iMzU2IiBmb250LXNpemU9IjE3IiBmaWxsPSIjYjAzYTJhIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXdlaWdodD0iYm9sZCIgZm9udC1mYW1pbHk9IkNvbWljIFNhbnMgTVMsIGN1cnNpdmUiPkFndWxoYXM8L3RleHQ+PHRleHQgeD0iMjAwIiB5PSI2MCIgZm9udC1zaXplPSIyNiIgZmlsbD0iIzhhNWEyYiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC13ZWlnaHQ9ImJvbGQiIGZvbnQtZmFtaWx5PSJDb21pYyBTYW5zIE1TLCBjdXJzaXZlIj5BZnJpY2E8L3RleHQ+PHRleHQgeD0iMjAwIiB5PSI0MjQiIGZvbnQtc2l6ZT0iMTciIGZpbGw9IiMzYjJmMmYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtd2VpZ2h0PSJib2xkIiBmb250LWZhbWlseT0iQ29taWMgU2FucyBNUywgY3Vyc2l2ZSI+U291dGhlcm5tb3N0IHBvaW50IG9mIEFmcmljYTwvdGV4dD48L3N2Zz4=","alt":"Map of Africa with a star at the southern tip","caption":"Cape Agulhas"}},{"id":"africa-geography-q8","section":"Location and Extent","question":"A strait is a narrow stretch of water joining two seas. Which strait joins the Mediterranean Sea to the Atlantic Ocean?","options":["Strait of Gibraltar","Strait of Bab-el-Mandeb","Strait of Mozambique","Strait of Bering"],"correctIndex":0,"explanation":"The Strait of Gibraltar connects the Mediterranean Sea with the Atlantic Ocean.","suggestImage":true,"imageNote":"Small diagram of the Strait of Gibraltar separating Africa and Europe, joining two seas.","image":{"id":"africa-geography-q8","type":"svg","src":"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0MDAgMzIwIiB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMyMCI+PHJlY3Qgd2lkdGg9IjQwMCIgaGVpZ2h0PSIzMjAiIGZpbGw9IiM5ZmQ4ZWYiLz48cGF0aCBkPSJNMCwwIEg0MDAgVjkyIEMzMzAsMTEwIDI1MCw4NiAyMDAsOTYgQzE1MCwxMDYgODAsMTIwIDAsMTA0IFoiIGZpbGw9IiNiY2Q3ZjAiIHN0cm9rZT0iIzNiMmYyZiIgc3Ryb2tlLXdpZHRoPSI0IiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PHRleHQgeD0iMjAwIiB5PSI0NiIgZm9udC1zaXplPSIyNiIgZmlsbD0iIzJiNGE2ZiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC13ZWlnaHQ9ImJvbGQiIGZvbnQtZmFtaWx5PSJDb21pYyBTYW5zIE1TLCBjdXJzaXZlIj5FVVJPUEU8L3RleHQ+PHBhdGggZD0iTTAsMzIwIFYyMDYgQzgwLDE5MCAxNTAsMjA2IDIwMCwyMTQgQzI1MCwyMjIgMzMwLDIwNiA0MDAsMjI0IFYzMjAgWiIgZmlsbD0iI2ZmZTZhOCIgc3Ryb2tlPSIjM2IyZjJmIiBzdHJva2Utd2lkdGg9IjQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48dGV4dCB4PSIyMDAiIHk9IjI4MiIgZm9udC1zaXplPSIyNiIgZmlsbD0iIzhhNWEyYiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC13ZWlnaHQ9ImJvbGQiIGZvbnQtZmFtaWx5PSJDb21pYyBTYW5zIE1TLCBjdXJzaXZlIj5BRlJJQ0E8L3RleHQ+PHJlY3QgeD0iMTc2IiB5PSI5NiIgd2lkdGg9IjQ4IiBoZWlnaHQ9IjExMCIgZmlsbD0iIzVmYzRlOCIgb3BhY2l0eT0iMC45NSIvPjxwYXRoIGQ9Ik0xNzYsOTYgVjIwNiBNMjI0LDk2IFYyMDYiIHN0cm9rZT0iIzJhN2ZhOCIgc3Ryb2tlLXdpZHRoPSIzIiBzdHJva2UtZGFzaGFycmF5PSI2IDUiIGZpbGw9Im5vbmUiLz48dGV4dCB4PSIyMDAiIHk9IjE1OCIgZm9udC1zaXplPSIxNSIgZmlsbD0iIzBkNGE2OCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC13ZWlnaHQ9ImJvbGQiIGZvbnQtZmFtaWx5PSJDb21pYyBTYW5zIE1TLCBjdXJzaXZlIj5TdHJhaXQgb2Y8L3RleHQ+PHRleHQgeD0iMjAwIiB5PSIxNzYiIGZvbnQtc2l6ZT0iMTUiIGZpbGw9IiMwZDRhNjgiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtd2VpZ2h0PSJib2xkIiBmb250LWZhbWlseT0iQ29taWMgU2FucyBNUywgY3Vyc2l2ZSI+R2licmFsdGFyPC90ZXh0Pjx0ZXh0IHg9Ijc4IiB5PSIxNTIiIGZvbnQtc2l6ZT0iMTYiIGZpbGw9IiMwZDRhNjgiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtd2VpZ2h0PSJib2xkIiBmb250LWZhbWlseT0iQ29taWMgU2FucyBNUywgY3Vyc2l2ZSI+QVRMQU5USUM8L3RleHQ+PHRleHQgeD0iNzgiIHk9IjE3MiIgZm9udC1zaXplPSIxNiIgZmlsbD0iIzBkNGE2OCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC13ZWlnaHQ9ImJvbGQiIGZvbnQtZmFtaWx5PSJDb21pYyBTYW5zIE1TLCBjdXJzaXZlIj5PQ0VBTjwvdGV4dD48dGV4dCB4PSIzMjYiIHk9IjE1MiIgZm9udC1zaXplPSIxNiIgZmlsbD0iIzBkNGE2OCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC13ZWlnaHQ9ImJvbGQiIGZvbnQtZmFtaWx5PSJDb21pYyBTYW5zIE1TLCBjdXJzaXZlIj5NZWRpdGVycmFuZWFuPC90ZXh0Pjx0ZXh0IHg9IjMyNiIgeT0iMTcyIiBmb250LXNpemU9IjE2IiBmaWxsPSIjMGQ0YTY4IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXdlaWdodD0iYm9sZCIgZm9udC1mYW1pbHk9IkNvbWljIFNhbnMgTVMsIGN1cnNpdmUiPlNFQTwvdGV4dD48cGF0aCBkPSJNMTMyLDE1MCBMMTY0LDE1MCIgc3Ryb2tlPSIjZTU1MzNkIiBzdHJva2Utd2lkdGg9IjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPjxwYXRoIGQ9Ik0xNjQsMTUwIEwxNTIsMTQxIE0xNjQsMTUwIEwxNTIsMTU5IiBzdHJva2U9IiNlNTUzM2QiIHN0cm9rZS13aWR0aD0iNSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBmaWxsPSJub25lIi8+PHBhdGggZD0iTTI3MiwxNTAgTDIzNiwxNTAiIHN0cm9rZT0iI2U1NTMzZCIgc3Ryb2tlLXdpZHRoPSI1IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48cGF0aCBkPSJNMjM2LDE1MCBMMjQ4LDE0MSBNMjM2LDE1MCBMMjQ4LDE1OSIgc3Ryb2tlPSIjZTU1MzNkIiBzdHJva2Utd2lkdGg9IjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgZmlsbD0ibm9uZSIvPjwvc3ZnPg==","alt":"Strait between Europe and Africa","caption":"Strait of Gibraltar"}},{"id":"africa-geography-q9","section":"Location and Extent","question":"Africa is joined to the continent of Asia by a narrow strip of land called an isthmus. What is it called?","options":["Isthmus of Suez","Isthmus of Panama","Isthmus of Gibraltar","Isthmus of Kra"],"correctIndex":0,"explanation":"The Isthmus of Suez links the Red Sea and the Mediterranean Sea, joining Africa to Asia.","suggestImage":true,"imageNote":"Diagram of a narrow strip of land with water on both sides, labelled Isthmus of Suez.","image":{"id":"africa-geography-q9","type":"svg","src":"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0MDAgMzIwIiB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMyMCI+PHJlY3Qgd2lkdGg9IjQwMCIgaGVpZ2h0PSIzMjAiIGZpbGw9IiM5ZmQ4ZWYiLz48cmVjdCB4PSIwIiB5PSI2MCIgd2lkdGg9IjI1MCIgaGVpZ2h0PSIyMDAiIGZpbGw9IiNmZmU2YTgiIHN0cm9rZT0iIzNiMmYyZiIgc3Ryb2tlLXdpZHRoPSI0IiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PHRleHQgeD0iMTIwIiB5PSIxNTAiIGZvbnQtc2l6ZT0iMjYiIGZpbGw9IiM4YTVhMmIiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtd2VpZ2h0PSJib2xkIiBmb250LWZhbWlseT0iQ29taWMgU2FucyBNUywgY3Vyc2l2ZSI+QUZSSUNBPC90ZXh0PjxwYXRoIGQ9Ik0yNTAsNjAgTDQwMCw2MCBWMjYwIEwyNTAsMjYwIFoiIGZpbGw9IiNiY2Q3ZjAiIHN0cm9rZT0iIzJiNGE2ZiIgc3Ryb2tlLXdpZHRoPSI0IiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PHRleHQgeD0iMzI0IiB5PSIxNTAiIGZvbnQtc2l6ZT0iMjYiIGZpbGw9IiMyYjRhNmYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtd2VpZ2h0PSJib2xkIiBmb250LWZhbWlseT0iQ29taWMgU2FucyBNUywgY3Vyc2l2ZSI+QVNJQTwvdGV4dD48cmVjdCB4PSIwIiB5PSIwIiB3aWR0aD0iMjUwIiBoZWlnaHQ9IjU2IiBmaWxsPSIjNWZjNGU4IiBzdHJva2U9IiMyYTdmYTgiIHN0cm9rZS13aWR0aD0iMyIvPjx0ZXh0IHg9IjEyNCIgeT0iMzYiIGZvbnQtc2l6ZT0iMTUiIGZpbGw9IiMwZDRhNjgiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtd2VpZ2h0PSJib2xkIiBmb250LWZhbWlseT0iQ29taWMgU2FucyBNUywgY3Vyc2l2ZSI+TWVkaXRlcnJhbmVhbiBTZWE8L3RleHQ+PHJlY3QgeD0iMCIgeT0iMjY0IiB3aWR0aD0iMjUwIiBoZWlnaHQ9IjU2IiBmaWxsPSIjNWZjNGU4IiBzdHJva2U9IiMyYTdmYTgiIHN0cm9rZS13aWR0aD0iMyIvPjx0ZXh0IHg9IjEyNCIgeT0iMzAwIiBmb250LXNpemU9IjE1IiBmaWxsPSIjMGQ0YTY4IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXdlaWdodD0iYm9sZCIgZm9udC1mYW1pbHk9IkNvbWljIFNhbnMgTVMsIGN1cnNpdmUiPlJlZCBTZWE8L3RleHQ+PHJlY3QgeD0iMjIyIiB5PSI2MCIgd2lkdGg9IjMwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iI2U1NTMzZCIgc3Ryb2tlPSIjOGEyYjFjIiBzdHJva2Utd2lkdGg9IjMiLz48dGV4dCB4PSIyMzciIHk9IjE0NSIgZm9udC1zaXplPSIxMiIgZmlsbD0iIzNiMmYyZiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC13ZWlnaHQ9ImJvbGQiIGZvbnQtZmFtaWx5PSJDb21pYyBTYW5zIE1TLCBjdXJzaXZlIj48L3RleHQ+PHBhdGggZD0iTTI3MiwxNjAgTDIwNCwxNjAiIHN0cm9rZT0iI2IwM2EyYSIgc3Ryb2tlLXdpZHRoPSI0IiBzdHJva2UtZGFzaGFycmF5PSI2IDUiLz48dGV4dCB4PSIzMDAiIHk9IjE1MCIgZm9udC1zaXplPSIxNyIgZmlsbD0iIzhhMmIxYyIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC13ZWlnaHQ9ImJvbGQiIGZvbnQtZmFtaWx5PSJDb21pYyBTYW5zIE1TLCBjdXJzaXZlIj5Jc3RobXVzPC90ZXh0Pjx0ZXh0IHg9IjMwMCIgeT0iMTcwIiBmb250LXNpemU9IjE3IiBmaWxsPSIjOGEyYjFjIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXdlaWdodD0iYm9sZCIgZm9udC1mYW1pbHk9IkNvbWljIFNhbnMgTVMsIGN1cnNpdmUiPm9mIFN1ZXo8L3RleHQ+PHRleHQgeD0iMTIwIiB5PSIyMDAiIGZvbnQtc2l6ZT0iMTUiIGZpbGw9IiM4YTVhMmIiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtd2VpZ2h0PSJib2xkIiBmb250LWZhbWlseT0iQ29taWMgU2FucyBNUywgY3Vyc2l2ZSI+bmFycm93IHN0cmlwIG9mIGxhbmQ8L3RleHQ+PHRleHQgeD0iMTIwIiB5PSIyMjAiIGZvbnQtc2l6ZT0iMTUiIGZpbGw9IiM4YTVhMmIiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtd2VpZ2h0PSJib2xkIiBmb250LWZhbWlseT0iQ29taWMgU2FucyBNUywgY3Vyc2l2ZSI+dGhhdCBqb2lucyBBZnJpY2EgdG8gQXNpYTwvdGV4dD48L3N2Zz4=","alt":"Narrow strip of land joining Africa and Asia","caption":"Isthmus of Suez"}}]},{"id":"boundaries","title":"Boundaries","emoji":"🚧","questions":[{"id":"africa-geography-q11","section":"Boundaries","question":"Which sea lies to the north of Africa?","options":["The Mediterranean Sea","The Red Sea","The Arabian Sea","The Baltic Sea"],"correctIndex":0,"explanation":"Africa is bounded by the Mediterranean Sea on its northern side.","suggestImage":false},{"id":"africa-geography-q12","section":"Boundaries","question":"Why did the Europeans call Africa the 'Dark Continent'?","options":["Because of its dense forests, marshes, swamps and vast deserts","Because the sun never shines in Africa at all","Because the whole continent stays in deep darkness","Because African animals only come out at night"],"correctIndex":0,"explanation":"Its thick forests, swamps, marshes and big deserts made travel into the interior very hard.","suggestImage":true,"imageNote":"Dark dense jungle, a marsh with mosquitoes and a wide sandy desert, showing why Africa seemed dark.","image":{"id":"africa-geography-q12","type":"svg","src":"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0MDAgMzAwIiB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCI+PHJlY3QgeD0iMTAiIHk9IjQwIiB3aWR0aD0iMTIwIiBoZWlnaHQ9IjE3MCIgcng9IjE0IiBmaWxsPSIjMmY2YjM0IiBzdHJva2U9IiMzYjJmMmYiIHN0cm9rZS13aWR0aD0iNCIvPjxyZWN0IHg9IjEwIiB5PSIxNzAiIHdpZHRoPSIxMjAiIGhlaWdodD0iNDAiIGZpbGw9IiMxZDQ1MjIiLz48cmVjdCB4PSIxNDAiIHk9IjQwIiB3aWR0aD0iMTIwIiBoZWlnaHQ9IjE3MCIgcng9IjE0IiBmaWxsPSIjNmY5ZjdhIiBzdHJva2U9IiMzYjJmMmYiIHN0cm9rZS13aWR0aD0iNCIvPjxyZWN0IHg9IjE0MCIgeT0iMTcwIiB3aWR0aD0iMTIwIiBoZWlnaHQ9IjQwIiBmaWxsPSIjM2Q2YjU3Ii8+PHJlY3QgeD0iMjcwIiB5PSI0MCIgd2lkdGg9IjEyMCIgaGVpZ2h0PSIxNzAiIHJ4PSIxNCIgZmlsbD0iI2U2YzA3YSIgc3Ryb2tlPSIjM2IyZjJmIiBzdHJva2Utd2lkdGg9IjQiLz48cmVjdCB4PSIyNzAiIHk9IjE3MCIgd2lkdGg9IjEyMCIgaGVpZ2h0PSI0MCIgZmlsbD0iI2M5OWI0NSIvPjxjaXJjbGUgY3g9IjM4IiBjeT0iOTIiIHI9IjIyIiBmaWxsPSIjMWQ0NTIyIiBzdHJva2U9IiMxMjMwMWEiIHN0cm9rZS13aWR0aD0iMyIvPjxjaXJjbGUgY3g9IjcyIiBjeT0iNzYiIHI9IjIyIiBmaWxsPSIjMWQ0NTIyIiBzdHJva2U9IiMxMjMwMWEiIHN0cm9rZS13aWR0aD0iMyIvPjxjaXJjbGUgY3g9IjEwNCIgY3k9Ijk2IiByPSIyMiIgZmlsbD0iIzFkNDUyMiIgc3Ryb2tlPSIjMTIzMDFhIiBzdHJva2Utd2lkdGg9IjMiLz48ZWxsaXBzZSBjeD0iMTcwIiBjeT0iMTg4IiByeD0iNDYiIHJ5PSIxNiIgZmlsbD0iIzNkNmI1NyIvPjxjaXJjbGUgY3g9IjE5NiIgY3k9Ijk4IiByPSIxNSIgZmlsbD0iIzJiM2E0YSIgc3Ryb2tlPSIjM2IyZjJmIiBzdHJva2Utd2lkdGg9IjMiLz48cGF0aCBkPSJNMTk2LDgzIFY3MCBNMTk2LDExMyBWMTI2IE0xODEsOTggSDE2OCBNMjExLDk4IEgyMjQiIHN0cm9rZT0iIzJiM2E0YSIgc3Ryb2tlLXdpZHRoPSI0IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48cGF0aCBkPSJNMjY2LDE4MiBDMjg2LDE0MiAzMTYsMTQyIDM0MCwxODIgWiIgZmlsbD0iI2M5OWI0NSIgc3Ryb2tlPSIjOGE2YTIwIiBzdHJva2Utd2lkdGg9IjMiLz48Y2lyY2xlIGN4PSIzMDAiIGN5PSI4NiIgcj0iMjAiIGZpbGw9IiNmZmMyMzMiIHN0cm9rZT0iIzNiMmYyZiIgc3Ryb2tlLXdpZHRoPSIzIi8+PHRleHQgeD0iNzAiIHk9IjIzNiIgZm9udC1zaXplPSIxNSIgZmlsbD0iIzEyMzAxYSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC13ZWlnaHQ9ImJvbGQiIGZvbnQtZmFtaWx5PSJDb21pYyBTYW5zIE1TLCBjdXJzaXZlIj5kZW5zZSBqdW5nbGU8L3RleHQ+PHRleHQgeD0iMjAwIiB5PSIyMzYiIGZvbnQtc2l6ZT0iMTUiIGZpbGw9IiMxZDQ1MjIiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtd2VpZ2h0PSJib2xkIiBmb250LWZhbWlseT0iQ29taWMgU2FucyBNUywgY3Vyc2l2ZSI+bWFyc2h5PC90ZXh0Pjx0ZXh0IHg9IjMzMCIgeT0iMjM2IiBmb250LXNpemU9IjE1IiBmaWxsPSIjOGE2YTIwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXdlaWdodD0iYm9sZCIgZm9udC1mYW1pbHk9IkNvbWljIFNhbnMgTVMsIGN1cnNpdmUiPndpZGUgZGVzZXJ0PC90ZXh0Pjx0ZXh0IHg9IjIwMCIgeT0iMjgiIGZvbnQtc2l6ZT0iMTkiIGZpbGw9IiMzYjJmMmYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtd2VpZ2h0PSJib2xkIiBmb250LWZhbWlseT0iQ29taWMgU2FucyBNUywgY3Vyc2l2ZSI+V2h5IEFmcmljYSB3YXMgY2FsbGVkIHRoZSAiREFSSyBDT05USU5FTlQiPC90ZXh0Pjx0ZXh0IHg9IjIwMCIgeT0iMjc2IiBmb250LXNpemU9IjE1IiBmaWxsPSIjNWE0YTNhIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXdlaWdodD0iYm9sZCIgZm9udC1mYW1pbHk9IkNvbWljIFNhbnMgTVMsIGN1cnNpdmUiPnRoaWNrIGZvcmVzdHMgKyB3ZXQgbWFyc2hlcyArIGVuZGxlc3Mgc2FuZDwvdGV4dD48L3N2Zz4=","alt":"Jungle, marsh and desert panels","caption":"The Dark Continent"}},{"id":"africa-geography-q13","section":"Boundaries","question":"Who were the first explorers to venture into the interior of Africa in the middle of the 19th century?","options":["Sir Henry Morton Stanley, Mungo Park and Dr. David Livingstone","Marco Polo and Christopher Columbus","Vasco da Gama and Ibn Battuta","Henry Hudson and James Cook"],"correctIndex":0,"explanation":"These three explorers were the first to enter Africa's interior in the 1800s.","suggestImage":true,"imageNote":"Simple portraits of Sir Henry Morton Stanley, Mungo Park and Dr. David Livingstone with explorers' items.","image":{"id":"africa-geography-q13","type":"svg","src":"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0MDAgMzAwIiB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCI+PHJlY3QgeD0iMjIiIHk9IjQ2IiB3aWR0aD0iMTEwIiBoZWlnaHQ9IjE5NiIgcng9IjE2IiBmaWxsPSIjZmZmNmU1IiBzdHJva2U9IiMzYjJmMmYiIHN0cm9rZS13aWR0aD0iNCIvPjxjaXJjbGUgY3g9Ijc3IiBjeT0iMTEyIiByPSIzMiIgZmlsbD0iI2YyYzlhMCIgc3Ryb2tlPSIjM2IyZjJmIiBzdHJva2Utd2lkdGg9IjMiLz48cGF0aCBkPSJNNDcsMTA0IEM1Miw3MiAxMDIsNzIgMTA3LDEwNCBaIiBmaWxsPSIjM2IyZjJmIi8+PHBhdGggZD0iTTQyLDI0MiBDNDQsMTgwIDExMCwxODAgMTEyLDI0MiBaIiBmaWxsPSIjNmY5ZmQ4IiBzdHJva2U9IiMzYjJmMmYiIHN0cm9rZS13aWR0aD0iMyIvPjxjaXJjbGUgY3g9Ijc3IiBjeT0iMjEyIiByPSIxNyIgZmlsbD0iI2U2ZjJmZiIgc3Ryb2tlPSIjM2IyZjJmIiBzdHJva2Utd2lkdGg9IjMiLz48cGF0aCBkPSJNNzcsMTk5IEw4NSwyMTUgTDY5LDIxNSBaIiBmaWxsPSIjZTU1MzNkIiBzdHJva2U9IiM4YTJiMWMiIHN0cm9rZS13aWR0aD0iMiIvPjx0ZXh0IHg9Ijc3IiB5PSIyNjgiIGZvbnQtc2l6ZT0iMTUiIGZpbGw9IiMzYjJmMmYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtd2VpZ2h0PSJib2xkIiBmb250LWZhbWlseT0iQ29taWMgU2FucyBNUywgY3Vyc2l2ZSI+RGF2aWQ8L3RleHQ+PHRleHQgeD0iNzciIHk9IjI4NiIgZm9udC1zaXplPSIxMyIgZmlsbD0iIzZhNWE0YSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC13ZWlnaHQ9ImJvbGQiIGZvbnQtZmFtaWx5PSJDb21pYyBTYW5zIE1TLCBjdXJzaXZlIj5MaXZpbmdzdG9uZTwvdGV4dD48cmVjdCB4PSIxNDgiIHk9IjQ2IiB3aWR0aD0iMTEwIiBoZWlnaHQ9IjE5NiIgcng9IjE2IiBmaWxsPSIjZmZmNmU1IiBzdHJva2U9IiMzYjJmMmYiIHN0cm9rZS13aWR0aD0iNCIvPjxjaXJjbGUgY3g9IjIwMyIgY3k9IjExMiIgcj0iMzIiIGZpbGw9IiNjOThiNGIiIHN0cm9rZT0iIzNiMmYyZiIgc3Ryb2tlLXdpZHRoPSIzIi8+PHBhdGggZD0iTTE3MywxMDQgQzE3OCw3MiAyMjgsNzIgMjMzLDEwNCBaIiBmaWxsPSIjM2IyZjJmIi8+PHBhdGggZD0iTTE2OCwyNDIgQzE3MCwxODAgMjM2LDE4MCAyMzgsMjQyIFoiIGZpbGw9IiM2ZjlmZDgiIHN0cm9rZT0iIzNiMmYyZiIgc3Ryb2tlLXdpZHRoPSIzIi8+PGNpcmNsZSBjeD0iMjAzIiBjeT0iMjEyIiByPSIxNyIgZmlsbD0iI2U2ZjJmZiIgc3Ryb2tlPSIjM2IyZjJmIiBzdHJva2Utd2lkdGg9IjMiLz48cGF0aCBkPSJNMjAzLDE5OSBMMjExLDIxNSBMMTk1LDIxNSBaIiBmaWxsPSIjZTU1MzNkIiBzdHJva2U9IiM4YTJiMWMiIHN0cm9rZS13aWR0aD0iMiIvPjx0ZXh0IHg9IjIwMyIgeT0iMjY4IiBmb250LXNpemU9IjE1IiBmaWxsPSIjM2IyZjJmIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXdlaWdodD0iYm9sZCIgZm9udC1mYW1pbHk9IkNvbWljIFNhbnMgTVMsIGN1cnNpdmUiPk11bmdvPC90ZXh0Pjx0ZXh0IHg9IjIwMyIgeT0iMjg2IiBmb250LXNpemU9IjEzIiBmaWxsPSIjNmE1YTRhIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXdlaWdodD0iYm9sZCIgZm9udC1mYW1pbHk9IkNvbWljIFNhbnMgTVMsIGN1cnNpdmUiPlBhcms8L3RleHQ+PHJlY3QgeD0iMjc0IiB5PSI0NiIgd2lkdGg9IjExMCIgaGVpZ2h0PSIxOTYiIHJ4PSIxNiIgZmlsbD0iI2ZmZjZlNSIgc3Ryb2tlPSIjM2IyZjJmIiBzdHJva2Utd2lkdGg9IjQiLz48Y2lyY2xlIGN4PSIzMjkiIGN5PSIxMTIiIHI9IjMyIiBmaWxsPSIjOGQ1NTI0IiBzdHJva2U9IiMzYjJmMmYiIHN0cm9rZS13aWR0aD0iMyIvPjxwYXRoIGQ9Ik0yOTksMTA0IEMzMDQsNzIgMzU0LDcyIDM1OSwxMDQgWiIgZmlsbD0iIzNiMmYyZiIvPjxwYXRoIGQ9Ik0yOTQsMjQyIEMyOTYsMTgwIDM2MiwxODAgMzY0LDI0MiBaIiBmaWxsPSIjNmY5ZmQ4IiBzdHJva2U9IiMzYjJmMmYiIHN0cm9rZS13aWR0aD0iMyIvPjxjaXJjbGUgY3g9IjMyOSIgY3k9IjIxMiIgcj0iMTciIGZpbGw9IiNlNmYyZmYiIHN0cm9rZT0iIzNiMmYyZiIgc3Ryb2tlLXdpZHRoPSIzIi8+PHBhdGggZD0iTTMyOSwxOTkgTDMzNywyMTUgTDMyMSwyMTUgWiIgZmlsbD0iI2U1NTMzZCIgc3Ryb2tlPSIjOGEyYjFjIiBzdHJva2Utd2lkdGg9IjIiLz48dGV4dCB4PSIzMjkiIHk9IjI2OCIgZm9udC1zaXplPSIxNSIgZmlsbD0iIzNiMmYyZiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC13ZWlnaHQ9ImJvbGQiIGZvbnQtZmFtaWx5PSJDb21pYyBTYW5zIE1TLCBjdXJzaXZlIj5IZW5yeTwvdGV4dD48dGV4dCB4PSIzMjkiIHk9IjI4NiIgZm9udC1zaXplPSIxMyIgZmlsbD0iIzZhNWE0YSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC13ZWlnaHQ9ImJvbGQiIGZvbnQtZmFtaWx5PSJDb21pYyBTYW5zIE1TLCBjdXJzaXZlIj5NLiBTdGFubGV5PC90ZXh0Pjx0ZXh0IHg9IjIwMCIgeT0iMzAiIGZvbnQtc2l6ZT0iMjAiIGZpbGw9IiMzYjJmMmYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtd2VpZ2h0PSJib2xkIiBmb250LWZhbWlseT0iQ29taWMgU2FucyBNUywgY3Vyc2l2ZSI+Rmlyc3QgZXhwbG9yZXJzIGludG8gQWZyaWNhJ3MgaW50ZXJpb3I8L3RleHQ+PC9zdmc+","alt":"Three explorer portraits with compasses","caption":"Early explorers"}}]},{"id":"major-physical-features","title":"Major Physical Features","emoji":"⛰️","questions":[{"id":"africa-geography-q14","section":"Major Physical Features","question":"About how much of Africa is covered by the Sahara Desert?","options":["One-third (1/3)","One-fifth (1/5)","One-half (1/2)","One-tenth (1/10)"],"correctIndex":0,"explanation":"The Sahara covers about one-third of Africa and is the largest desert in the world.","suggestImage":false},{"id":"africa-geography-q15","section":"Major Physical Features","question":"Water is found in a few green spots called oases in the Sahara. Which two oases are named in the chapter?","options":["Kufra and Siwa","Nile and Congo","Victoria and Chad","Karoo and Merzouga"],"correctIndex":0,"explanation":"The chapter names the Kufra Oases and the Siwa Oases as oases of the Sahara.","suggestImage":true,"imageNote":"Palm-lined oasis pool in the desert, like the Siwa Oasis shown in Fig. 8.4.","image":{"id":"africa-geography-q15","type":"svg","src":"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0MDAgMzAwIiB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCI+PHJlY3Qgd2lkdGg9IjQwMCIgaGVpZ2h0PSIzMDAiIGZpbGw9IiNmZmUwYTMiLz48Y2lyY2xlIGN4PSIzMzAiIGN5PSI1OCIgcj0iMjgiIGZpbGw9IiNmZmMyMzMiIHN0cm9rZT0iIzNiMmYyZiIgc3Ryb2tlLXdpZHRoPSI0IiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PHBhdGggZD0iTTAsMjMyIEM3MCwxODIgMTUwLDE5NiAyMDgsMjI4IFoiIGZpbGw9IiNlOGM5ODgiIHN0cm9rZT0iIzNiMmYyZiIgc3Ryb2tlLXdpZHRoPSI0IiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PHBhdGggZD0iTTE4MCwyMzYgQzI1MCwxOTAgMzMwLDIwMCA0MDAsMjQwIFYzMDAgSDE4MCBaIiBmaWxsPSIjZGNiODczIiBzdHJva2U9IiMzYjJmMmYiIHN0cm9rZS13aWR0aD0iNCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjxlbGxpcHNlIGN4PSIxOTYiIGN5PSIyMzgiIHJ4PSI2NiIgcnk9IjMwIiBmaWxsPSIjNWZjNGU4IiBzdHJva2U9IiMyYTdmYTgiIHN0cm9rZS13aWR0aD0iNCIvPjxlbGxpcHNlIGN4PSIxODAiIGN5PSIyMzAiIHJ4PSIxOCIgcnk9IjYiIGZpbGw9IiNhOWU0ZjciLz48ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgxMzIsMjI2KSBzY2FsZSgxLjApIj48cGF0aCBkPSJNMCwwIEMtNCwtMzAgLTYsLTUyIC0yLC03MCIgc3Ryb2tlPSIjOGI1ZTM0IiBzdHJva2Utd2lkdGg9IjkiIGZpbGw9Im5vbmUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPjxwYXRoIGQ9Ik0tMiwtNzAgQy0yMC40LC04OCAtMzQsLTc2IC00Mi41LC02NiIgc3Ryb2tlPSIjM2Y5ZTRkIiBzdHJva2Utd2lkdGg9IjkiIGZpbGw9Im5vbmUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPjxwYXRoIGQ9Ik0tMiwtNzAgQy03LjE5OTk5OTk5OTk5OTk5OSwtODggLTEyLC05MCAtMTUuMCwtODAiIHN0cm9rZT0iIzNmOWU0ZCIgc3Ryb2tlLXdpZHRoPSI5IiBmaWxsPSJub25lIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48cGF0aCBkPSJNLTIsLTcwIEM5LjYsLTg4IDE2LC05MCAyMC4wLC04MCIgc3Ryb2tlPSIjM2Y5ZTRkIiBzdHJva2Utd2lkdGg9IjkiIGZpbGw9Im5vbmUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPjxwYXRoIGQ9Ik0tMiwtNzAgQzIxLjU5OTk5OTk5OTk5OTk5OCwtODggMzYsLTc0IDQ1LjAsLTY0IiBzdHJva2U9IiMzZjllNGQiIHN0cm9rZS13aWR0aD0iOSIgZmlsbD0ibm9uZSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+PHBhdGggZD0iTS0yLC03MCBDLTE0LjM5OTk5OTk5OTk5OTk5OSwtODggLTI0LC02OCAtMzAuMCwtNTgiIHN0cm9rZT0iIzNmOWU0ZCIgc3Ryb2tlLXdpZHRoPSI5IiBmaWxsPSJub25lIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48cGF0aCBkPSJNLTIsLTcwIEMxLjIsLTg4IDIsLTcwIDIuNSwtNjAiIHN0cm9rZT0iIzNmOWU0ZCIgc3Ryb2tlLXdpZHRoPSI5IiBmaWxsPSJub25lIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48cGF0aCBkPSJNLTIsLTcwIEMxNS42LC04OCAyNiwtNjYgMzIuNSwtNTYiIHN0cm9rZT0iIzNmOWU0ZCIgc3Ryb2tlLXdpZHRoPSI5IiBmaWxsPSJub25lIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48L2c+PGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMjU2LDIyNCkgc2NhbGUoMC44NikiPjxwYXRoIGQ9Ik0wLDAgQy00LC0zMCAtNiwtNTIgLTIsLTcwIiBzdHJva2U9IiM4YjVlMzQiIHN0cm9rZS13aWR0aD0iOSIgZmlsbD0ibm9uZSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+PHBhdGggZD0iTS0yLC03MCBDLTIwLjQsLTg4IC0zNCwtNzYgLTQyLjUsLTY2IiBzdHJva2U9IiMzZjllNGQiIHN0cm9rZS13aWR0aD0iOSIgZmlsbD0ibm9uZSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+PHBhdGggZD0iTS0yLC03MCBDLTcuMTk5OTk5OTk5OTk5OTk5LC04OCAtMTIsLTkwIC0xNS4wLC04MCIgc3Ryb2tlPSIjM2Y5ZTRkIiBzdHJva2Utd2lkdGg9IjkiIGZpbGw9Im5vbmUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPjxwYXRoIGQ9Ik0tMiwtNzAgQzkuNiwtODggMTYsLTkwIDIwLjAsLTgwIiBzdHJva2U9IiMzZjllNGQiIHN0cm9rZS13aWR0aD0iOSIgZmlsbD0ibm9uZSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+PHBhdGggZD0iTS0yLC03MCBDMjEuNTk5OTk5OTk5OTk5OTk4LC04OCAzNiwtNzQgNDUuMCwtNjQiIHN0cm9rZT0iIzNmOWU0ZCIgc3Ryb2tlLXdpZHRoPSI5IiBmaWxsPSJub25lIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48cGF0aCBkPSJNLTIsLTcwIEMtMTQuMzk5OTk5OTk5OTk5OTk5LC04OCAtMjQsLTY4IC0zMC4wLC01OCIgc3Ryb2tlPSIjM2Y5ZTRkIiBzdHJva2Utd2lkdGg9IjkiIGZpbGw9Im5vbmUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPjxwYXRoIGQ9Ik0tMiwtNzAgQzEuMiwtODggMiwtNzAgMi41LC02MCIgc3Ryb2tlPSIjM2Y5ZTRkIiBzdHJva2Utd2lkdGg9IjkiIGZpbGw9Im5vbmUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPjxwYXRoIGQ9Ik0tMiwtNzAgQzE1LjYsLTg4IDI2LC02NiAzMi41LC01NiIgc3Ryb2tlPSIjM2Y5ZTRkIiBzdHJva2Utd2lkdGg9IjkiIGZpbGw9Im5vbmUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPjwvZz48dGV4dCB4PSIyMDAiIHk9IjQ2IiBmb250LXNpemU9IjMwIiBmaWxsPSIjOGE1YTJiIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXdlaWdodD0iYm9sZCIgZm9udC1mYW1pbHk9IkNvbWljIFNhbnMgTVMsIGN1cnNpdmUiPk9BU0lTPC90ZXh0Pjx0ZXh0IHg9IjIwMCIgeT0iNzYiIGZvbnQtc2l6ZT0iMTUiIGZpbGw9IiM4YTVhMmIiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtd2VpZ2h0PSJib2xkIiBmb250LWZhbWlseT0iQ29taWMgU2FucyBNUywgY3Vyc2l2ZSI+YSBncmVlbiBzcG90IHdpdGggd2F0ZXIgaW4gdGhlIGRlc2VydDwvdGV4dD48L3N2Zz4=","alt":"Palm trees and a pool in the desert","caption":"An oasis"}},{"id":"africa-geography-q16","section":"Major Physical Features","question":"Which desert of Africa is known for its red sand dunes and lies in the southern part of the continent?","options":["Kalahari Desert","Namib Desert","Sahara Desert","Tibesti Plateau"],"correctIndex":0,"explanation":"The Kalahari Desert lies in southern Africa and is famous for its red sand dunes.","suggestImage":true,"imageNote":"Map of Africa shading the Sahara, Kalahari and Namib deserts in their correct places.","image":{"id":"africa-geography-q16","type":"svg","src":"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0MDAgNDIwIiB3aWR0aD0iNDAwIiBoZWlnaHQ9IjQyMCI+PHJlY3Qgd2lkdGg9IjQwMCIgaGVpZ2h0PSI0MjAiIGZpbGw9IiNiZmU2ZjUiLz48cG9seWdvbiBwb2ludHM9Ijk1LDU1IDEzMCw1OCAxNzAsNjggMjAwLDc2IDIzMiw3OCAyNTIsOTIgMjYyLDExMiAyNzAsMTQwIDMwMCwxNjggMzE4LDE4MiAzMDgsMTk2IDI4NiwxOTggMjgyLDIyMCAyOTAsMjQ4IDMwMCwyNzIgMzA2LDMwMCAzMDAsMzMwIDI4OCwzNTggMjY4LDM4MiAyNTYsMzkwIDI0MCwzNzIgMjI2LDM0NiAyMTAsMzIyIDE5OCwyOTYgMTkwLDI2OCAxODYsMjQyIDE3NiwyMTYgMTYwLDE5MiAxNTAsMTcyIDEyOCwxNjIgMTA0LDE1NiA4NCwxNTAgNzIsMTM2IDc4LDExNiA5MCw5NiA4Niw3NCIgZmlsbD0iI2YyZTNiOCIgc3Ryb2tlPSIjM2IyZjJmIiBzdHJva2Utd2lkdGg9IjQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48Y2xpcFBhdGggaWQ9ImFmMiI+PHBvbHlnb24gcG9pbnRzPSI5NSw1NSAxMzAsNTggMTcwLDY4IDIwMCw3NiAyMzIsNzggMjUyLDkyIDI2MiwxMTIgMjcwLDE0MCAzMDAsMTY4IDMxOCwxODIgMzA4LDE5NiAyODYsMTk4IDI4MiwyMjAgMjkwLDI0OCAzMDAsMjcyIDMwNiwzMDAgMzAwLDMzMCAyODgsMzU4IDI2OCwzODIgMjU2LDM5MCAyNDAsMzcyIDIyNiwzNDYgMjEwLDMyMiAxOTgsMjk2IDE5MCwyNjggMTg2LDI0MiAxNzYsMjE2IDE2MCwxOTIgMTUwLDE3MiAxMjgsMTYyIDEwNCwxNTYgODQsMTUwIDcyLDEzNiA3OCwxMTYgOTAsOTYgODYsNzQiLz48L2NsaXBQYXRoPjxnIGNsaXAtcGF0aD0idXJsKCNhZjIpIj48ZWxsaXBzZSBjeD0iMTgwIiBjeT0iMTAwIiByeD0iMTMwIiByeT0iNTIiIGZpbGw9IiNmMGM5NmIiLz48ZWxsaXBzZSBjeD0iMjQ2IiBjeT0iMzE2IiByeD0iNzYiIHJ5PSI0MiIgZmlsbD0iI2YwYzk2YiIvPjxlbGxpcHNlIGN4PSIyMTYiIGN5PSIzNjYiIHJ4PSI3MiIgcnk9IjMwIiBmaWxsPSIjZTA3OTNkIi8+PC9nPjx0ZXh0IHg9IjE4MCIgeT0iNjIiIGZvbnQtc2l6ZT0iMTgiIGZpbGw9IiM3YTVhMTAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtd2VpZ2h0PSJib2xkIiBmb250LWZhbWlseT0iQ29taWMgU2FucyBNUywgY3Vyc2l2ZSI+U0FIQVJBPC90ZXh0Pjx0ZXh0IHg9IjI1MCIgeT0iMzA2IiBmb250LXNpemU9IjE1IiBmaWxsPSIjN2E1YTEwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXdlaWdodD0iYm9sZCIgZm9udC1mYW1pbHk9IkNvbWljIFNhbnMgTVMsIGN1cnNpdmUiPktBTEFIQVJJPC90ZXh0Pjx0ZXh0IHg9IjE2MCIgeT0iMzUyIiBmb250LXNpemU9IjE2IiBmaWxsPSIjN2EyZjBkIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXdlaWdodD0iYm9sZCIgZm9udC1mYW1pbHk9IkNvbWljIFNhbnMgTVMsIGN1cnNpdmUiPk5BTUlCPC90ZXh0Pjx0ZXh0IHg9IjIwMCIgeT0iNjAiIGZvbnQtc2l6ZT0iMCIgZmlsbD0iIzhhNWEyYiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC13ZWlnaHQ9ImJvbGQiIGZvbnQtZmFtaWx5PSJDb21pYyBTYW5zIE1TLCBjdXJzaXZlIj5BZnJpY2E8L3RleHQ+PHRleHQgeD0iMjAwIiB5PSI0MTIiIGZvbnQtc2l6ZT0iMTUiIGZpbGw9IiM3YTJmMGQiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtd2VpZ2h0PSJib2xkIiBmb250LWZhbWlseT0iQ29taWMgU2FucyBNUywgY3Vyc2l2ZSI+TmFtaWI6IHJlZCBzYW5kIGR1bmVzLCBzb3V0aC13ZXN0IGNvYXN0PC90ZXh0Pjwvc3ZnPg==","alt":"Map of Africa shading the three deserts","caption":"Sahara, Kalahari and Namib"}},{"id":"africa-geography-q17","section":"Major Physical Features","question":"Africa is called the 'plateau continent'. Where are its plateaus the highest?","options":["In the south","In the north","Along the west coast","Along the east coast"],"correctIndex":0,"explanation":"The height of the plateaus is greater in the south and decreases towards the north.","suggestImage":true,"imageNote":"Side-view diagram of Africa as a vast high plateau, higher in the south and sloping down to the north.","image":{"id":"africa-geography-q17","type":"svg","src":"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0MDAgMzAwIiB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCI+PHJlY3Qgd2lkdGg9IjQwMCIgaGVpZ2h0PSIzMDAiIGZpbGw9IiNkZmYwZmIiLz48Y2lyY2xlIGN4PSI1OCIgY3k9IjUyIiByPSIyNCIgZmlsbD0iI2ZmYzIzMyIgc3Ryb2tlPSIjM2IyZjJmIiBzdHJva2Utd2lkdGg9IjQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48cGF0aCBkPSJNMjAsMjUwIEwyMCwyMTQgQzkwLDIwNiAxNTAsMTk2IDIwMCwxNzggQzI1MCwxNjAgMzAwLDEyMCAzODAsNzQgTDM4MCwyNTAgWiIgZmlsbD0iI2UwYjc2YSIgc3Ryb2tlPSIjM2IyZjJmIiBzdHJva2Utd2lkdGg9IjQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48cGF0aCBkPSJNMTUwLDE5MiBDMjIwLDE3MiAyOTAsMTMyIDM3MCw4OCIgc3Ryb2tlPSIjYzk5YjQ1IiBzdHJva2Utd2lkdGg9IjYiIGZpbGw9Im5vbmUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPjx0ZXh0IHg9IjMwMCIgeT0iMTMwIiBmb250LXNpemU9IjE4IiBmaWxsPSIjN2E1YTEwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXdlaWdodD0iYm9sZCIgZm9udC1mYW1pbHk9IkNvbWljIFNhbnMgTVMsIGN1cnNpdmUiPkhJR0g8L3RleHQ+PHRleHQgeD0iMzAwIiB5PSIxNTAiIGZvbnQtc2l6ZT0iMTgiIGZpbGw9IiM3YTVhMTAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtd2VpZ2h0PSJib2xkIiBmb250LWZhbWlseT0iQ29taWMgU2FucyBNUywgY3Vyc2l2ZSI+cGxhdGVhdXM8L3RleHQ+PHRleHQgeD0iNzgiIHk9IjIwMCIgZm9udC1zaXplPSIxNiIgZmlsbD0iIzdhNWExMCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC13ZWlnaHQ9ImJvbGQiIGZvbnQtZmFtaWx5PSJDb21pYyBTYW5zIE1TLCBjdXJzaXZlIj5sb3dlcjwvdGV4dD48dGV4dCB4PSI3OCIgeT0iMjE4IiBmb250LXNpemU9IjE2IiBmaWxsPSIjN2E1YTEwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXdlaWdodD0iYm9sZCIgZm9udC1mYW1pbHk9IkNvbWljIFNhbnMgTVMsIGN1cnNpdmUiPm5vcnRoPC90ZXh0PjxwYXRoIGQ9Ik01Miw5NiBWMTQwIE01Miw5NiBMNDIsMTE0IE01Miw5NiBMNjIsMTE0IiBzdHJva2U9IiNlNTUzM2QiIHN0cm9rZS13aWR0aD0iNSIgZmlsbD0ibm9uZSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+PHRleHQgeD0iNTIiIHk9IjE2OCIgZm9udC1zaXplPSIxNyIgZmlsbD0iI2IwM2EyYSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC13ZWlnaHQ9ImJvbGQiIGZvbnQtZmFtaWx5PSJDb21pYyBTYW5zIE1TLCBjdXJzaXZlIj5OPC90ZXh0Pjx0ZXh0IHg9IjM0MCIgeT0iMjcyIiBmb250LXNpemU9IjE3IiBmaWxsPSIjYjAzYTJhIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXdlaWdodD0iYm9sZCIgZm9udC1mYW1pbHk9IkNvbWljIFNhbnMgTVMsIGN1cnNpdmUiPlM8L3RleHQ+PHRleHQgeD0iMjAwIiB5PSIzMCIgZm9udC1zaXplPSIyMCIgZmlsbD0iIzNiMmYyZiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC13ZWlnaHQ9ImJvbGQiIGZvbnQtZmFtaWx5PSJDb21pYyBTYW5zIE1TLCBjdXJzaXZlIj5BZnJpY2EgaXMgYSAicGxhdGVhdSBjb250aW5lbnQiPC90ZXh0Pjx0ZXh0IHg9IjIwMCIgeT0iMjg4IiBmb250LXNpemU9IjE1IiBmaWxsPSIjNWE0YTNhIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXdlaWdodD0iYm9sZCIgZm9udC1mYW1pbHk9IkNvbWljIFNhbnMgTVMsIGN1cnNpdmUiPmhpZ2hlc3QgaW4gdGhlIHNvdXRoLCBzbG9waW5nIGRvd24gdG8gdGhlIG5vcnRoPC90ZXh0Pjwvc3ZnPg==","alt":"Side view of Africa, high in the south","caption":"Plateau continent"}}]},{"id":"objective-questions","title":"Objective Questions","emoji":"📝","questions":[{"id":"africa-physical-q1","section":"Objective Questions","question":"From which lake does the River Nile begin?","options":["Lake Rudolf","Lake Tanganyika","Lake Victoria","Lake Albert"],"correctIndex":2,"explanation":"The text says the River Nile originates in Lake Victoria in East Africa.","suggestImage":false},{"id":"africa-physical-q2","section":"Objective Questions","question":"The northern part of Africa is a —","options":["A mountain","A plateau","A lowland","A desert"],"correctIndex":3,"explanation":"The north of Africa is covered by the huge Sahara Desert.","suggestImage":false},{"id":"africa-physical-q3","section":"Objective Questions","question":"What is the most prominent physical feature of Africa?","options":["Lake Victoria","Rift valley","Lake Chad","Lake Rukwa"],"correctIndex":1,"explanation":"The Rift Valley is Africa's most noticeable feature, and it is clear in satellite pictures.","suggestImage":true,"imageNote":"Satellite picture or diagram of the long, narrow Rift Valley running through eastern Africa with steep sides.","image":{"id":"africa-physical-q3","type":"svg","src":"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0MDAgMzIwIiB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMyMCI+PHJlY3Qgd2lkdGg9IjQwMCIgaGVpZ2h0PSIzMjAiIGZpbGw9IiNkZmYwZmIiLz48cmVjdCB4PSIwIiB5PSIwIiB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMyMCIgZmlsbD0iI2NmZTZhOCIvPjxwYXRoIGQ9Ik0wLDMyMCBWOTYgTDExNiwxMzIgVjMyMCBaIiBmaWxsPSIjYzk4YjRiIiBzdHJva2U9IiMzYjJmMmYiIHN0cm9rZS13aWR0aD0iNCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjxwYXRoIGQ9Ik00MDAsMzIwIFY5NiBMMjg0LDEzMiBWMzIwIFoiIGZpbGw9IiNjOThiNGIiIHN0cm9rZT0iIzNiMmYyZiIgc3Ryb2tlLXdpZHRoPSI0IiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PHJlY3QgeD0iMTE2IiB5PSIxMzIiIHdpZHRoPSIxNjgiIGhlaWdodD0iMTg4IiBmaWxsPSIjZTZkM2EwIiBzdHJva2U9IiMzYjJmMmYiIHN0cm9rZS13aWR0aD0iNCIvPjxyZWN0IHg9IjEzMCIgeT0iMTYwIiB3aWR0aD0iMTQwIiBoZWlnaHQ9IjI2IiByeD0iMTIiIGZpbGw9IiM1ZmM0ZTgiIHN0cm9rZT0iIzJhN2ZhOCIgc3Ryb2tlLXdpZHRoPSIzIi8+PHRleHQgeD0iMjAwIiB5PSIxNTIiIGZvbnQtc2l6ZT0iMjAiIGZpbGw9IiM4YTJiMWMiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtd2VpZ2h0PSJib2xkIiBmb250LWZhbWlseT0iQ29taWMgU2FucyBNUywgY3Vyc2l2ZSI+UmlmdCBWYWxsZXk8L3RleHQ+PHRleHQgeD0iNTgiIHk9IjIwMCIgZm9udC1zaXplPSIxNiIgZmlsbD0iIzVhM2ExYSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC13ZWlnaHQ9ImJvbGQiIGZvbnQtZmFtaWx5PSJDb21pYyBTYW5zIE1TLCBjdXJzaXZlIj5zdGVlcDwvdGV4dD48dGV4dCB4PSI1OCIgeT0iMjIwIiBmb250LXNpemU9IjE2IiBmaWxsPSIjNWEzYTFhIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXdlaWdodD0iYm9sZCIgZm9udC1mYW1pbHk9IkNvbWljIFNhbnMgTVMsIGN1cnNpdmUiPndhbGw8L3RleHQ+PHRleHQgeD0iMzQyIiB5PSIyMDAiIGZvbnQtc2l6ZT0iMTYiIGZpbGw9IiM1YTNhMWEiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtd2VpZ2h0PSJib2xkIiBmb250LWZhbWlseT0iQ29taWMgU2FucyBNUywgY3Vyc2l2ZSI+c3RlZXA8L3RleHQ+PHRleHQgeD0iMzQyIiB5PSIyMjAiIGZvbnQtc2l6ZT0iMTYiIGZpbGw9IiM1YTNhMWEiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtd2VpZ2h0PSJib2xkIiBmb250LWZhbWlseT0iQ29taWMgU2FucyBNUywgY3Vyc2l2ZSI+d2FsbDwvdGV4dD48dGV4dCB4PSIyMDAiIHk9IjIxNiIgZm9udC1zaXplPSIxNSIgZmlsbD0iIzdhNWExMCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC13ZWlnaHQ9ImJvbGQiIGZvbnQtZmFtaWx5PSJDb21pYyBTYW5zIE1TLCBjdXJzaXZlIj5sb25nIG5hcnJvdzwvdGV4dD48dGV4dCB4PSIyMDAiIHk9IjIzNiIgZm9udC1zaXplPSIxNSIgZmlsbD0iIzdhNWExMCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC13ZWlnaHQ9ImJvbGQiIGZvbnQtZmFtaWx5PSJDb21pYyBTYW5zIE1TLCBjdXJzaXZlIj52YWxsZXk8L3RleHQ+PHRleHQgeD0iMjAwIiB5PSIzMDAiIGZvbnQtc2l6ZT0iMTUiIGZpbGw9IiMyZjZiMzQiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtd2VpZ2h0PSJib2xkIiBmb250LWZhbWlseT0iQ29taWMgU2FucyBNUywgY3Vyc2l2ZSI+cnVucyBkb3duIGVhc3Rlcm4gQWZyaWNhPC90ZXh0Pjwvc3ZnPg==","alt":"Steep walls with a long narrow valley","caption":"The Rift Valley"}},{"id":"africa-physical-q4","section":"Objective Questions","question":"Which is the longest river in the world?","options":["River Orange","River Nile","River Zaire","River Niger"],"correctIndex":1,"explanation":"The Nile runs 6670 km, so it is the longest river in the world.","suggestImage":false}]},{"id":"match-the-following","title":"Match The Following","emoji":"🌍","questions":[{"id":"africa-physical-q14","section":"Match the Following","question":"In the match-the-following activity, which capital city goes with Kenya?","options":["Lusaka","Khartoum","Addis Ababa","Nairobi"],"correctIndex":3,"explanation":"The matching list pairs Kenya with Nairobi, the country's capital city.","suggestImage":false}]},{"id":"fill-in-the-blanks","title":"Fill In The Blanks","emoji":"🌍","questions":[{"id":"africa-physical-q15","section":"Fill in the Blanks","question":"Which Nile is the main tributary of the River Nile?","options":["Blue Nile","White Nile","Bahr-el-Arab","River Tana"],"correctIndex":1,"explanation":"The White Nile is the main tributary, and the Blue Nile is another one.","suggestImage":false}]},{"id":"case-study-cocoa-in-ghana","title":"Case Study: Cocoa in Ghana","emoji":"🍫","questions":[{"id":"africa-physical-q16","section":"Case Study: Cocoa in Ghana","question":"Which country is the biggest customer of Ghana's cocoa?","options":["The USA","Germany","The Netherlands","Spain"],"correctIndex":0,"explanation":"The USA buys the most cocoa, and Germany and the Netherlands come next.","suggestImage":false},{"id":"africa-physical-q17","section":"Case Study: Cocoa in Ghana","question":"About how much of a cocoa bean is cocoa butter?","options":["About 15 per cent","About 30 per cent","About 45 per cent","About 60 per cent"],"correctIndex":2,"explanation":"Cocoa butter makes up roughly 45 per cent of the bean and is used in creams and soaps.","suggestImage":false},{"id":"africa-physical-q18","section":"Case Study: Cocoa in Ghana","question":"Most of Ghana's cocoa crop is shipped out from which two ports?","options":["Takoradi and Tema","Accra and Kumasi","Nairobi and Mombasa","Alexandria and Port Sudan"],"correctIndex":0,"explanation":"Most cocoa leaves Ghana through the two ports of Takoradi and Tema.","suggestImage":true,"imageNote":"Map of Ghana marking the cocoa-growing belt and the ports of Takoradi and Tema.","image":{"id":"africa-physical-q18","type":"svg","src":"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0MDAgMzQwIiB3aWR0aD0iNDAwIiBoZWlnaHQ9IjM0MCI+PHJlY3Qgd2lkdGg9IjQwMCIgaGVpZ2h0PSIzNDAiIGZpbGw9IiM5ZmQ4ZWYiLz48cG9seWdvbiBwb2ludHM9IjEyMCw0MCAyNTAsMzQgMjg2LDcwIDI3NCwxNDAgMzAwLDIxNCAyNTgsMjkwIDE2MCwyOTYgMTEyLDIzMiA5NiwxNDAiIGZpbGw9IiNhOGU2YTMiIHN0cm9rZT0iIzNiMmYyZiIgc3Ryb2tlLXdpZHRoPSI0IiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PGNsaXBQYXRoIGlkPSJnaCI+PHBvbHlnb24gcG9pbnRzPSIxMjAsNDAgMjUwLDM0IDI4Niw3MCAyNzQsMTQwIDMwMCwyMTQgMjU4LDI5MCAxNjAsMjk2IDExMiwyMzIgOTYsMTQwIi8+PC9jbGlwUGF0aD48ZyBjbGlwLXBhdGg9InVybCgjZ2gpIj48cmVjdCB4PSI4MCIgeT0iOTAiIHdpZHRoPSIyNDAiIGhlaWdodD0iODAiIGZpbGw9IiM3ZmJmNWYiLz48cmVjdCB4PSIwIiB5PSIxNzAiIHdpZHRoPSI0MDAiIGhlaWdodD0iNjAiIGZpbGw9IiNlNmMwN2EiLz48L2c+PHRleHQgeD0iMjAwIiB5PSIxMzIiIGZvbnQtc2l6ZT0iMTYiIGZpbGw9IiMyZjViMzQiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtd2VpZ2h0PSJib2xkIiBmb250LWZhbWlseT0iQ29taWMgU2FucyBNUywgY3Vyc2l2ZSI+Y29jb2EgYmVsdDwvdGV4dD48Y2lyY2xlIGN4PSIxMDQiIGN5PSIyNTAiIHI9IjEyIiBmaWxsPSIjMmE3ZmE4IiBzdHJva2U9IiMzYjJmMmYiIHN0cm9rZS13aWR0aD0iMyIvPjxjaXJjbGUgY3g9IjEwNCIgY3k9IjI1MCIgcj0iNCIgZmlsbD0iI2ZmZiIvPjxjaXJjbGUgY3g9IjI3MiIgY3k9IjI0NCIgcj0iMTIiIGZpbGw9IiMyYTdmYTgiIHN0cm9rZT0iIzNiMmYyZiIgc3Ryb2tlLXdpZHRoPSIzIi8+PGNpcmNsZSBjeD0iMjcyIiBjeT0iMjQ0IiByPSI0IiBmaWxsPSIjZmZmIi8+PHRleHQgeD0iMjAwIiB5PSIzMCIgZm9udC1zaXplPSIyNiIgZmlsbD0iIzJmNmIzNCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC13ZWlnaHQ9ImJvbGQiIGZvbnQtZmFtaWx5PSJDb21pYyBTYW5zIE1TLCBjdXJzaXZlIj5HSEFOQTwvdGV4dD48cGF0aCBkPSJNMTA0LDI1MCBMNjAsMzAwIiBzdHJva2U9IiMwZDRhNjgiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWRhc2hhcnJheT0iNiA1Ii8+PHRleHQgeD0iNjQiIHk9IjMyMCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzBkNGE2OCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC13ZWlnaHQ9ImJvbGQiIGZvbnQtZmFtaWx5PSJDb21pYyBTYW5zIE1TLCBjdXJzaXZlIj5UYWtvcmFkaTwvdGV4dD48cGF0aCBkPSJNMjcyLDI0NCBMMzE4LDMwMCIgc3Ryb2tlPSIjMGQ0YTY4IiBzdHJva2Utd2lkdGg9IjMiIHN0cm9rZS1kYXNoYXJyYXk9IjYgNSIvPjx0ZXh0IHg9IjMzOCIgeT0iMzIwIiBmb250LXNpemU9IjE0IiBmaWxsPSIjMGQ0YTY4IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXdlaWdodD0iYm9sZCIgZm9udC1mYW1pbHk9IkNvbWljIFNhbnMgTVMsIGN1cnNpdmUiPlRlbWE8L3RleHQ+PGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMzQyLDEyMCkgcm90YXRlKDIwKSI+PGVsbGlwc2UgY3g9IjAiIGN5PSIwIiByeD0iMjYiIHJ5PSIzNCIgZmlsbD0iIzhiNDUxMyIgc3Ryb2tlPSIjNGEyNDEwIiBzdHJva2Utd2lkdGg9IjMiLz48cGF0aCBkPSJNMCwtMzQgVjM0IE0tMTYsLTIwIEwtMjYsLTYgTTE2LC0yMCBMMjYsLTYgTS0xNiw2IEwtMjYsMjAgTTE2LDYgTDI2LDIwIiBzdHJva2U9IiM0YTI0MTAiIHN0cm9rZS13aWR0aD0iMyIgZmlsbD0ibm9uZSIvPjwvZz48L3N2Zz4=","alt":"Map of Ghana with cocoa belt and two ports","caption":"Ghana cocoa ports"}}]}]}</script>
+
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <linearGradient id="gradA" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4ecdc4"/><stop offset="100%" stop-color="#4f9de8"/>
+    </linearGradient>
+  </defs>
+</svg>
+
+<script>
+(() => {
+"use strict";
+/* ══════════════════════════════════════════════════════════════
+   html-quiz runtime — self-contained, no libraries, no network.
+   Question data is parsed from the #quiz-data script tag.
+   ══════════════════════════════════════════════════════════════ */
+
+// ── Data & config ─────────────────────────────────────────────
+const QUIZ = JSON.parse(document.getElementById('quiz-data').textContent.trim());
+const params = new URLSearchParams(location.search);
+const cfg = {
+  secs: parseTimerSecs(),                 // 0 = no timer (unlimited); ?secs=N (2-60) restores a timer
+  max:  clampInt(params.get('max'), 25, 1, 100),   // (informational only; cap applied at build)
+  tts:  params.get('tts') !== 'off' && params.get('tts') !== '0'
+};
+function clampInt(v, d, lo, hi){ const n = parseInt(v,10); return Number.isFinite(n) ? Math.min(hi, Math.max(lo, n)) : d; }
+function parseTimerSecs(){
+  const raw = params.get('secs');
+  if (raw === null || raw === '' || raw === '0') return 0;   // default: unlimited time
+  const n = parseInt(raw, 10);
+  return Number.isFinite(n) ? Math.min(60, Math.max(2, n)) : 0;
+}
+
+// Build a flat ordered question list across all sections.
+const FLAT = [];
+QUIZ.sections.forEach(s => {
+  s.questions.forEach(q => {
+    FLAT.push({ q, sectionId: s.id, sectionTitle: s.title });
+  });
+});
+const TOTAL = FLAT.length;
+
+// ── State machine ─────────────────────────────────────────────
+let state = {
+  mode: 'intro',        // intro | question | revealed | results
+  scope: null,          // null = all sections, else sectionId
+  list: [],             // ordered [{q, sectionId, sectionTitle}] for current scope
+  iq: 0,
+  answers: [],          // {qid, chosen(-1=timeout), status, pts}
+  score: 0,
+  runToken: 0,
+  transitioning: false
+};
+
+const elStage  = document.getElementById('stage');
+const elScore  = document.getElementById('score-chip');
+const elProg   = document.getElementById('progress-fill');
+const elTree   = document.getElementById('tree');
+const elSide   = document.getElementById('sidebar');
+const overlay  = document.getElementById('overlay');
+const elMute   = document.getElementById('mute-btn');
+let muted = false;
+
+// ── DOM helpers (NO innerHTML anywhere) ───────────────────────
+const h = (tag, cls, text) => {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (text !== undefined) e.textContent = text;   // untrusted text → textContent only
+  return e;
+};
+function clear(node){ while(node.firstChild) node.removeChild(node.firstChild); }
+
+// ── Sound (WebAudio, synthesised; lazy context for autoplay) ─
+let AC = null;
+function ensureAudio(){
+  if (!AC){ try{ AC = new (window.AudioContext || window.webkitAudioContext)(); }catch(e){ return null; } }
+  if (AC.state === 'suspended') AC.resume();
+  return AC;
+}
+function blip(freq, dur, type, delay, vol){
+  const ac = AC || ensureAudio();
+  if (!ac) return;
+  const t0 = ac.currentTime + (delay || 0);
+  const o = ac.createOscillator(), g = ac.createGain();
+  o.type = type || 'sine'; o.frequency.value = freq;
+  g.gain.setValueAtTime(vol || 0.14, t0);
+  g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+  o.connect(g); g.connect(ac.destination);
+  o.start(t0); o.stop(t0 + dur + 0.03);
+}
+const sTick   = () => blip(880, 0.06, 'square');
+const sCorrect= () => { blip(523,0.12,'sine',0); blip(659,0.12,'sine',0.11); blip(784,0.2,'sine',0.22); };
+const sWrong  = () => { blip(220,0.22,'triangle',0); blip(170,0.28,'triangle',0.14); };
+const sTimesUp= () => { blip(440,0.18,'triangle',0); blip(330,0.3,'triangle',0.16); };
+const sPop    = () => { blip(660,0.09,'sine',0,0.1); blip(880,0.1,'sine',0.07,0.08); };
+
+// ── TTS (Web Speech API) ──────────────────────────────────────
+function ttsAvailable(){ return 'speechSynthesis' in window; }
+function pickVoice(){
+  if (!ttsAvailable()) return null;
+  const vs = speechSynthesis.getVoices();
+  return vs.find(v => /^en/i.test(v.lang)) || vs[0] || null;
+}
+function speak(text, onEnd){
+  if (!cfg.tts || muted || !ttsAvailable() || !text) { if (onEnd) onEnd(); return; }
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.rate = 1; u.pitch = 1.05;
+  const v = pickVoice(); if (v) u.voice = v;
+  if (onEnd) u.onend = onEnd;
+  speechSynthesis.speak(u);
+}
+if ('speechSynthesis' in window){
+  speechSynthesis.onvoiceschanged = () => {};   // warm the voice list
+}
+
+// ── Timer ring ────────────────────────────────────────────────
+let rafId = 0;
+function stopTimer(){ if (rafId){ cancelAnimationFrame(rafId); rafId = 0; } }
+function startTimer(secs, token){
+  stopTimer();
+  const C = 2 * Math.PI * 30;                    // r=30 ring
+  const ring = document.getElementById('ring-fg');
+  const count = document.getElementById('t-count');
+  const wrap = document.getElementById('timer-wrap');
+  ring.setAttribute('stroke-dasharray', C);
+  ring.setAttribute('stroke-dashoffset', 0);
+  const deadline = performance.now() + secs * 1000;
+  let lastSec = Math.ceil(secs);
+  const loop = (now) => {
+    if (state.runToken !== token) return;        // stale — question changed
+    const remMs = deadline - now;
+    const remSec = Math.max(0, Math.ceil(remMs / 1000));
+    const frac = Math.max(0, Math.min(1, remMs / (secs * 1000)));
+    ring.setAttribute('stroke-dashoffset', String(C * (1 - frac)));   // SVG attr, not CSS
+    count.textContent = String(remSec);
+    wrap.classList.toggle('low', remSec <= 3);
+    if (remSec < lastSec){ lastSec = remSec; if (remSec > 0 && remSec <= 3 && state.mode === 'question') sTick(); }
+    if (remMs <= 0){ onTimeout(token); return; }
+    rafId = requestAnimationFrame(loop);
+  };
+  rafId = requestAnimationFrame(loop);
+}
+
+// ── Timer markup builder (returned to slot in question card) ──
+function timerMarkup(){
+  if (cfg.secs <= 0) return null;          // no-timer mode: no ring, no countdown
+  const wrap = h('div', 'timer-wrap'); wrap.id = 'timer-wrap';
+  const ns = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(ns, 'svg');
+  svg.setAttribute('viewBox', '0 0 74 74');
+  const bg = document.createElementNS(ns, 'circle');
+  bg.setAttribute('cx','37'); bg.setAttribute('cy','37'); bg.setAttribute('r','30'); bg.setAttribute('class','circle-bg');
+  const fg = document.createElementNS(ns, 'circle');
+  fg.setAttribute('cx','37'); fg.setAttribute('cy','37'); fg.setAttribute('r','30'); fg.setAttribute('class','circle-fg');
+  fg.id = 'ring-fg';
+  svg.appendChild(bg); svg.appendChild(fg);
+  const c = h('div', 't-count', String(cfg.secs)); c.id = 't-count';
+  wrap.appendChild(svg); wrap.appendChild(c);
+  return wrap;
+}
+
+// ── Confetti ──────────────────────────────────────────────────
+const CONF_COLORS = ['#ff6b6b','#ffd93d','#2ecc71','#4f9de8','#9b59b6','#ff9d2e'];
+function burstConfetti(n){
+  const layer = document.getElementById('confetti');
+  for (let i = 0; i < n; i++){
+    const c = h('div', 'confetti');
+    c.style.left = (Math.random() * 100) + 'vw';
+    c.style.background = CONF_COLORS[i % CONF_COLORS.length];
+    c.style.setProperty('--rx', (Math.random() * 540 - 270) + 'deg');
+    c.style.animationDuration = (1.6 + Math.random() * 1.6) + 's';
+    c.style.animationDelay = (Math.random() * 0.5) + 's';
+    c.style.width = (7 + Math.random() * 8) + 'px';
+    c.style.height = (7 + Math.random() * 8) + 'px';
+    c.addEventListener('animationend', () => c.remove());
+    layer.appendChild(c);
+  }
+}
+
+// ── Tree building ─────────────────────────────────────────────
+function renderTree(){
+  clear(elTree);
+  QUIZ.sections.forEach(sec => {
+    const node = h('div', 'tree-node');
+    node.setAttribute('data-sec', sec.id);
+    const arrow = h('span', 'arrow', '▶');
+    const dot = h('span', 'dot');
+    dot.style.background = sectionColor(sec.id);
+    const label = h('span', null, sec.emoji + ' ' + sec.title);
+    const badge = h('span', 'badge', String(sec.questions.length));
+    node.appendChild(arrow); node.appendChild(dot); node.appendChild(label); node.appendChild(badge);
+    node.addEventListener('click', () => {
+      arrow.classList.toggle('open');
+      const kids = document.getElementById('children-' + sec.id);
+      if (kids) kids.classList.toggle('open');
+    });
+    elTree.appendChild(node);
+
+    const kids = h('div', 'tree-children');
+    kids.id = 'children-' + sec.id;
+    sec.questions.forEach(q => {
+      const leaf = h('div', 'tree-node tree-leaf');
+      leaf.setAttribute('data-qid', q.id);
+      const qn = h('span', null, 'Q' + (FLAT.length ? '' : '') + q.id.split('-q')[1]);
+      const st = h('span', 'st');
+      leaf.appendChild(h('span', 'arrow', '•'));
+      leaf.appendChild(qn); leaf.appendChild(st);
+      leaf.addEventListener('click', () => startAtSection(sec.id, q.id));
+      kids.appendChild(leaf);
+    });
+    elTree.appendChild(kids);
+  });
+}
+function sectionColor(id){
+  const pal = ['#4ecdc4','#ffb300','#9b59b6','#4f9de8','#ff6b6b','#2ecc71','#e67e22','#e84393'];
+  let x = 0; for (const ch of id) x = (x + ch.charCodeAt(0)) % pal.length;
+  return pal[x];
+}
+function updateTreeStatus(){
+  const answered = new Map(state.answers.map(a => [a.qid, a.status]));
+  document.querySelectorAll('#tree .tree-leaf').forEach(leaf => {
+    const st = leaf.querySelector('.st');
+    const qid = leaf.getAttribute('data-qid');
+    const s = answered.get(qid);
+    st.textContent = '';
+    st.className = 'st';
+    if (s === 'correct'){ st.textContent = '✓'; st.classList.add('good'); }
+    else if (s === 'wrong'){ st.textContent = '✗'; st.classList.add('bad'); }
+    else if (s === 'timeout'){ st.textContent = '⏰'; st.classList.add('slow'); }
+  });
+  // highlight active section node
+  document.querySelectorAll('#tree .tree-node[data-sec]').forEach(n => {
+    n.classList.toggle('active', state.scope === null || n.getAttribute('data-sec') === state.scope);
+  });
+}
+
+// ── Scope / nav ───────────────────────────────────────────────
+function shuffle(arr){
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--){ const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+  return a;
+}
+function startScope(scopeId){
+  state.scope = scopeId || null;
+  if (state.scope) {
+    state.list = FLAT.filter(f => f.sectionId === state.scope);
+  } else {
+    // group by section, shuffle sections, keep questions in source order within each
+    const bySec = [];
+    const secOrder = [];
+    FLAT.forEach(f => { if (!secOrder.includes(f.sectionId)) secOrder.push(f.sectionId); });
+    secOrder.forEach(sid => bySec.push(FLAT.filter(f => f.sectionId === sid)));
+    state.list = shuffle(bySec).flat();
+  }
+  state.iq = 0; state.answers = []; state.score = 0; state.runToken++;
+  updateScore();
+  if (state.list.length === 0){ renderIntro(); return; }
+  renderQuestion();
+}
+function startAtSection(secId, qid){
+  state.scope = secId;
+  state.list = FLAT.filter(f => f.sectionId === secId);
+  const idx = state.list.findIndex(f => f.q.id === qid);
+  state.iq = idx >= 0 ? idx : 0;
+  state.answers = []; state.score = 0; state.runToken++;
+  updateScore();
+  closeDrawer();
+  renderQuestion();
+}
+function currentQ(){
+  const f = state.list[state.iq];
+  return f ? f.q : null;
+}
+
+// ── Views ─────────────────────────────────────────────────────
+function renderIntro(){
+  state.mode = 'intro';
+  clear(elStage);
+  const card = h('div', 'card intro card-in');
+  const big = h('div', 'big-emoji', QUIZ.emoji || '🧠');
+  const title = h('h1', null, QUIZ.title || 'Africa — Geography');
+  const sub = h('div', 'sub', QUIZ.subtitle || 'Test yourself & learn with fun quiz!');
+  const meta = h('div', 'meta-chip', '🎯 ' + TOTAL + ' questions · ⭐ up to ' + (TOTAL * 10) + ' points · ' + (cfg.secs > 0 ? '⏱️ ' + cfg.secs + 's each' : '⏱️ no time limit'));
+  const start = h('button', 'big-btn', '▶ Start Quiz');
+  start.addEventListener('click', () => { ensureAudio(); state.runToken++; startScope(null); });
+  card.appendChild(big); card.appendChild(title); card.appendChild(sub);
+  const row = h('div', 'ghost-row');
+  const samp = h('button', 'big-btn ghost', '🔊 Hear me');
+  samp.addEventListener('click', () => { ensureAudio(); speak('Hello friend! Let’s play and learn together!'); });
+  const imgAll = h('div', 'hint-line', 'Open a section in the left menu to play a single topic.');
+  row.appendChild(samp);
+  card.appendChild(meta); card.appendChild(start); card.appendChild(row); card.appendChild(imgAll);
+  elStage.appendChild(card);
+  updateProgress(0);
+}
+function speakQuestion(q, onEnd){
+  const all = 'Question ' + q.question + '. Options: ' +
+    q.options.map((o, i) => String.fromCharCode(65 + i) + '. ' + o).join('. ') + '.';
+  speak(all, onEnd);
+}
+function renderQuestion(){
+  state.mode = 'question';
+  const q = currentQ();
+  if (!q){ renderResults(); return; }
+  const token = ++state.runToken;
+  stopTimer();
+  clear(elStage);
+  const card = h('div', 'card card-in');
+  const head = h('div', 'q-head');
+  head.appendChild(h('div', 'q-progress', 'Question ' + (state.iq + 1) + ' of ' + state.list.length));
+  const tm = timerMarkup();
+  if (tm) head.appendChild(tm);
+  card.appendChild(head);
+
+  // question text
+  card.appendChild(h('div', 'q-text', q.question));
+
+  // optional image
+  if (q.image){
+    const iw = h('div', 'qimg-wrap');
+    if (q.image.type === 'emoji'){
+      iw.appendChild(h('div', 'emoji-big', q.image.src));
+    } else {
+      const img = h('img', 'qimg');
+      img.setAttribute('src', q.image.src);
+      img.setAttribute('alt', q.image.alt || '');
+      iw.appendChild(img);
+    }
+    if (q.image.caption) iw.appendChild(h('div', 'caption', q.image.caption));
+    card.appendChild(iw);
+  }
+
+  // options
+  const opts = h('div', 'options');
+  q.options.forEach((text, i) => {
+    const b = h('button', 'opt');
+    b.setAttribute('data-idx', String(i));
+    b.appendChild(h('span', 'key', String.fromCharCode(65 + i)));
+    b.appendChild(h('span', null, text));
+    b.appendChild(h('span', 'mark'));
+    b.addEventListener('click', () => { ensureAudio(); if (state.mode === 'question') answer(i); });
+    opts.appendChild(b);
+  });
+  card.appendChild(opts);
+
+  // speak button
+  const foot = h('div', 'q-foot');
+  const spk = h('button', 'speak-btn', '🔊 Read aloud');
+  spk.addEventListener('click', () => { ensureAudio(); speakQuestion(q); });
+  foot.appendChild(spk);
+  card.appendChild(foot);
+  elStage.appendChild(card);
+
+  updateProgress(state.iq / state.list.length);
+  speakQuestion(q, () => {
+    if (state.runToken === token && state.mode === 'question' && cfg.secs > 0) startTimer(cfg.secs, token);
+  });
+}
+function reveal(q, status, chosen){
+  state.mode = 'revealed';
+  stopTimer();
+  state.answers.push({ qid: q.id, chosen, status, pts: status === 'correct' ? 10 : 0 });
+  if (status === 'correct') state.score += 10;
+  updateScore();
+  updateTreeStatus();
+  burstConfetti(status === 'correct' ? 60 : 0);
+
+  const card = document.querySelector('#stage .card');
+  // banner
+  const banner = h('div', 'reveal-banner ' + (status === 'correct' ? 'good' : status === 'wrong' ? 'bad' : 'slow'));
+  const icon = status === 'correct' ? '✅' : status === 'wrong' ? '❌' : '⏰';
+  const msg = status === 'correct' ? 'Correct! Great job!' : status === 'wrong' ? 'Oops! Not quite.' : "Time's up!";
+  banner.appendChild(h('span', null, icon + ' ' + msg));
+  card.appendChild(banner);
+  // explanation
+  const exp = h('div', 'reveal-exp');
+  const b = h('b', null, '💡 '); b.textContent = '💡 ' + q.options[q.correctIndex];
+  exp.appendChild(b);
+  exp.appendChild(h('div', null, q.explanation));
+  card.appendChild(exp);
+  // highlight options
+  const buttons = card.querySelectorAll('.opt');
+  buttons.forEach((btn, i) => {
+    btn.disabled = true;
+    const mark = btn.querySelector('.mark');
+    if (i === q.correctIndex){ btn.classList.add('correct'); mark.textContent = '✓'; }
+    else if (i === chosen){ btn.classList.add('wrong-chosen'); mark.textContent = '✗'; }
+    else btn.classList.add('dim');
+  });
+  // next row
+  const row = h('div', 'next-row');
+  const pts = h('div', 'pts-gain ' + (status === 'correct' ? 'gain' : 'none'),
+                status === 'correct' ? '+10 points' : '+0 points');
+  const nb = h('button', 'next-btn', state.iq + 1 >= state.list.length ? 'See results 🏆' : 'Next ➡️');
+  nb.addEventListener('click', () => { state.iq++; if (state.iq >= state.list.length) renderResults(); else renderQuestion(); });
+  row.appendChild(pts); row.appendChild(nb);
+  const head = card.querySelector('.q-head');
+  if (head) head.appendChild(row); else card.appendChild(row);
+  // duplicate next-row at bottom for easy access
+  const row2 = h('div', 'next-row');
+  row2.appendChild(h('div', 'pts-gain ' + (status === 'correct' ? 'gain' : 'none'),
+                status === 'correct' ? '+10 points' : '+0 points'));
+  const nb2 = h('button', 'next-btn', state.iq + 1 >= state.list.length ? 'See results 🏆' : 'Next ➡️');
+  nb2.addEventListener('click', () => { state.iq++; if (state.iq >= state.list.length) renderResults(); else renderQuestion(); });
+  row2.appendChild(nb2);
+  card.appendChild(row2);
+}
+function answer(i){
+  const q = currentQ();
+  ensureAudio();
+  if (i === q.correctIndex) sCorrect(); else sWrong();
+  reveal(q, i === q.correctIndex ? 'correct' : 'wrong', i);
+}
+function onTimeout(token){
+  if (state.runToken !== token) return;   // stale
+  const q = currentQ();
+  ensureAudio(); sTimesUp();
+  reveal(q, 'timeout', -1);
+  speak(q.explanation);
+}
+function renderResults(){
+  state.mode = 'results';
+  stopTimer();
+  clear(elStage);
+  const card = h('div', 'card results card-in');
+  const count = state.list.length;
+  const maxPts = count * 10;
+  const words = pctWord(state.score / maxPts);
+  card.appendChild(h('div', 'big-emoji', words.emoji));
+  card.appendChild(h('h2', null, words.title));
+  card.appendChild(h('div', 'sub', 'You scored ' + state.score + ' of ' + maxPts + ' points'));
+
+  // score ring
+  const rw = h('div', 'ring-wrap');
+  const ns = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(ns, 'svg');
+  svg.setAttribute('viewBox', '0 0 120 120');
+  const bg = document.createElementNS(ns, 'circle');
+  bg.setAttribute('cx','60'); bg.setAttribute('cy','60'); bg.setAttribute('r','45'); bg.setAttribute('class','rbg');
+  const fg = document.createElementNS(ns, 'circle');
+  fg.setAttribute('cx','60'); fg.setAttribute('cy','60'); fg.setAttribute('r','45'); fg.setAttribute('class','rfg');
+  fg.id = 'ring-fg-r';
+  svg.appendChild(bg); svg.appendChild(fg);
+  rw.appendChild(svg);
+  const rs = h('div', 'rscore');
+  const n = h('div', 'n', String(state.score)); n.id = 'rscore-n'; n.className = 'n rscore-n';
+  rs.appendChild(n); rs.appendChild(h('div', 'pts', 'points'));
+  rw.appendChild(rs);
+  card.appendChild(rw);
+
+  const stars = h('div', 'stars', '⭐'.repeat(words.stars) + '☆'.repeat(5 - words.stars));
+  card.appendChild(stars);
+
+  // review
+  const review = h('div', 'review');
+  state.answers.forEach((a, i) => {
+    const f = state.list[i];
+    const row = h('div', 'review-row');
+    row.appendChild(h('div', 'qi', 'Q' + (i + 1)));
+    const body = h('div', 'qbody');
+    body.appendChild(h('div', 'qq', f.q.question));
+    const your = a.chosen >= 0 ? f.q.options[a.chosen] : 'No answer';
+    body.appendChild(h('div', 'aa', 'Your answer: ' + your));
+    body.appendChild(h('div', 'aa', '✅ ' + f.q.options[f.q.correctIndex]));
+    row.appendChild(body);
+    row.appendChild(h('div', 'pts ' + (a.pts ? 'gain' : 'none'), (a.pts ? '+' : '') + a.pts));
+    review.appendChild(row);
+  });
+  card.appendChild(review);
+
+  if (QUIZ.truncated){
+    card.appendChild(h('div', 'hint-line', 'Showing ' + QUIZ.truncated.shown + ' of ' + QUIZ.truncated.total + ' questions.'));
+  }
+
+  const row2 = h('div', 'ghost-row');
+  const again = h('button', 'big-btn ghost', '🔄 Play again');
+  again.addEventListener('click', () => { burstConfetti(0); startScope(state.scope); });
+  const menu = h('button', 'big-btn ghost', '🏠 Menu');
+  menu.addEventListener('click', () => renderIntro());
+  row2.appendChild(again); row2.appendChild(menu);
+  card.appendChild(row2);
+  elStage.appendChild(card);
+
+  // deferred: animate ring + settle score number + confetti
+  setTimeout(() => {
+    const C = 283;
+    const fgR = document.getElementById('ring-fg-r');
+    fgR.setAttribute('stroke-dashoffset', String(C * (1 - (state.score / maxPts))));
+    const num = document.getElementById('rscore-n');
+    if (num) num.textContent = String(state.score);   // settle immediately so chip & ring always agree
+    burstConfetti(140);
+    sPop();
+  }, 60);
+}
+function pctWord(p){
+  if (p >= 0.9)  return { emoji:'🏆', title:'Amazing!', stars:5 };
+  if (p >= 0.7)  return { emoji:'🌟', title:'Great job!', stars:4 };
+  if (p >= 0.5)  return { emoji:'😄', title:'Good try!', stars:3 };
+  if (p >= 0.3)  return { emoji:'🙂', title:'Keep going!', stars:2 };
+  return { emoji:'💪', title:'Practice makes better!', stars:1 };
+}
+function updateScore(){ elScore.textContent = '⭐ Score: ' + state.score; }
+function updateProgress(p){
+  if (elProg) elProg.style.width = Math.round(Math.max(0, Math.min(1, p)) * 100) + '%';
+  // track is shared for all-scope run; on intro show 0
+}
+
+// ── Mobile drawer ─────────────────────────────────────────────
+function closeDrawer(){
+  elSide.classList.remove('open'); overlay.classList.remove('open');
+}
+document.getElementById('hamburger').addEventListener('click', () => {
+  elSide.classList.toggle('open'); overlay.classList.toggle('open');
+});
+overlay.addEventListener('click', closeDrawer);
+document.getElementById('sidebar-home').addEventListener('click', () => { closeDrawer(); renderIntro(); });
+elMute.addEventListener('click', () => {
+  muted = !muted;
+  elMute.textContent = muted ? '🔇' : '🔊';
+  if (muted && 'speechSynthesis' in window) speechSynthesis.cancel();
+});
+
+// ── Boot ──────────────────────────────────────────────────────
+renderTree();
+renderIntro();
+})();
+</script>
+</body>
+</html>
