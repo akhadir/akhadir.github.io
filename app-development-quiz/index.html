@@ -1,0 +1,1338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%233aa0ff'/%3E%3Ctext x='16' y='24' font-size='22' text-anchor='middle'%3E%F0%9F%93%9F%3C/text%3E%3C/svg%3E">
+<title>App Development Quiz — Quiz</title>
+<style>
+  /* ══════════════ KID-FRIENDLY PALETTE (bright daylight) ══════════════ */
+  :root {
+    --bg: linear-gradient(160deg, #fff8e1 0%, #e0f7fa 60%, #dff4ff 100%);
+    --panel: #ffffff;
+    --ink: #2d3436;
+    --ink-soft: #6b7a85;
+    --coral: #ff6b6b;
+    --sunny: #ffd93d;
+    --teal: #4ecdc4;
+    --sky: #4f9de8;
+    --violet: #9b59b6;
+    --green: #2ecc71;
+    --amber: #ffb300;
+    --red: #ff6b6b;
+    --sidebar-w: 264px;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { height:100%; }
+  body {
+    background: var(--bg); color: var(--ink); overflow:hidden;
+    font-family: 'Comic Sans MS','Chalkboard SE','Marker Felt','Segoe UI','Trebuchet MS',sans-serif;
+    display:flex;
+  }
+
+  /* ── Sidebar tree ── */
+  .sidebar {
+    width: var(--sidebar-w); min-width: var(--sidebar-w); height:100vh;
+    background: rgba(255,255,255,0.82); border-right:1px solid rgba(0,0,0,0.08);
+    display:flex; flex-direction:column; z-index:20; overflow-y:auto;
+    backdrop-filter: blur(4px);
+    transition: transform .3s ease;
+  }
+  .sidebar-header {
+    padding:1.1rem 1rem .8rem; border-bottom:1px solid rgba(0,0,0,0.08);
+    font-size:1.05rem; font-weight:bold; cursor:pointer; display:flex; gap:.4rem; align-items:center;
+    flex-shrink:0;
+  }
+  .sidebar-header .ticker { color:var(--sky); }
+  .tree { flex:1; padding:.5rem 0; overflow-y:auto; }
+  .tree-node {
+    padding:.5rem .8rem .5rem 1rem; cursor:pointer; display:flex; align-items:center; gap:.45rem;
+    font-size:.86rem; transition: background .15s; border-left:3px solid transparent;
+    user-select:none; color:var(--ink);
+  }
+  .tree-node:hover { background:rgba(79,157,232,0.1); }
+  .tree-node.active { border-left-color: var(--amber); background:rgba(255,217,61,0.14); }
+  .tree-node .arrow { font-size:.65rem; width:12px; text-align:center; flex-shrink:0; transition:transform .2s; color:var(--ink-soft); }
+  .tree-node .arrow.open { transform:rotate(90deg); }
+  .tree-node .dot { width:11px; height:11px; border-radius:50%; flex-shrink:0; }
+  .tree-node .badge {
+    margin-left:auto; font-size:.68rem; background:rgba(78,205,196,0.2); color:var(--teal);
+    border-radius:999px; padding:.05rem .5rem; flex-shrink:0;
+  }
+  .tree-children { overflow:hidden; max-height:0; transition:max-height .3s ease; }
+  .tree-children.open { max-height:600px; }
+  .tree-children .tree-node { padding-left:2.2rem; font-size:.8rem; }
+  .tree-leaf .st {
+    margin-left:auto; font-size:.72rem; width:1.1rem; text-align:center; flex-shrink:0;
+  }
+  .st.good { color:var(--green); }
+  .st.bad { color:var(--red); }
+  .st.slow { color:var(--amber); }
+
+  /* ── Main column ── */
+  .main { flex:1; display:flex; flex-direction:column; position:relative; z-index:5; min-width:0; }
+  .topbar {
+    padding:.6rem 1.1rem; display:flex; align-items:center; gap:.8rem; flex-shrink:0;
+    background:rgba(255,255,255,0.6); border-bottom:1px solid rgba(0,0,0,0.08);
+  }
+  .topbar .app-title { font-size:1.05rem; font-weight:bold; display:flex; gap:.4rem; align-items:center; }
+  .topbar .spacer { flex:1; }
+  .score-chip {
+    background:#fff; border:2px solid var(--sunny); color:var(--ink); border-radius:999px;
+    padding:.3rem .9rem; font-size:.9rem; font-weight:bold; box-shadow:0 2px 8px rgba(0,0,0,0.08);
+  }
+  .mute-btn {
+    background:#fff; border:2px solid rgba(0,0,0,0.12); border-radius:999px; cursor:pointer;
+    font-size:1rem; padding:.25rem .6rem; font-family:inherit;
+  }
+  .mute-btn:hover { border-color:var(--sky); }
+  .progress-track {
+    height:8px; border-radius:99px; background:rgba(0,0,0,0.08); overflow:hidden; flex:1; max-width:260px;
+  }
+  .progress-fill { height:100%; width:0%; background:linear-gradient(90deg,var(--teal),var(--sky)); border-radius:99px; transition:width .4s ease; }
+
+  /* ── Stage / views ── */
+  .stage { flex:1; display:flex; justify-content:center; align-content:center; padding:1.4rem; overflow:auto; min-height:0; }
+  .card {
+    background:var(--panel); border-radius:22px; box-shadow:0 14px 44px rgba(45,52,54,0.16);
+    width:100%; max-width:720px; padding:1.8rem 2rem 2rem; position:relative;
+    border:1px solid rgba(0,0,0,0.05); margin:auto;
+  }
+
+  /* Intro */
+  .intro { text-align:center; }
+  .intro .big-emoji { font-size:4rem; animation: bob 3s ease-in-out infinite; display:inline-block; }
+  .intro h1 { font-size:2rem; margin:.4rem 0 .3rem; background:linear-gradient(135deg,var(--sky),var(--violet)); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
+  .intro .sub { color:var(--ink-soft); margin-bottom:1.2rem; }
+  .intro .meta-chip { color:var(--ink-soft); font-size:.9rem; margin-bottom:1.4rem; }
+  .big-btn {
+    font-family:inherit; font-size:1.15rem; font-weight:bold; color:#fff; cursor:pointer;
+    background:linear-gradient(135deg,var(--green),#27ae60); border:none; border-radius:999px;
+    padding:.85rem 2.2rem; box-shadow:0 6px 18px rgba(46,204,113,0.4); transition:transform .15s, box-shadow .15s;
+  }
+  .big-btn:hover { transform:translateY(-2px); }
+  .big-btn.ghost { background:#fff; color:var(--ink); box-shadow:0 2px 8px rgba(0,0,0,0.1); border:2px solid rgba(0,0,0,0.1); margin-left:.7rem; }
+  .ghost-row { margin-top:1.1rem; display:flex; justify-content:center; gap:.4rem; flex-wrap:wrap; }
+  .hint-line { font-size:.82rem; color:var(--ink-soft); margin-top:1rem; }
+
+  /* Question */
+  .q-head { display:flex; justify-content:space-between; align-items:center; gap:.6rem; flex-wrap:wrap; }
+  .q-progress { font-size:.82rem; color:var(--ink-soft); font-weight:bold; padding:.2rem 0; }
+  .timer-wrap { position:relative; width:74px; height:74px; flex-shrink:0; }
+  .timer-wrap svg { width:74px; height:74px; transform:rotate(-90deg); }
+  .timer-wrap .circle-bg { fill:none; stroke:rgba(0,0,0,0.08); stroke-width:7; }
+  .timer-wrap .circle-fg { fill:none; stroke:var(--sky); stroke-width:7; stroke-linecap:round; }
+  .timer-wrap .t-count {
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    font-size:1.5rem; font-weight:bold; color:var(--ink);
+  }
+  .timer-wrap.low .circle-fg { stroke:var(--red); }
+  .timer-wrap.low .t-count { color:var(--red); }
+  .q-text { font-size:1.35rem; line-height:1.45; margin:.7rem 0 1rem; font-weight:bold; }
+  .qimg-wrap { text-align:center; margin:.2rem 0 1rem; }
+  .qimg-wrap img.qimg {
+    max-width:100%; max-height:240px; border-radius:14px; object-fit:contain;
+    border:1px solid rgba(0,0,0,0.08);
+  }
+  .qimg-wrap .emoji-big { font-size:4.2rem; animation: pop 0.5s ease; }
+  .qimg-wrap .caption { font-size:.78rem; color:var(--ink-soft); margin-top:.35rem; }
+
+  .options { display:flex; flex-direction:column; gap:.7rem; }
+  .opt {
+    display:flex; align-items:center; gap:.8rem; width:100%; text-align:left;
+    font-family:inherit; font-size:1.02rem; color:var(--ink); cursor:pointer;
+    background:#f7fbfc; border:2px solid rgba(0,0,0,0.08); border-radius:14px;
+    padding:.72rem 1rem; min-height:48px; transition:border-color .15s, background .15s, transform .1s;
+    position:relative; overflow:hidden;
+  }
+  .opt:hover { border-color:var(--sky); background:#eef6ff; transform:translateY(-1px); }
+  .opt .key {
+    width:30px; height:30px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center;
+    background:#fff; border:2px solid rgba(0,0,0,0.14); font-size:.9rem; font-weight:bold; color:var(--ink-soft);
+  }
+  .opt.correct { border-color:var(--green); background:#eafaf1; }
+  .opt.correct .key { border-color:var(--green); color:var(--green); background:#d5f5e3; }
+  .opt.wrong-chosen { border-color:var(--red); background:#fdecea; }
+  .opt.wrong-chosen .key { border-color:var(--red); color:var(--red); background:#fadbd8; }
+  .opt.dim { opacity:.55; }
+  .opt .mark { margin-left:auto; font-size:1.1rem; }
+
+  /* Reveal banner */
+  .reveal-banner {
+    margin-top:1rem; border-radius:14px; padding:.8rem 1rem; font-size:1.02rem; font-weight:bold;
+    display:flex; gap:.6rem; align-items:center; animation: slideUp .35s ease both;
+  }
+  .reveal-banner.good { background:#eafaf1; color:#1e8449; }
+  .reveal-banner.bad { background:#fdecea; color:#c0392b; }
+  .reveal-banner.slow { background:#fef5e7; color:#b9770e; }
+  .reveal-exp { margin-top:.6rem; background:#f4f8fa; border-radius:12px; padding:.8rem 1rem; font-size:.95rem; color:var(--ink-soft); line-height:1.5; }
+  .reveal-exp b { color:var(--ink); }
+  .next-row { display:flex; align-items:center; justify-content:space-between; gap:.6rem; }
+  .pts-gain { font-weight:bold; font-size:1rem; }
+  .pts-gain.gain { color:var(--green); }
+  .pts-gain.none { color:var(--ink-soft); }
+  .next-btn {
+    font-family:inherit; font-size:1.02rem; font-weight:bold; cursor:pointer; color:#fff;
+    background:linear-gradient(135deg,var(--sky),#2e86de); border:none; border-radius:999px;
+    padding:.7rem 1.7rem; box-shadow:0 4px 14px rgba(79,157,232,0.4); transition:transform .15s;
+  }
+  .next-btn:hover { transform:translateY(-2px); }
+
+  .q-foot { display:flex; justify-content:center; margin-top:1rem; }
+  .speak-btn {
+    font-family:inherit; font-size:.9rem; color:var(--ink-soft); cursor:pointer; background:none;
+    border:1px solid rgba(0,0,0,0.1); border-radius:999px; padding:.35rem 1rem;
+  }
+  .speak-btn:hover { border-color:var(--sky); color:var(--sky); }
+
+  /* Results */
+  .results { text-align:center; }
+  .results h2 { font-size:1.7rem; margin-bottom:.3rem; }
+  .results .sub { color:var(--ink-soft); margin-bottom:1rem; }
+  .ring-wrap { width:150px; height:150px; margin:0 auto .6rem; position:relative; }
+  .ring-wrap svg { width:150px; height:150px; transform:rotate(-90deg); }
+  .ring-wrap .rbg { fill:none; stroke:rgba(0,0,0,0.08); stroke-width:12; }
+  .ring-wrap .rfg { fill:none; stroke:url(#gradA); stroke-width:12; stroke-linecap:round;
+    stroke-dasharray:283; stroke-dashoffset:283; transition:stroke-dashoffset 1s ease; }
+  .ring-wrap .rscore {
+    position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
+  }
+  .ring-wrap .rscore .n { font-size:2rem; font-weight:bold; }
+  .ring-wrap .rscore .pts { font-size:.8rem; color:var(--ink-soft); }
+  .stars { font-size:1.9rem; letter-spacing:.15rem; margin:.2rem 0 .9rem; }
+  .review { text-align:left; margin:1rem 0; }
+  .review-row { display:flex; gap:.7rem; padding:.6rem .4rem; border-bottom:1px solid rgba(0,0,0,0.06); font-size:.86rem; align-items:flex-start; }
+  .review-row .qi { font-weight:bold; color:var(--ink-soft); min-width:1.6rem; }
+  .review-row .qbody { flex:1; }
+  .review-row .qbody .qq { font-weight:bold; margin-bottom:.15rem; }
+  .review-row .qbody .aa { color:var(--ink-soft); }
+  .review-row .pts { font-weight:bold; flex-shrink:0; }
+  .review-row .pts.gain { color:var(--green); }
+  .review-row .pts.none { color:var(--ink-soft); }
+
+  /* Confetti */
+  #confetti { position:fixed; inset:0; pointer-events:none; z-index:200; overflow:hidden; }
+  .confetti {
+    position:absolute; top:-3vh; width:12px; height:12px; border-radius:2px;
+    animation: confetti-fall linear forwards;
+  }
+
+  /* Hamburger / overlay (mobile) */
+  .hamburger { display:none; position:fixed; top:.7rem; left:.7rem; z-index:40;
+    background:#fff; border:1px solid rgba(0,0,0,0.15); border-radius:10px;
+    padding:.35rem .65rem; font-size:1.25rem; cursor:pointer; font-family:inherit; }
+  .overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:19; }
+  .overlay.open { display:block; }
+
+  /* Keyframes */
+  @keyframes bob { 0%,100%{ transform:translateY(0);} 50%{ transform:translateY(-8px);} }
+  @keyframes pop { 0%{ transform:scale(0.4); opacity:0;} 100%{ transform:scale(1); opacity:1;} }
+  @keyframes slideUp { from{ opacity:0; transform:translateY(14px);} to{ opacity:1; transform:translateY(0);} }
+  @keyframes cardIn { from{ opacity:0; transform:translateY(20px) scale(0.97);} to{ opacity:1; transform:none;} }
+  @keyframes confetti-fall { to { transform:translateY(108vh) rotate(var(--rx,180deg)); opacity:.9; } }
+  .card-in { animation:cardIn .35s ease both; }
+
+  @media (max-width:768px) {
+    .sidebar { position:fixed; left:0; top:0; bottom:0; transform:translateX(-100%); z-index:100; box-shadow:0 0 40px rgba(0,0,0,0.2); }
+    .sidebar.open { transform:translateX(0); }
+    .hamburger { display:block; }
+    .card { padding:1.4rem 1.2rem 1.6rem; }
+    .q-text { font-size:1.15rem; }
+  }
+</style>
+</head>
+<body>
+
+<div id="confetti"></div>
+
+<button class="hamburger" id="hamburger">☰</button>
+<div class="overlay" id="overlay"></div>
+
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header" id="sidebar-home"><span class="ticker">🧠</span> <span id="side-title">App Development Quiz</span></div>
+  <div class="tree" id="tree"></div>
+</aside>
+
+<main class="main">
+  <div class="topbar">
+    <span class="app-title"><span>🧠</span><span id="top-title" title="App Development Quiz">App Development Quiz</span></span>
+    <span class="spacer"></span>
+    <div class="progress-track" title="Progress"><div class="progress-fill" id="progress-fill"></div></div>
+    <span class="score-chip" id="score-chip">⭐ Score: 0</span>
+    <button class="mute-btn" id="mute-btn" title="Toggle read-aloud (TTS)">🔊</button>
+  </div>
+  <div class="stage" id="stage"></div>
+</main>
+
+<script type="application/json" id="quiz-data">{
+ "title": "App Development",
+ "emoji": "📱",
+ "sections": [
+  {
+   "id": "what-is-an-app",
+   "title": "What is an App?",
+   "emoji": "📱",
+   "questions": [
+    {
+     "id": "app-development-p1-q1",
+     "section": "What is an App?",
+     "question": "What is an app?",
+     "options": [
+      "A software program made for mobile phones and tablets",
+      "A type of mobile phone",
+      "A part of the phone's screen",
+      "A piece of hardware inside a phone"
+     ],
+     "correctIndex": 0,
+     "explanation": "An app is a software program built for hand-held smart devices to do personal and professional tasks.",
+     "image": {
+      "type": "svg",
+      "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1NjAgMzIwIiB3aWR0aD0iNTYwIiBoZWlnaHQ9IjMyMCIgZm9udC1mYW1pbHk9IlZlcmRhbmEsICdEZWphVnUgU2FucycsICdTZWdvZSBVSScsIHNhbnMtc2VyaWYiPjxyZWN0IHdpZHRoPSI1NjAiIGhlaWdodD0iMzIwIiBmaWxsPSIjZWFmNmZmIi8+PHRleHQgeD0iMjgwIiB5PSIzNiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1zaXplPSIxOSIgZm9udC13ZWlnaHQ9ImJvbGQiIGZpbGw9IiMyZjNhNTIiPkFuIGFwcCBsaXZlcyBvbiB5b3VyIHBob25lPC90ZXh0PjxyZWN0IHg9IjIwNSIgeT0iNTIiIHdpZHRoPSIxNTAiIGhlaWdodD0iMjM2IiByeD0iMjAiIGZpbGw9IiMyZjNhNTIiIHN0cm9rZT0iIzJmM2E1MiIgc3Ryb2tlLXdpZHRoPSI0Ii8+PHJlY3QgeD0iMjEzIiB5PSI3NCIgd2lkdGg9IjEzNCIgaGVpZ2h0PSIxOTIiIHJ4PSI5IiBmaWxsPSIjZmZmZmZmIi8+PHJlY3QgeD0iMjYzIiB5PSI2MSIgd2lkdGg9IjM0IiBoZWlnaHQ9IjYiIHJ4PSIzIiBmaWxsPSIjYzlkNGUzIi8+PGNpcmNsZSBjeD0iMjM3IiBjeT0iMTA0IiByPSIxNiIgZmlsbD0iIzNhYTBmZiIgc3Ryb2tlPSIjMmYzYTUyIiBzdHJva2Utd2lkdGg9IjMiLz48dGV4dCB4PSIyMzciIHk9IjEwOS40NCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1zaXplPSIxNi44IiBmb250LXdlaWdodD0iYm9sZCIgZmlsbD0iI2ZmZmZmZiI+8J+TsTwvdGV4dD48Y2lyY2xlIGN4PSIyODEiIGN5PSIxMDQiIHI9IjE2IiBmaWxsPSIjM2VjNDZiIiBzdHJva2U9IiMyZjNhNTIiIHN0cm9rZS13aWR0aD0iMyIvPjx0ZXh0IHg9IjI4MSIgeT0iMTA5LjQ0IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXNpemU9IjE2LjgiIGZvbnQtd2VpZ2h0PSJib2xkIiBmaWxsPSIjZmZmZmZmIj7wn46uPC90ZXh0PjxjaXJjbGUgY3g9IjMyNSIgY3k9IjEwNCIgcj0iMTYiIGZpbGw9IiNmZmIwMjAiIHN0cm9rZT0iIzJmM2E1MiIgc3Ryb2tlLXdpZHRoPSIzIi8+PHRleHQgeD0iMzI1IiB5PSIxMDkuNDQiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtc2l6ZT0iMTYuOCIgZm9udC13ZWlnaHQ9ImJvbGQiIGZpbGw9IiNmZmZmZmYiPvCflJc8L3RleHQ+PGNpcmNsZSBjeD0iMjM3IiBjeT0iMTU0IiByPSIxNiIgZmlsbD0iI2ZmNmI2YiIgc3Ryb2tlPSIjMmYzYTUyIiBzdHJva2Utd2lkdGg9IjMiLz48dGV4dCB4PSIyMzciIHk9IjE1OS40NCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1zaXplPSIxNi44IiBmb250LXdlaWdodD0iYm9sZCIgZmlsbD0iI2ZmZmZmZiI+8J+SrDwvdGV4dD48Y2lyY2xlIGN4PSIyODEiIGN5PSIxNTQiIHI9IjE2IiBmaWxsPSIjOWI1ZGU1IiBzdHJva2U9IiMyZjNhNTIiIHN0cm9rZS13aWR0aD0iMyIvPjx0ZXh0IHg9IjI4MSIgeT0iMTU5LjQ0IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXNpemU9IjE2LjgiIGZvbnQtd2VpZ2h0PSJib2xkIiBmaWxsPSIjZmZmZmZmIj7wn5SNPC90ZXh0PjxjaXJjbGUgY3g9IjMyNSIgY3k9IjE1NCIgcj0iMTYiIGZpbGw9IiMyZWM0YjYiIHN0cm9rZT0iIzJmM2E1MiIgc3Ryb2tlLXdpZHRoPSIzIi8+PHRleHQgeD0iMzI1IiB5PSIxNTkuNDQiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtc2l6ZT0iMTYuOCIgZm9udC13ZWlnaHQ9ImJvbGQiIGZpbGw9IiNmZmZmZmYiPvCfk7c8L3RleHQ+PGNpcmNsZSBjeD0iMjM3IiBjeT0iMjA0IiByPSIxNiIgZmlsbD0iI2ZmN2FiOCIgc3Ryb2tlPSIjMmYzYTUyIiBzdHJva2Utd2lkdGg9IjMiLz48dGV4dCB4PSIyMzciIHk9IjIwOS40NCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1zaXplPSIxNi44IiBmb250LXdlaWdodD0iYm9sZCIgZmlsbD0iI2ZmZmZmZiI+8J+TsTwvdGV4dD48Y2lyY2xlIGN4PSIyODEiIGN5PSIyMDQiIHI9IjE2IiBmaWxsPSIjM2VjNDZiIiBzdHJva2U9IiMyZjNhNTIiIHN0cm9rZS13aWR0aD0iMyIvPjx0ZXh0IHg9IjI4MSIgeT0iMjA5LjQ0IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXNpemU9IjE2LjgiIGZvbnQtd2VpZ2h0PSJib2xkIiBmaWxsPSIjZmZmZmZmIj7inIU8L3RleHQ+PGNpcmNsZSBjeD0iMzI1IiBjeT0iMjA0IiByPSIxNiIgZmlsbD0iIzNhYTBmZiIgc3Ryb2tlPSIjMmYzYTUyIiBzdHJva2Utd2lkdGg9IjMiLz48dGV4dCB4PSIzMjUiIHk9IjIwOS40NCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1zaXplPSIxNi44IiBmb250LXdlaWdodD0iYm9sZCIgZmlsbD0iI2ZmZmZmZiI+8J+TjTwvdGV4dD48dGV4dCB4PSIyODAiIHk9IjI3NCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1zaXplPSIxMyIgZm9udC13ZWlnaHQ9ImJvbGQiIGZpbGw9IiMyZjNhNTIiPkFwcHM8L3RleHQ+PHRleHQgeD0iNTgiIHk9IjEzMCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1zaXplPSI0NiIgZm9udC13ZWlnaHQ9ImJvbGQiIGZpbGw9IiMyZjNhNTIiPvCfk7E8L3RleHQ+PHRleHQgeD0iNTgiIHk9IjE2MCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1zaXplPSIxNCIgZm9udC13ZWlnaHQ9ImJvbGQiIGZpbGw9IiMyZjNhNTIiPkEgcGhvbmUgaXM8L3RleHQ+PHRleHQgeD0iNTgiIHk9IjE4MCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1zaXplPSIxNCIgZm9udC13ZWlnaHQ9ImJvbGQiIGZpbGw9IiMyZjNhNTIiPmhhcmR3YXJlIHlvdTwvdGV4dD48dGV4dCB4PSI1OCIgeT0iMjAwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXNpemU9IjE0IiBmb250LXdlaWdodD0iYm9sZCIgZmlsbD0iIzJmM2E1MiI+Y2FuIHRvdWNoLjwvdGV4dD48dGV4dCB4PSI0NjIiIHk9IjEzMCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1zaXplPSI0NiIgZm9udC13ZWlnaHQ9ImJvbGQiIGZpbGw9IiMyZjNhNTIiPvCfkrs8L3RleHQ+PHRleHQgeD0iNDYyIiB5PSIxNjAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtc2l6ZT0iMTQiIGZvbnQtd2VpZ2h0PSJib2xkIiBmaWxsPSIjMmYzYTUyIj5BbiBhcHAgaXM8L3RleHQ+PHRleHQgeD0iNDYyIiB5PSIxODAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtc2l6ZT0iMTQiIGZvbnQtd2VpZ2h0PSJib2xkIiBmaWxsPSIjMmYzYTUyIj5zb2Z0d2FyZSB5b3U8L3RleHQ+PHRleHQgeD0iNDYyIiB5PSIyMDAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtc2l6ZT0iMTQiIGZvbnQtd2VpZ2h0PSJib2xkIiBmaWxsPSIjMmYzYTUyIj5pbnN0YWxsIGFuZCBydW4uPC90ZXh0PjxwYXRoIGQ9Ik0xMjAgMTUwIEwxOTYgMTUwIiBzdHJva2U9IiMyZjNhNTIiIHN0cm9rZS13aWR0aD0iNCIgc3Ryb2tlLWRhc2hhcnJheT0iOCA3Ii8+PHBhdGggZD0iTTM2NCAxNTAgTDQ0MCAxNTAiIHN0cm9rZT0iIzJmM2E1MiIgc3Ryb2tlLXdpZHRoPSI0IiBzdHJva2UtZGFzaGFycmF5PSI4IDciLz48L3N2Zz4=",
+      "alt": "A phone screen full of app icons",
+      "caption": "A phone screen full of app icons"
+     },
+     "imageNote": "A smartphone home screen showing a grid of colorful app icons with the label 'Apps'."
+    },
+    {
+     "id": "app-development-p1-q2",
+     "section": "What is an App?",
+     "question": "The short word 'app' comes from which full word?",
+     "options": [
+      "A mobile phone",
+      "An application",
+      "A computer game",
+      "A type of cable"
+     ],
+     "correctIndex": 1,
+     "explanation": "'App' is a modern short form of the word application.",
+     "image": null
+    },
+    {
+     "id": "app-development-p1-q3",
+     "section": "What is an App?",
+     "question": "The Google Play Store belongs to which company?",
+     "options": [
+      "Apple",
+      "Microsoft",
+      "Google",
+      "Samsung"
+     ],
+     "correctIndex": 2,
+     "explanation": "The three popular app stores are Google's Play Store, Apple's App Store and Microsoft's Windows Store.",
+     "image": {
+      "type": "svg",
+      "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1NjAgMzIwIiB3aWR0aD0iNTYwIiBoZWlnaHQ9IjMyMCIgZm9udC1mYW1pbHk9IlZlcmRhbmEsICdEZWphVnUgU2FucycsICdTZWdvZSBVSScsIHNhbnMtc2VyaWYiPjxyZWN0IHdpZHRoPSI1NjAiIGhlaWdodD0iMzIwIiBmaWxsPSIjZWFmNmZmIi8+PHRleHQgeD0iMjgwIiB5PSIzOCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1zaXplPSIxOSIgZm9udC13ZWlnaHQ9ImJvbGQiIGZpbGw9IiMyZjNhNTIiPlRoZSB0aHJlZSBwb3B1bGFyIGFwcCBzdG9yZXM8L3RleHQ+PHJlY3QgeD0iMzQiIHk9IjYyIiB3aWR0aD0iMTQ4IiBoZWlnaHQ9IjE1MCIgcng9IjE2IiBmaWxsPSIjZmZmZmZmIiBzdHJva2U9IiMyZjNhNTIiIHN0cm9rZS13aWR0aD0iNCIvPjxyZWN0IHg9IjM0IiB5PSI2MiIgd2lkdGg9IjE0OCIgaGVpZ2h0PSIxNTAiIHJ4PSIxNiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjM2VjNDZiIiBzdHJva2Utd2lkdGg9IjYiLz48Y2lyY2xlIGN4PSIxMDgiIGN5PSIxMDgiIHI9IjI3IiBmaWxsPSIjM2VjNDZiIiBzdHJva2U9IiMyZjNhNTIiIHN0cm9rZS13aWR0aD0iMyIvPjx0ZXh0IHg9IjEwOCIgeT0iMTE3LjE4IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXNpemU9IjI4LjM1IiBmb250LXdlaWdodD0iYm9sZCIgZmlsbD0iI2ZmZmZmZiI+8J+FvzwvdGV4dD48dGV4dCB4PSIxMDgiIHk9IjE1OCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1zaXplPSIxMiIgZm9udC13ZWlnaHQ9ImJvbGQiIGZpbGw9IiMyZjNhNTIiPkdvb2dsZcKgUGxhecKgU3RvcmU8L3RleHQ+PHRleHQgeD0iMTA4IiB5PSIxNzgiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtc2l6ZT0iMTMiIGZvbnQtd2VpZ2h0PSJib2xkIiBmaWxsPSIjM2VjNDZiIj5Hb29nbGU8L3RleHQ+PHJlY3QgeD0iNTgiIHk9IjE4NiIgd2lkdGg9IjEwMCIgaGVpZ2h0PSIyMiIgcng9IjExIiBmaWxsPSIjM2VjNDZiIiBmaWxsLW9wYWNpdHk9IjAuMTYiIHN0cm9rZT0iIzJmM2E1MiIgc3Ryb2tlLXdpZHRoPSIwIi8+PHRleHQgeD0iMTA4IiB5PSIyMDIiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtc2l6ZT0iMTIiIGZvbnQtd2VpZ2h0PSJib2xkIiBmaWxsPSIjM2VjNDZiIj5jb3JyZWN0PC90ZXh0PjxyZWN0IHg9IjIwMiIgeT0iNjIiIHdpZHRoPSIxNDgiIGhlaWdodD0iMTUwIiByeD0iMTYiIGZpbGw9IiNmZmZmZmYiIHN0cm9rZT0iIzJmM2E1MiIgc3Ryb2tlLXdpZHRoPSIzIi8+PGNpcmNsZSBjeD0iMjc2IiBjeT0iMTA4IiByPSIyNyIgZmlsbD0iI2M5ZDRlMyIgc3Ryb2tlPSIjMmYzYTUyIiBzdHJva2Utd2lkdGg9IjMiLz48dGV4dCB4PSIyNzYiIHk9IjExNy4xOCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1zaXplPSIyOC4zNSIgZm9udC13ZWlnaHQ9ImJvbGQiIGZpbGw9IiNmZmZmZmYiPvCfjY48L3RleHQ+PHRleHQgeD0iMjc2IiB5PSIxNTgiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtc2l6ZT0iMTIiIGZvbnQtd2VpZ2h0PSJib2xkIiBmaWxsPSIjMmYzYTUyIj5BcHBsZcKgQXBwwqBTdG9yZTwvdGV4dD48dGV4dCB4PSIyNzYiIHk9IjE3OCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1zaXplPSIxMyIgZm9udC13ZWlnaHQ9ImJvbGQiIGZpbGw9IiNjOWQ0ZTMiPkFwcGxlPC90ZXh0PjxyZWN0IHg9IjM3MCIgeT0iNjIiIHdpZHRoPSIxNDgiIGhlaWdodD0iMTUwIiByeD0iMTYiIGZpbGw9IiNmZmZmZmYiIHN0cm9rZT0iIzJmM2E1MiIgc3Ryb2tlLXdpZHRoPSIzIi8+PGNpcmNsZSBjeD0iNDQ0IiBjeT0iMTA4IiByPSIyNyIgZmlsbD0iIzNhYTBmZiIgc3Ryb2tlPSIjMmYzYTUyIiBzdHJva2Utd2lkdGg9IjMiLz48dGV4dCB4PSI0NDQiIHk9IjExNy4xOCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1zaXplPSIyOC4zNSIgZm9udC13ZWlnaHQ9ImJvbGQiIGZpbGw9IiNmZmZmZmYiPvCfqp88L3RleHQ+PHRleHQgeD0iNDQ0IiB5PSIxNTgiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtc2l6ZT0iMTIiIGZvbnQtd2VpZ2h0PSJib2xkIiBmaWxsPSIjMmYzYTUyIj5XaW5kb3dzwqBTdG9yZTwvdGV4dD48dGV4dCB4PSI0NDQiIHk9IjE3OCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1zaXplPSIxMyIgZm9udC13ZWlnaHQ9ImJvbGQiIGZpbGw9IiMzYWEwZmYiPk1pY3Jvc29mdDwvdGV4dD48dGV4dCB4PSIyODAiIHk9IjI1NCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1zaXplPSIxNSIgZm9udC13ZWlnaHQ9ImJvbGQiIGZpbGw9IiMyZjNhNTIiPkVhY2ggc3RvcmUgYmVsb25ncyB0byB0aGUgY29tcGFueSB0aGF0IG1hZGUgaXRzIHBob25lcy48L3RleHQ+PHRleHQgeD0iMjgwIiB5PSIyODIiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtc2l6ZT0iMTQiIGZvbnQtd2VpZ2h0PSJib2xkIiBmaWxsPSIjMmYzYTUyIj5UaGUgUGxheSBTdG9yZSB3aXRoIHRoZSB0cmlhbmdsZSBsb2dvIGlzIEdvb2dsZSdzLjwvdGV4dD48L3N2Zz4=",
+      "alt": "Google Play Store, Apple App Store, Windows Store",
+      "caption": "Google Play Store, Apple App Store, Windows Store"
+     },
+     "imageNote": "Three store logos side by side: Google Play Store, Apple App Store, Microsoft Windows Store."
+    },
+    {
+     "id": "app-development-p4-q1",
+     "section": "What is an App?",
+     "question": "Apps are mainly developed for which kind of devices?",
+     "options": [
+      "Hand-held smart devices",
+      "Desktop computers only",
+      "Television sets",
+      "Printers"
+     ],
+     "correctIndex": 0,
+     "explanation": "An app is a software program built mainly for hand-held devices like mobile phones and tablets.",
+     "image": null
+    }
+   ]
+  },
+  {
+   "id": "types-of-mobile-apps",
+   "title": "Types of Mobile Apps",
+   "emoji": "📱",
+   "questions": [
+    {
+     "id": "app-development-p1-q4",
+     "section": "Types of Mobile Apps",
+     "question": "A desktop application depends on which two things?",
+     "options": [
+      "The hardware and the operating system",
+      "Only the size of the screen",
+      "The weather outside",
+      "The age of the user"
+     ],
+     "correctIndex": 0,
+     "explanation": "Desktop apps are built for a particular computer or laptop and depend on its hardware and operating system.",
+     "image": null
+    },
+    {
+     "id": "app-development-p1-q5",
+     "section": "Types of Mobile Apps",
+     "question": "Where is a mobile app installed and run?",
+     "options": [
+      "On a remote server far away",
+      "Inside a web browser only",
+      "On the mobile device itself",
+      "On a pen drive"
+     ],
+     "correctIndex": 2,
+     "explanation": "Mobile apps are installed and run on the phone or tablet itself, like Camera, Calendar and Zoom.",
+     "image": null
+    },
+    {
+     "id": "app-development-p1-q6",
+     "section": "Types of Mobile Apps",
+     "question": "What does a web app need before it can work?",
+     "options": [
+      "A working Internet connection",
+      "A very powerful computer",
+      "A second mobile phone",
+      "A television"
+     ],
+     "correctIndex": 0,
+     "explanation": "A web app is stored on a remote server and works through a browser, so it needs the Internet.",
+     "image": {
+      "type": "svg",
+      "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1NjAgMzIwIiB3aWR0aD0iNTYwIiBoZWlnaHQ9IjMyMCIgZm9udC1mYW1pbHk9IlZlcmRhbmEsICdEZWphVnUgU2FucycsICdTZWdvZSBVSScsIHNhbnMtc2VyaWYiPjxyZWN0IHdpZHRoPSI1NjAiIGhlaWdodD0iMzIwIiBmaWxsPSIjZWFmNmZmIi8+PHRleHQgeD0iMjgwIiB5PSIzNCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1zaXplPSIxOSIgZm9udC13ZWlnaHQ9ImJvbGQiIGZpbGw9IiMyZjNhNTIiPkEgd2ViIGFwcCBuZWVkcyB0aGUgSW50ZXJuZXQ8L3RleHQ+PHJlY3QgeD0iMzAiIHk9Ijc0IiB3aWR0aD0iOTYiIGhlaWdodD0iMTUwIiByeD0iMTYiIGZpbGw9IiMyZjNhNTIiIHN0cm9rZT0iIzJmM2E1MiIgc3Ryb2tlLXdpZHRoPSIzIi8+PHJlY3QgeD0iMzciIHk9IjkwIiB3aWR0aD0iODIiIGhlaWdodD0iMTE2IiByeD0iNiIgZmlsbD0iI2ZmZmZmZiIvPjxjaXJjbGUgY3g9Ijc4IiBjeT0iMjE1IiByPSI0LjUiIGZpbGw9IiNmZmZmZmYiLz48cmVjdCB4PSI0NSIgeT0iMTA0IiB3aWR0aD0iNjYiIGhlaWdodD0iNDYiIHJ4PSI4IiBmaWxsPSIjZjRmOWZmIiBzdHJva2U9IiMyZjNhNTIiIHN0cm9rZS13aWR0aD0iMyIvPjx0ZXh0IHg9Ijc4IiB5PSIxMzMiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtc2l6ZT0iMjYiPvCfjJA8L3RleHQ+PHRleHQgeD0iNzgiIHk9IjI0NiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1zaXplPSIxNCIgZm9udC13ZWlnaHQ9ImJvbGQiIGZpbGw9IiMyZjNhNTIiPllvdXIgcGhvbmU8L3RleHQ+PGNpcmNsZSBjeD0iMjgyIiBjeT0iMTQ2IiByPSI0MiIgZmlsbD0iIzJlYzRiNiIgc3Ryb2tlPSIjMmYzYTUyIiBzdHJva2Utd2lkdGg9IjQiLz48dGV4dCB4PSIyODIiIHk9IjE0MSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1zaXplPSIzNCIgZm9udC13ZWlnaHQ9ImJvbGQiIGZpbGw9IiNmZmZmZmYiPvCfjJA8L3RleHQ+PHRleHQgeD0iMjgyIiB5PSIxNjQiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtc2l6ZT0iMTEiIGZvbnQtd2VpZ2h0PSJib2xkIiBmaWxsPSIjZmZmZmZmIj5JbnRlcm5ldDwvdGV4dD48cmVjdCB4PSI0MDgiIHk9Ijc2IiB3aWR0aD0iMTE4IiBoZWlnaHQ9IjQ0IiByeD0iOCIgZmlsbD0iIzliNWRlNSIgc3Ryb2tlPSIjMmYzYTUyIiBzdHJva2Utd2lkdGg9IjMiLz48cmVjdCB4PSI0MDgiIHk9IjEzMCIgd2lkdGg9IjExOCIgaGVpZ2h0PSI0NCIgcng9IjgiIGZpbGw9IiM5YjVkZTUiIHN0cm9rZT0iIzJmM2E1MiIgc3Ryb2tlLXdpZHRoPSIzIi8+PHJlY3QgeD0iNDA4IiB5PSIxODQiIHdpZHRoPSIxMTgiIGhlaWdodD0iNDQiIHJ4PSI4IiBmaWxsPSIjOWI1ZGU1IiBzdHJva2U9IiMyZjNhNTIiIHN0cm9rZS13aWR0aD0iMyIvPjxjaXJjbGUgY3g9IjQyOCIgY3k9Ijk4IiByPSI0LjUiIGZpbGw9IiNmZmZmZmYiLz48cmVjdCB4PSI0NDIiIHk9Ijk0LjUiIHdpZHRoPSI2NiIgaGVpZ2h0PSI3IiByeD0iMy41IiBmaWxsPSIjZmZmZmZmIiBmaWxsLW9wYWNpdHk9IjAuNzUiLz48Y2lyY2xlIGN4PSI0MjgiIGN5PSIxNTIiIHI9IjQuNSIgZmlsbD0iI2ZmZmZmZiIvPjxyZWN0IHg9IjQ0MiIgeT0iMTQ4LjUiIHdpZHRoPSI2NiIgaGVpZ2h0PSI3IiByeD0iMy41IiBmaWxsPSIjZmZmZmZmIiBmaWxsLW9wYWNpdHk9IjAuNzUiLz48Y2lyY2xlIGN4PSI0MjgiIGN5PSIyMDYiIHI9IjQuNSIgZmlsbD0iI2ZmZmZmZiIvPjxyZWN0IHg9IjQ0MiIgeT0iMjAyLjUiIHdpZHRoPSI2NiIgaGVpZ2h0PSI3IiByeD0iMy41IiBmaWxsPSIjZmZmZmZmIiBmaWxsLW9wYWNpdHk9IjAuNzUiLz48dGV4dCB4PSI0NjciIHk9IjI1MCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1zaXplPSIxNCIgZm9udC13ZWlnaHQ9ImJvbGQiIGZpbGw9IiMyZjNhNTIiPlJlbW90ZSBzZXJ2ZXI8L3RleHQ+PHRleHQgeD0iNDY3IiB5PSIyNjkiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtc2l6ZT0iMTIiIGZvbnQtd2VpZ2h0PSJib2xkIiBmaWxsPSIjMmYzYTUyIj5zdG9yZXMgdGhlIHdlYiBhcHA8L3RleHQ+PHBhdGggZD0iTTEzMiAxNDYgTDIzMiAxNDYiIHN0cm9rZT0iIzJmM2E1MiIgc3Ryb2tlLXdpZHRoPSI0IiBtYXJrZXItZW5kPSJ1cmwoI2EpIi8+PHBhdGggZD0iTTMzNCAxNDYgTDQwMiAxNDYiIHN0cm9rZT0iIzJmM2E1MiIgc3Ryb2tlLXdpZHRoPSI0IiBtYXJrZXItZW5kPSJ1cmwoI2EpIi8+PGRlZnM+PG1hcmtlciBpZD0iYSIgbWFya2VyV2lkdGg9IjkiIG1hcmtlckhlaWdodD0iOSIgcmVmWD0iNyIgcmVmWT0iNC41IiBvcmllbnQ9ImF1dG8iPjxwYXRoIGQ9Ik0wIDAgTDkgNC41IEwwIDkgeiIgZmlsbD0iIzJmM2E1MiIvPjwvbWFya2VyPjwvZGVmcz48cmVjdCB4PSIxMjAiIHk9IjI4MiIgd2lkdGg9IjMyMCIgaGVpZ2h0PSIyNiIgcng9IjEzIiBmaWxsPSIjZmZiMDIwIiBmaWxsLW9wYWNpdHk9IjAuMjIiIHN0cm9rZT0iIzJmM2E1MiIgc3Ryb2tlLXdpZHRoPSIwIi8+PHRleHQgeD0iMjgwIiB5PSIzMDAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtc2l6ZT0iMTQiIGZvbnQtd2VpZ2h0PSJib2xkIiBmaWxsPSIjOGE1YTAwIj5ObyBJbnRlcm5ldCA9IHRoZSB3ZWIgYXBwIGNhbm5vdCB3b3JrPC90ZXh0Pjwvc3ZnPg==",
+      "alt": "A web app travels from a server to your phone over the Internet",
+      "caption": "A web app travels from a server to your phone over the Internet"
+     },
+     "imageNote": "Simple diagram: phone with browser icon -> Internet cloud -> remote server holding the web app."
+    },
+    {
+     "id": "app-development-p1-q7",
+     "section": "Types of Mobile Apps",
+     "question": "An app made for iOS will not run on which platform?",
+     "options": [
+      "Android",
+      "iPhone",
+      "iPad",
+      "iOS"
+     ],
+     "correctIndex": 0,
+     "explanation": "Native apps are platform dependent, so an iOS app cannot run on Android or Windows.",
+     "image": {
+      "type": "svg",
+      "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1NjAgMzIwIiB3aWR0aD0iNTYwIiBoZWlnaHQ9IjMyMCIgZm9udC1mYW1pbHk9IlZlcmRhbmEsICdEZWphVnUgU2FucycsICdTZWdvZSBVSScsIHNhbnMtc2VyaWYiPjxyZWN0IHdpZHRoPSI1NjAiIGhlaWdodD0iMzIwIiBmaWxsPSIjZWFmNmZmIi8+PHRleHQgeD0iMjgwIiB5PSIzNCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1zaXplPSIxOSIgZm9udC13ZWlnaHQ9ImJvbGQiIGZpbGw9IiMyZjNhNTIiPk5hdGl2ZSBhcHBzIG1hdGNoIG9uZSBwbGF0Zm9ybSBvbmx5PC90ZXh0PjxyZWN0IHg9IjE2OCIgeT0iNjYiIHdpZHRoPSI5NiIgaGVpZ2h0PSIxNTAiIHJ4PSIxNiIgZmlsbD0iIzJmM2E1MiIgc3Ryb2tlPSIjMmYzYTUyIiBzdHJva2Utd2lkdGg9IjMiLz48cmVjdCB4PSIxNzUiIHk9IjgyIiB3aWR0aD0iODIiIGhlaWdodD0iMTE2IiByeD0iNiIgZmlsbD0iI2ZmZmZmZiIvPjxjaXJjbGUgY3g9IjIxNiIgY3k9IjIwNyIgcj0iNC41IiBmaWxsPSIjZmZmZmZmIi8+PHJlY3QgeD0iMTgzIiB5PSIxMjgiIHdpZHRoPSI2NiIgaGVpZ2h0PSI1MiIgcng9IjgiIGZpbGw9IiNmNGY5ZmYiIHN0cm9rZT0iIzJmM2E1MiIgc3Ryb2tlLXdpZHRoPSIzIi8+PHRleHQgeD0iMjE2IiB5PSIxNjQiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtc2l6ZT0iMjgiPvCfk7c8L3RleHQ+PHRleHQgeD0iMjE2IiB5PSIyMzgiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtc2l6ZT0iMTQiIGZvbnQtd2VpZ2h0PSJib2xkIiBmaWxsPSIjMmYzYTUyIj5pT1MgcGhvbmU8L3RleHQ+PHJlY3QgeD0iMzk2IiB5PSI2NiIgd2lkdGg9Ijk2IiBoZWlnaHQ9IjE1MCIgcng9IjE2IiBmaWxsPSIjMmYzYTUyIiBzdHJva2U9IiMyZjNhNTIiIHN0cm9rZS13aWR0aD0iMyIvPjxyZWN0IHg9IjQwMyIgeT0iODIiIHdpZHRoPSI4MiIgaGVpZ2h0PSIxMTYiIHJ4PSI2IiBmaWxsPSIjZmZmZmZmIi8+PGNpcmNsZSBjeD0iNDQ0IiBjeT0iMjA3IiByPSI0LjUiIGZpbGw9IiNmZmZmZmYiLz48cmVjdCB4PSI0MTEiIHk9IjEyOCIgd2lkdGg9IjY2IiBoZWlnaHQ9IjUyIiByeD0iOCIgZmlsbD0iI2Y0ZjlmZiIgc3Ryb2tlPSIjMmYzYTUyIiBzdHJva2Utd2lkdGg9IjMiLz48dGV4dCB4PSI0NDQiIHk9IjE2NiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1zaXplPSIzMCI+4p2MPC90ZXh0Pjx0ZXh0IHg9IjQ0NCIgeT0iMjM4IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXNpemU9IjE0IiBmb250LXdlaWdodD0iYm9sZCIgZmlsbD0iIzJmM2E1MiI+QW5kcm9pZCBwaG9uZTwvdGV4dD48dGV4dCB4PSIyMTYiIHk9IjI1MCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1zaXplPSIxMyIgZm9udC13ZWlnaHQ9ImJvbGQiIGZpbGw9IiMyZjNhNTIiPkNhbWVyYSBhcHAgcnVucyBoZXJlPC90ZXh0Pjx0ZXh0IHg9IjQ0NCIgeT0iMjUwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXNpemU9IjEzIiBmb250LXdlaWdodD0iYm9sZCIgZmlsbD0iI2ZmNmI2YiI+U2FtZSBhcHAgd2lsbCBub3QgcnVuPC90ZXh0PjxwYXRoIGQ9Ik0yODIgMTQxIEwzMzAgMTQxIiBzdHJva2U9IiNmZjZiNmIiIHN0cm9rZS13aWR0aD0iNSIvPjxwYXRoIGQ9Ik0zMzAgMTQxIGwtMTMgLTggbDAgMTYgeiIgZmlsbD0iI2ZmNmI2YiIvPjxyZWN0IHg9Ijk2IiB5PSIyNzIiIHdpZHRoPSIzNjgiIGhlaWdodD0iMzAiIHJ4PSIxNSIgZmlsbD0iI2ZmNmI2YiIgZmlsbC1vcGFjaXR5PSIwLjE0IiBzdHJva2U9IiMyZjNhNTIiIHN0cm9rZS13aWR0aD0iMCIvPjx0ZXh0IHg9IjI4MCIgeT0iMjkyIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXNpemU9IjE1IiBmb250LXdlaWdodD0iYm9sZCIgZmlsbD0iI2EwMmIyYiI+aU9TIGFuZCBBbmRyb2lkIGFyZSBkaWZmZXJlbnQgcGxhdGZvcm1zPC90ZXh0Pjwvc3ZnPg==",
+      "alt": "An iOS app will not run on an Android phone",
+      "caption": "An iOS app will not run on an Android phone"
+     },
+     "imageNote": "Two phones side by side, one labelled iOS with a Camera app, one labelled Android with an empty screen."
+    }
+   ]
+  },
+  {
+   "id": "categories-of-apps",
+   "title": "Categories of Apps",
+   "emoji": "🗂",
+   "questions": [
+    {
+     "id": "app-development-p1-q10",
+     "section": "Categories of Apps",
+     "question": "How much of the app store do gaming apps take up?",
+     "options": [
+      "More than 24%",
+      "Less than 2%",
+      "Almost half",
+      "Exactly 1%"
+     ],
+     "correctIndex": 0,
+     "explanation": "Gaming apps are today's most popular category, sharing more than 24% of the app store.",
+     "image": null
+    },
+    {
+     "id": "app-development-p1-q11",
+     "section": "Categories of Apps",
+     "question": "Where can children learn using educational apps?",
+     "options": [
+      "Only inside a classroom",
+      "Only on a desktop computer",
+      "From anywhere and at any time",
+      "Only during exams"
+     ],
+     "correctIndex": 2,
+     "explanation": "Educational apps like Khan Academy give children a platform to learn from anywhere and anytime.",
+     "image": null
+    },
+    {
+     "id": "app-development-p1-q12",
+     "section": "Categories of Apps",
+     "question": "What can e-commerce apps let you do?",
+     "options": [
+      "Buy or sell products online over the Internet",
+      "Watch movies for free",
+      "Print a school project",
+      "Cook food without ingredients"
+     ],
+     "correctIndex": 0,
+     "explanation": "E-commerce means buying or selling products on an online service, so Amazon, Bhim UPI and Blinkit are examples.",
+     "image": null
+    },
+    {
+     "id": "app-development-p4-q5",
+     "section": "Categories of Apps",
+     "question": "Which of these is NOT a gaming app?",
+     "options": [
+      "Talking Tom",
+      "Candy Crush",
+      "Angry Birds",
+      "Netflix"
+     ],
+     "correctIndex": 0,
+     "explanation": "Talking Tom is a talking pet app, while Candy Crush and Angry Birds are games.",
+     "image": {
+      "type": "svg",
+      "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1NjAgMzIwIiB3aWR0aD0iNTYwIiBoZWlnaHQ9IjMyMCIgZm9udC1mYW1pbHk9IlZlcmRhbmEsICdEZWphVnUgU2FucycsICdTZWdvZSBVSScsIHNhbnMtc2VyaWYiPjxyZWN0IHdpZHRoPSI1NjAiIGhlaWdodD0iMzIwIiBmaWxsPSIjZWFmNmZmIi8+PHRleHQgeD0iMjgwIiB5PSIzNCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1zaXplPSIxOSIgZm9udC13ZWlnaHQ9ImJvbGQiIGZpbGw9IiMyZjNhNTIiPldoaWNoIG9uZSBpcyBub3QgYSBnYW1lPzwvdGV4dD48cmVjdCB4PSIyMiIgeT0iNjAiIHdpZHRoPSIxMTYiIGhlaWdodD0iMTUyIiByeD0iMTYiIGZpbGw9IiNmZmZmZmYiIHN0cm9rZT0iIzJmM2E1MiIgc3Ryb2tlLXdpZHRoPSIzIi8+PGNpcmNsZSBjeD0iODAiIGN5PSIxMDgiIHI9IjMwIiBmaWxsPSIjZmY2YjZiIiBzdHJva2U9IiMyZjNhNTIiIHN0cm9rZS13aWR0aD0iMyIvPjx0ZXh0IHg9IjgwIiB5PSIxMTguMiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1zaXplPSIzMS41IiBmb250LXdlaWdodD0iYm9sZCIgZmlsbD0iI2ZmZmZmZiI+8J+YuzwvdGV4dD48dGV4dCB4PSI4MCIgeT0iMTYwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXNpemU9IjEzIiBmb250LXdlaWdodD0iYm9sZCIgZmlsbD0iIzJmM2E1MiI+VGFsa2luZyBUb208L3RleHQ+PHJlY3QgeD0iNDQiIHk9IjE3NCIgd2lkdGg9IjcyIiBoZWlnaHQ9IjI0IiByeD0iMTIiIGZpbGw9IiMzZWM0NmIiIGZpbGwtb3BhY2l0eT0iMC4xOCIgc3Ryb2tlPSIjMmYzYTUyIiBzdHJva2Utd2lkdGg9IjAiLz48dGV4dCB4PSI4MCIgeT0iMTkxIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXNpemU9IjEzIiBmb250LXdlaWdodD0iYm9sZCIgZmlsbD0iIzFkN2EzYyI+Z2FtZTwvdGV4dD48cmVjdCB4PSIxNTQiIHk9IjYwIiB3aWR0aD0iMTE2IiBoZWlnaHQ9IjE1MiIgcng9IjE2IiBmaWxsPSIjZmZmZmZmIiBzdHJva2U9IiMyZjNhNTIiIHN0cm9rZS13aWR0aD0iMyIvPjxjaXJjbGUgY3g9IjIxMiIgY3k9IjEwOCIgcj0iMzAiIGZpbGw9IiNmZmIwMjAiIHN0cm9rZT0iIzJmM2E1MiIgc3Ryb2tlLXdpZHRoPSIzIi8+PHRleHQgeD0iMjEyIiB5PSIxMTguMiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1zaXplPSIzMS41IiBmb250LXdlaWdodD0iYm9sZCIgZmlsbD0iI2ZmZmZmZiI+8J+NrTwvdGV4dD48dGV4dCB4PSIyMTIiIHk9IjE2MCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1zaXplPSIxMyIgZm9udC13ZWlnaHQ9ImJvbGQiIGZpbGw9IiMyZjNhNTIiPkNhbmR5IENydXNoPC90ZXh0PjxyZWN0IHg9IjE3NiIgeT0iMTc0IiB3aWR0aD0iNzIiIGhlaWdodD0iMjQiIHJ4PSIxMiIgZmlsbD0iIzNlYzQ2YiIgZmlsbC1vcGFjaXR5PSIwLjE4IiBzdHJva2U9IiMyZjNhNTIiIHN0cm9rZS13aWR0aD0iMCIvPjx0ZXh0IHg9IjIxMiIgeT0iMTkxIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXNpemU9IjEzIiBmb250LXdlaWdodD0iYm9sZCIgZmlsbD0iIzFkN2EzYyI+Z2FtZTwvdGV4dD48cmVjdCB4PSIyODYiIHk9IjYwIiB3aWR0aD0iMTE2IiBoZWlnaHQ9IjE1MiIgcng9IjE2IiBmaWxsPSIjZmZmZmZmIiBzdHJva2U9IiMyZjNhNTIiIHN0cm9rZS13aWR0aD0iMyIvPjxjaXJjbGUgY3g9IjM0NCIgY3k9IjEwOCIgcj0iMzAiIGZpbGw9IiMzZWM0NmIiIHN0cm9rZT0iIzJmM2E1MiIgc3Ryb2tlLXdpZHRoPSIzIi8+PHRleHQgeD0iMzQ0IiB5PSIxMTguMiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1zaXplPSIzMS41IiBmb250LXdlaWdodD0iYm9sZCIgZmlsbD0iI2ZmZmZmZiI+8J+QpjwvdGV4dD48dGV4dCB4PSIzNDQiIHk9IjE2MCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1zaXplPSIxMyIgZm9udC13ZWlnaHQ9ImJvbGQiIGZpbGw9IiMyZjNhNTIiPkFuZ3J5IEJpcmRzPC90ZXh0PjxyZWN0IHg9IjMwOCIgeT0iMTc0IiB3aWR0aD0iNzIiIGhlaWdodD0iMjQiIHJ4PSIxMiIgZmlsbD0iIzNlYzQ2YiIgZmlsbC1vcGFjaXR5PSIwLjE4IiBzdHJva2U9IiMyZjNhNTIiIHN0cm9rZS13aWR0aD0iMCIvPjx0ZXh0IHg9IjM0NCIgeT0iMTkxIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXNpemU9IjEzIiBmb250LXdlaWdodD0iYm9sZCIgZmlsbD0iIzFkN2EzYyI+Z2FtZTwvdGV4dD48cmVjdCB4PSI0MTgiIHk9IjYwIiB3aWR0aD0iMTE2IiBoZWlnaHQ9IjE1MiIgcng9IjE2IiBmaWxsPSIjZmZmZmZmIiBzdHJva2U9IiMyZjNhNTIiIHN0cm9rZS13aWR0aD0iMyIvPjxjaXJjbGUgY3g9IjQ3NiIgY3k9IjEwOCIgcj0iMzAiIGZpbGw9IiNmZjZiNmIiIHN0cm9rZT0iIzJmM2E1MiIgc3Ryb2tlLXdpZHRoPSIzIi8+PHRleHQgeD0iNDc2IiB5PSIxMTguMiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1zaXplPSIzMS41IiBmb250LXdlaWdodD0iYm9sZCIgZmlsbD0iI2ZmZmZmZiI+8J+ToDwvdGV4dD48dGV4dCB4PSI0NzYiIHk9IjE2MCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1zaXplPSIxMyIgZm9udC13ZWlnaHQ9ImJvbGQiIGZpbGw9IiMyZjNhNTIiPk5ldGZsaXg8L3RleHQ+PHJlY3QgeD0iNDI4IiB5PSIxNzQiIHdpZHRoPSI5NiIgaGVpZ2h0PSIyNCIgcng9IjEyIiBmaWxsPSIjZmY2YjZiIiBmaWxsLW9wYWNpdHk9IjAuMTgiIHN0cm9rZT0iIzJmM2E1MiIgc3Ryb2tlLXdpZHRoPSIwIi8+PHRleHQgeD0iNDc2IiB5PSIxOTEiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtc2l6ZT0iMTIiIGZvbnQtd2VpZ2h0PSJib2xkIiBmaWxsPSIjYTAyYjJiIj5ub3QgYSBnYW1lPC90ZXh0PjxyZWN0IHg9IjgwIiB5PSIyMzQiIHdpZHRoPSI0MDAiIGhlaWdodD0iMzAiIHJ4PSIxNSIgZmlsbD0iI2ZmNmI2YiIgZmlsbC1vcGFjaXR5PSIwLjEzIiBzdHJva2U9IiMyZjNhNTIiIHN0cm9rZS13aWR0aD0iMCIvPjx0ZXh0IHg9IjI4MCIgeT0iMjU0IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXNpemU9IjE0IiBmb250LXdlaWdodD0iYm9sZCIgZmlsbD0iI2EwMmIyYiI+TmV0ZmxpeCBpcyBmb3Igd2F0Y2hpbmcgc2hvd3MsIG5vdCBwbGF5aW5nLjwvdGV4dD48dGV4dCB4PSIyODAiIHk9IjI4OCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1zaXplPSIxMyIgZm9udC13ZWlnaHQ9ImJvbGQiIGZpbGw9IiMyZjNhNTIiPkdhbWVzOiBDYW5keSBDcnVzaCwgQW5ncnkgQmlyZHMuICBGdW4gcGV0OiBUYWxraW5nIFRvbS48L3RleHQ+PC9zdmc+",
+      "alt": "Talking Tom, Candy Crush, Angry Birds and Netflix",
+      "caption": "Talking Tom, Candy Crush, Angry Birds and Netflix"
+     },
+     "imageNote": "A row of four app icons: Talking Tom, Candy Crush, Angry Birds and Netflix."
+    }
+   ]
+  },
+  {
+   "id": "downloading-and-installing",
+   "title": "Downloading and Installing",
+   "emoji": "📢",
+   "questions": [
+    {
+     "id": "app-development-p2-q1",
+     "section": "Downloading and Installing the App",
+     "question": "What must you do first before you can use any app?",
+     "options": [
+      "Delete your old apps",
+      "Install it on your device",
+      "Give it a new name",
+      "Buy it from a shop"
+     ],
+     "correctIndex": 1,
+     "explanation": "An app is a software program, so you must install it on your device before using it.",
+     "image": null
+    },
+    {
+     "id": "app-development-p2-q2",
+     "section": "Downloading and Installing the App",
+     "question": "Which two app stores are the most commonly used?",
+     "options": [
+      "Google's Play Store and Apple's App Store",
+      "Apple's App Store and the Windows Store",
+      "Google's Play Store and the Nokia Store",
+      "The Amazon Store and Samsung Apps"
+     ],
+     "correctIndex": 0,
+     "explanation": "The book names Google's Play Store and Apple's App Store as the most used app stores.",
+     "image": null
+    },
+    {
+     "id": "app-development-p2-q3",
+     "section": "Downloading and Installing the App",
+     "question": "Why is Google's Play Store more popular?",
+     "options": [
+      "Its apps are completely free",
+      "Android devices have a huge market",
+      "It has more games",
+      "It downloads faster"
+     ],
+     "correctIndex": 1,
+     "explanation": "The Play Store is more popular because there is a huge market of Android devices.",
+     "image": null
+    },
+    {
+     "id": "app-development-p2-q4",
+     "section": "Downloading and Installing the App",
+     "question": "Which path correctly uninstalls an app on an Android mobile?",
+     "options": [
+      "Settings -> Apps Management -> Tap the App -> Uninstall",
+      "Play Store -> Tap the App -> Delete",
+      "Home Button -> Settings -> Uninstall All",
+      "Camera -> Apps -> Uninstall"
+     ],
+     "correctIndex": 0,
+     "explanation": "The text gives the steps Settings, Apps Management, tap the app, then Uninstall.",
+     "image": null
+    }
+   ]
+  },
+  {
+   "id": "app-inventor",
+   "title": "App Inventor",
+   "emoji": "🖥",
+   "questions": [
+    {
+     "id": "app-development-p2-q5",
+     "section": "Developing an App",
+     "question": "While developing an app, which quality should it have?",
+     "options": [
+      "It should be user friendly",
+      "It should be very heavy",
+      "It should show only ads",
+      "It should be paid"
+     ],
+     "correctIndex": 0,
+     "explanation": "The text says the app should have a unique idea, all relevant features and be user friendly.",
+     "image": null
+    },
+    {
+     "id": "app-development-p2-q6",
+     "section": "App Inventor",
+     "question": "Which organisation provides the free App Inventor tool?",
+     "options": [
+      "Microsoft",
+      "Massachusetts Institute of Technology (MIT)",
+      "Google",
+      "Apple"
+     ],
+     "correctIndex": 1,
+     "explanation": "App Inventor is a free app development tool provided by the Massachusetts Institute of Technology.",
+     "image": null
+    },
+    {
+     "id": "app-development-p2-q7",
+     "section": "App Inventor",
+     "question": "In App Inventor, which view is where you combine blocks to run the app?",
+     "options": [
+      "Design View",
+      "Block Editor View",
+      "Welcome View",
+      "Project View"
+     ],
+     "correctIndex": 1,
+     "explanation": "The Block Editor View is the place where blocks are combined to execute an application.",
+     "image": {
+      "type": "svg",
+      "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1NjAgMzIwIiB3aWR0aD0iNTYwIiBoZWlnaHQ9IjMyMCIgZm9udC1mYW1pbHk9IlZlcmRhbmEsICdEZWphVnUgU2FucycsICdTZWdvZSBVSScsIHNhbnMtc2VyaWYiPjxyZWN0IHdpZHRoPSI1NjAiIGhlaWdodD0iMzIwIiBmaWxsPSIjZWFmNmZmIi8+PHRleHQgeD0iMjgwIiB5PSIzNCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1zaXplPSIxOSIgZm9udC13ZWlnaHQ9ImJvbGQiIGZpbGw9IiMyZjNhNTIiPkFwcCBJbnZlbnRvciBoYXMgdHdvIHZpZXdzPC90ZXh0PjxyZWN0IHg9IjI4IiB5PSI1NCIgd2lkdGg9IjI0MCIgaGVpZ2h0PSIyMDAiIHJ4PSIxNCIgZmlsbD0iI2ZmZmZmZiIgc3Ryb2tlPSIjMmYzYTUyIiBzdHJva2Utd2lkdGg9IjMiLz48cmVjdCB4PSIyOCIgeT0iNTQiIHdpZHRoPSIyNDAiIGhlaWdodD0iMzQiIHJ4PSIxNCIgZmlsbD0iIzNhYTBmZiIgc3Ryb2tlPSIjMmYzYTUyIiBzdHJva2Utd2lkdGg9IjAiLz48cmVjdCB4PSIyOCIgeT0iNzQiIHdpZHRoPSIyNDAiIGhlaWdodD0iMTQiIGZpbGw9IiMzYWEwZmYiLz48dGV4dCB4PSIxNDgiIHk9Ijc4IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXNpemU9IjE1IiBmb250LXdlaWdodD0iYm9sZCIgZmlsbD0iI2ZmZmZmZiI+RGVzaWduIFZpZXc8L3RleHQ+PHJlY3QgeD0iNDYiIHk9IjEwNCIgd2lkdGg9Ijc0IiBoZWlnaHQ9IjI2IiByeD0iNyIgZmlsbD0iI2Y0ZjlmZiIgc3Ryb2tlPSIjMmYzYTUyIiBzdHJva2Utd2lkdGg9IjIiLz48dGV4dCB4PSI4MyIgeT0iMTIyIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXNpemU9IjEyIiBmb250LXdlaWdodD0iYm9sZCIgZmlsbD0iIzJmM2E1MiI+UGFsZXR0ZTwvdGV4dD48cmVjdCB4PSI0NiIgeT0iMTQwIiB3aWR0aD0iMjA0IiBoZWlnaHQ9Ijk2IiByeD0iNyIgZmlsbD0iI2Y0ZjlmZiIgc3Ryb2tlPSIjMmYzYTUyIiBzdHJva2Utd2lkdGg9IjIiLz48dGV4dCB4PSIxNDgiIHk9IjE1OCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1zaXplPSIxMiIgZm9udC13ZWlnaHQ9ImJvbGQiIGZpbGw9IiMyZjNhNTIiPlZpZXcgcGFuZTwvdGV4dD48cmVjdCB4PSI3MCIgeT0iMTcyIiB3aWR0aD0iNzAiIGhlaWdodD0iNDAiIHJ4PSI5IiBmaWxsPSIjZmZiMDIwIiBzdHJva2U9IiMyZjNhNTIiIHN0cm9rZS13aWR0aD0iMiIvPjx0ZXh0IHg9IjEwNSIgeT0iMTk3IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXNpemU9IjEyIiBmb250LXdlaWdodD0iYm9sZCIgZmlsbD0iIzJmM2E1MiI+QnV0dG9uPC90ZXh0PjxyZWN0IHg9IjI5MiIgeT0iNTQiIHdpZHRoPSIyNDAiIGhlaWdodD0iMjAwIiByeD0iMTQiIGZpbGw9IiNmZmZmZmYiIHN0cm9rZT0iIzJmM2E1MiIgc3Ryb2tlLXdpZHRoPSIzIi8+PHJlY3QgeD0iMjkyIiB5PSI1NCIgd2lkdGg9IjI0MCIgaGVpZ2h0PSIzNCIgcng9IjE0IiBmaWxsPSIjOWI1ZGU1IiBzdHJva2U9IiMyZjNhNTIiIHN0cm9rZS13aWR0aD0iMCIvPjxyZWN0IHg9IjI5MiIgeT0iNzQiIHdpZHRoPSIyNDAiIGhlaWdodD0iMTQiIGZpbGw9IiM5YjVkZTUiLz48dGV4dCB4PSI0MTIiIHk9Ijc4IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXNpemU9IjE1IiBmb250LXdlaWdodD0iYm9sZCIgZmlsbD0iI2ZmZmZmZiI+QmxvY2sgRWRpdG9yIFZpZXc8L3RleHQ+PHJlY3QgeD0iMzEwIiB5PSIxMDQiIHdpZHRoPSI3NCIgaGVpZ2h0PSIyNiIgcng9IjciIGZpbGw9IiNmNGY5ZmYiIHN0cm9rZT0iIzJmM2E1MiIgc3Ryb2tlLXdpZHRoPSIyIi8+PHRleHQgeD0iMzQ3IiB5PSIxMjIiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtc2l6ZT0iMTIiIGZvbnQtd2VpZ2h0PSJib2xkIiBmaWxsPSIjMmYzYTUyIj5CbG9ja3M8L3RleHQ+PHJlY3QgeD0iMzEwIiB5PSIxNDAiIHdpZHRoPSIyMDQiIGhlaWdodD0iOTYiIHJ4PSI3IiBmaWxsPSIjZjRmOWZmIiBzdHJva2U9IiMyZjNhNTIiIHN0cm9rZS13aWR0aD0iMiIvPjx0ZXh0IHg9IjQxMiIgeT0iMTU2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXNpemU9IjEyIiBmb250LXdlaWdodD0iYm9sZCIgZmlsbD0iIzJmM2E1MiI+V29ya3NwYWNlPC90ZXh0PjxyZWN0IHg9IjMyMiIgeT0iMTY2IiB3aWR0aD0iMTc4IiBoZWlnaHQ9IjI0IiByeD0iNSIgZmlsbD0iI2ZmYjAyMCIgc3Ryb2tlPSIjMmYzYTUyIiBzdHJva2Utd2lkdGg9IjIiLz48dGV4dCB4PSI0MTEiIHk9IjE4MyIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1zaXplPSIxMSIgZm9udC13ZWlnaHQ9ImJvbGQiIGZpbGw9IiMyZjNhNTIiPndoZW4gQnV0dG9uLkNsaWNrIGRvPC90ZXh0PjxyZWN0IHg9IjMzNCIgeT0iMTk0IiB3aWR0aD0iMTMwIiBoZWlnaHQ9IjI0IiByeD0iNSIgZmlsbD0iIzNlYzQ2YiIgc3Ryb2tlPSIjMmYzYTUyIiBzdHJva2Utd2lkdGg9IjIiLz48dGV4dCB4PSIzOTkiIHk9IjIxMSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1zaXplPSIxMSIgZm9udC13ZWlnaHQ9ImJvbGQiIGZpbGw9IiMyZjNhNTIiPnNldCBsYWJlbCB0bzwvdGV4dD48cmVjdCB4PSIxMjAiIHk9IjI3NCIgd2lkdGg9IjMyMCIgaGVpZ2h0PSIzMCIgcng9IjE1IiBmaWxsPSIjOWI1ZGU1IiBmaWxsLW9wYWNpdHk9IjAuMTYiIHN0cm9rZT0iIzJmM2E1MiIgc3Ryb2tlLXdpZHRoPSIwIi8+PHRleHQgeD0iMjgwIiB5PSIyOTQiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtc2l6ZT0iMTQiIGZvbnQtd2VpZ2h0PSJib2xkIiBmaWxsPSIjNWIyYTllIj5CbG9ja3MgYXJlIGpvaW5lZCBoZXJlIHRvIHJ1biB0aGUgYXBwPC90ZXh0Pjwvc3ZnPg==",
+      "alt": "Design View and Block Editor View side by side",
+      "caption": "Design View and Block Editor View side by side"
+     },
+     "imageNote": "Simple sketch of the App Inventor screen showing the Design View and the Block Editor View side by side."
+    },
+    {
+     "id": "app-development-p2-q8",
+     "section": "Setting up App Inventor",
+     "question": "What do you need before you can set up App Inventor?",
+     "options": [
+      "A Gmail account",
+      "A paid licence",
+      "A Play Store purchase",
+      "A second phone"
+     ],
+     "correctIndex": 0,
+     "explanation": "The text says we should have a Gmail account for setting up App Inventor.",
+     "image": null
+    }
+   ]
+  },
+  {
+   "id": "building-a-talking-app",
+   "title": "Building a Talking App",
+   "emoji": "🗣",
+   "questions": [
+    {
+     "id": "app-development-p2-q10",
+     "section": "Creating a Talking app",
+     "question": "How is the interface of the talking app designed?",
+     "options": [
+      "By choosing buttons, images or text boxes",
+      "By writing long codes in Notepad",
+      "By printing a picture",
+      "By recording a video call"
+     ],
+     "correctIndex": 0,
+     "explanation": "The text says we design the interface by choosing buttons, images or text boxes.",
+     "image": null
+    },
+    {
+     "id": "app-development-p3-q1",
+     "section": "Adding a Button",
+     "question": "How do you add a button to your app in App Inventor?",
+     "options": [
+      "Drag and drop a button from the Palette pane to the View pane",
+      "Type the word button in the Components pane",
+      "Click the Blocks button and search for Button",
+      "Choose Button from the Connect menu"
+     ],
+     "correctIndex": 0,
+     "explanation": "Buttons are dragged from the Palette pane and dropped into the View pane, like other screen components.",
+     "image": {
+      "type": "svg",
+      "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1NjAgMzIwIiB3aWR0aD0iNTYwIiBoZWlnaHQ9IjMyMCIgZm9udC1mYW1pbHk9IlZlcmRhbmEsICdEZWphVnUgU2FucycsICdTZWdvZSBVSScsIHNhbnMtc2VyaWYiPjxyZWN0IHdpZHRoPSI1NjAiIGhlaWdodD0iMzIwIiBmaWxsPSIjZWFmNmZmIi8+PHRleHQgeD0iMjgwIiB5PSIzMiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1zaXplPSIxOSIgZm9udC13ZWlnaHQ9ImJvbGQiIGZpbGw9IiMyZjNhNTIiPkRyYWcgYSBidXR0b24gZnJvbSBQYWxldHRlIHRvIFZpZXc8L3RleHQ+PHJlY3QgeD0iMjQiIHk9IjUwIiB3aWR0aD0iNTEyIiBoZWlnaHQ9IjE5MCIgcng9IjE2IiBmaWxsPSIjZmZmZmZmIiBzdHJva2U9IiMyZjNhNTIiIHN0cm9rZS13aWR0aD0iMyIvPjxyZWN0IHg9IjQwIiB5PSI2NiIgd2lkdGg9IjEwOCIgaGVpZ2h0PSIxNTgiIHJ4PSIxMCIgZmlsbD0iI2Y0ZjlmZiIgc3Ryb2tlPSIjMmYzYTUyIiBzdHJva2Utd2lkdGg9IjIiLz48dGV4dCB4PSI5NCIgeT0iODgiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtc2l6ZT0iMTMiIGZvbnQtd2VpZ2h0PSJib2xkIiBmaWxsPSIjMmYzYTUyIj5QYWxldHRlIHBhbmU8L3RleHQ+PHJlY3QgeD0iNTIiIHk9IjEwMiIgd2lkdGg9Ijg0IiBoZWlnaHQ9IjI0IiByeD0iNiIgZmlsbD0iI2ZmYjAyMCIgc3Ryb2tlPSIjMmYzYTUyIiBzdHJva2Utd2lkdGg9IjMiLz48dGV4dCB4PSI5NCIgeT0iMTE4IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXNpemU9IjEyIiBmb250LXdlaWdodD0iYm9sZCIgZmlsbD0iIzJmM2E1MiI+QnV0dG9uPC90ZXh0PjxyZWN0IHg9IjUyIiB5PSIxMzIiIHdpZHRoPSI4NCIgaGVpZ2h0PSIyNCIgcng9IjYiIGZpbGw9IiMzYWEwZmYiIHN0cm9rZT0iIzJmM2E1MiIgc3Ryb2tlLXdpZHRoPSIyIi8+PHRleHQgeD0iOTQiIHk9IjE0OCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1zaXplPSIxMiIgZm9udC13ZWlnaHQ9ImJvbGQiIGZpbGw9IiMyZjNhNTIiPkxhYmVsPC90ZXh0PjxyZWN0IHg9IjUyIiB5PSIxNjIiIHdpZHRoPSI4NCIgaGVpZ2h0PSIyNCIgcng9IjYiIGZpbGw9IiMyZWM0YjYiIHN0cm9rZT0iIzJmM2E1MiIgc3Ryb2tlLXdpZHRoPSIyIi8+PHRleHQgeD0iOTQiIHk9IjE3OCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1zaXplPSIxMiIgZm9udC13ZWlnaHQ9ImJvbGQiIGZpbGw9IiMyZjNhNTIiPkltYWdlPC90ZXh0PjxyZWN0IHg9IjUyIiB5PSIxOTIiIHdpZHRoPSI4NCIgaGVpZ2h0PSIyNCIgcng9IjYiIGZpbGw9IiM5YjVkZTUiIHN0cm9rZT0iIzJmM2E1MiIgc3Ryb2tlLXdpZHRoPSIyIi8+PHRleHQgeD0iOTQiIHk9IjIwOCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1zaXplPSIxMiIgZm9udC13ZWlnaHQ9ImJvbGQiIGZpbGw9IiMyZjNhNTIiPlRleHRCb3g8L3RleHQ+PHJlY3QgeD0iMTY0IiB5PSI2NiIgd2lkdGg9IjM1NiIgaGVpZ2h0PSIxNTgiIHJ4PSIxMCIgZmlsbD0iI2ZmZmZmZiIgc3Ryb2tlPSIjMmYzYTUyIiBzdHJva2Utd2lkdGg9IjIiLz48dGV4dCB4PSIzNDIiIHk9Ijg4IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXNpemU9IjEzIiBmb250LXdlaWdodD0iYm9sZCIgZmlsbD0iIzJmM2E1MiI+VmlldyBwYW5lPC90ZXh0PjxyZWN0IHg9IjE4NiIgeT0iMTA4IiB3aWR0aD0iMTEwIiBoZWlnaHQ9IjU2IiByeD0iOSIgZmlsbD0iI2ZmYjAyMCIgc3Ryb2tlPSIjMmYzYTUyIiBzdHJva2Utd2lkdGg9IjMiLz48dGV4dCB4PSIyNDEiIHk9IjE0MSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1zaXplPSIxNSIgZm9udC13ZWlnaHQ9ImJvbGQiIGZpbGw9IiMyZjNhNTIiPkJ1dHRvbjwvdGV4dD48cmVjdCB4PSIzMTYiIHk9IjEwOCIgd2lkdGg9IjExMCIgaGVpZ2h0PSI1NiIgcng9IjkiIGZpbGw9IiNmNGY5ZmYiIHN0cm9rZT0iIzJmM2E1MiIgc3Ryb2tlLXdpZHRoPSIyIi8+PHRleHQgeD0iMzcxIiB5PSIxNDEiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtc2l6ZT0iMTMiIGZvbnQtd2VpZ2h0PSJib2xkIiBmaWxsPSIjMmYzYTUyIj4oZW1wdHkpPC90ZXh0PjxwYXRoIGQ9Ik0xNDAgMTIwIEMxNTggOTYgMTY4IDkyIDE4NCA5NiIgc3Ryb2tlPSIlcyIgc3Ryb2tlLXdpZHRoPSI0IiBmaWxsPSJub25lIiBzdHJva2UtZGFzaGFycmF5PSI3IDYiIG1hcmtlci1lbmQ9InVybCgjZCkiLz48ZGVmcz48bWFya2VyIGlkPSJkIiBtYXJrZXJXaWR0aD0iOSIgbWFya2VySGVpZ2h0PSI5IiByZWZYPSI3IiByZWZZPSI0LjUiIG9yaWVudD0iYXV0byI+PHBhdGggZD0iTTAgMCBMOSA0LjUgTDAgOSB6IiBmaWxsPSIjZmY2YjZiIi8+PC9tYXJrZXI+PC9kZWZzPjx0ZXh0IHg9IjE2MCIgeT0iODQiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtc2l6ZT0iMTMiIGZvbnQtd2VpZ2h0PSJib2xkIiBmaWxsPSIjZmY2YjZiIj5kcmFnPC90ZXh0PjxyZWN0IHg9Ijg0IiB5PSIyNjIiIHdpZHRoPSIzOTIiIGhlaWdodD0iMjgiIHJ4PSIxNCIgZmlsbD0iIzNlYzQ2YiIgZmlsbC1vcGFjaXR5PSIwLjE2IiBzdHJva2U9IiMyZjNhNTIiIHN0cm9rZS13aWR0aD0iMCIvPjx0ZXh0IHg9IjI4MCIgeT0iMjgxIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXNpemU9IjE0IiBmb250LXdlaWdodD0iYm9sZCIgZmlsbD0iIzFkN2EzYyI+MS4gUGljayBpdCAgIDIuIERyYWcgICAzLiBEcm9wIGluIFZpZXcgcGFuZTwvdGV4dD48dGV4dCB4PSIyODAiIHk9IjMxMCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1zaXplPSIxMyIgZm9udC13ZWlnaHQ9ImJvbGQiIGZpbGw9IiMyZjNhNTIiPlRoZSBidXR0b24gdGhlbiBhcHBlYXJzIGluIHRoZSBDb21wb25lbnRzIHBhbmUgdG9vLjwvdGV4dD48L3N2Zz4=",
+      "alt": "Dragging a Button from the Palette pane to the View pane",
+      "caption": "Dragging a Button from the Palette pane to the View pane"
+     },
+     "imageNote": "Screenshot of App Inventor showing a Button dragged from the Palette pane into the View pane."
+    },
+    {
+     "id": "app-development-p3-q7",
+     "section": "Rename the Button",
+     "question": "In the example, what new name was given to the button?",
+     "options": [
+      "Button Two",
+      "Talking Me",
+      "Speak Now",
+      "Hello App"
+     ],
+     "correctIndex": 1,
+     "explanation": "The book renames the button to Talking Me by typing the name and clicking OK.",
+     "image": null
+    },
+    {
+     "id": "app-development-p3-q8",
+     "section": "Change the display name of button",
+     "question": "After renaming the button, what does the View pane still show on it?",
+     "options": [
+      "The new name Talking Me",
+      "Nothing at all",
+      "An error warning",
+      "The old text Text for Button1"
+     ],
+     "correctIndex": 3,
+     "explanation": "Renaming changes only the Components pane, so the button keeps showing Text for Button1.",
+     "image": null
+    }
+   ]
+  },
+  {
+   "id": "testing-the-app",
+   "title": "Testing the App",
+   "emoji": "️✅",
+   "questions": [
+    {
+     "id": "app-development-p3-q2",
+     "section": "Testing the App",
+     "question": "Which menu do you click to connect your Android device to App Inventor?",
+     "options": [
+      "Blocks menu",
+      "Connect menu",
+      "Designer menu",
+      "Share menu"
+     ],
+     "correctIndex": 1,
+     "explanation": "The Connect menu lets you link your Android phone or emulator to App Inventor.",
+     "image": null
+    },
+    {
+     "id": "app-development-p3-q3",
+     "section": "Testing the App",
+     "question": "Which option do you pick from the Connect drop-down list?",
+     "options": [
+      "New Project",
+      "Built-in Blocks",
+      "AI Companion",
+      "Rename"
+     ],
+     "correctIndex": 2,
+     "explanation": "The AI Companion option sets up the link with the MIT AI2 Companion app on your device.",
+     "image": null
+    },
+    {
+     "id": "app-development-p3-q4",
+     "section": "Testing the App",
+     "question": "How do you finish connecting your phone to the computer?",
+     "options": [
+      "Open MIT AI2 Companion and scan the QR code or type the code on screen",
+      "Press the OK button in the Components pane",
+      "Close the Block Editor window",
+      "Email the project to yourself"
+     ],
+     "correctIndex": 0,
+     "explanation": "MIT AI2 Companion on your device joins by scanning the QR code or typing the displayed code.",
+     "image": null
+    }
+   ]
+  },
+  {
+   "id": "block-editor",
+   "title": "Block Editor",
+   "emoji": "🧩",
+   "questions": [
+    {
+     "id": "app-development-p3-q10",
+     "section": "Block Editor",
+     "question": "Which part of the Block Editor handles Math, Text, Logic and Control?",
+     "options": [
+      "Backpack",
+      "Trash",
+      "Built-in Blocks",
+      "Workspace"
+     ],
+     "correctIndex": 2,
+     "explanation": "Built-in Blocks are the predefined blocks that perform operations like Math, Text, Logic and Control.",
+     "image": {
+      "type": "svg",
+      "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1NjAgMzIwIiB3aWR0aD0iNTYwIiBoZWlnaHQ9IjMyMCIgZm9udC1mYW1pbHk9IlZlcmRhbmEsICdEZWphVnUgU2FucycsICdTZWdvZSBVSScsIHNhbnMtc2VyaWYiPjxyZWN0IHdpZHRoPSI1NjAiIGhlaWdodD0iMzIwIiBmaWxsPSIjZWFmNmZmIi8+PHRleHQgeD0iMjgwIiB5PSIzMCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1zaXplPSIxOSIgZm9udC13ZWlnaHQ9ImJvbGQiIGZpbGw9IiMyZjNhNTIiPlBhcnRzIG9mIHRoZSBCbG9jayBFZGl0b3Igd2luZG93PC90ZXh0PjxyZWN0IHg9IjIwIiB5PSI0NCIgd2lkdGg9IjUyMCIgaGVpZ2h0PSIyMzIiIHJ4PSIxNCIgZmlsbD0iI2ZmZmZmZiIgc3Ryb2tlPSIjMmYzYTUyIiBzdHJva2Utd2lkdGg9IjMiLz48cmVjdCB4PSIzNCIgeT0iNTgiIHdpZHRoPSIxNTAiIGhlaWdodD0iMTE2IiByeD0iMTAiIGZpbGw9IiMzYWEwZmYiIHN0cm9rZT0iIzJmM2E1MiIgc3Ryb2tlLXdpZHRoPSIzIi8+PHRleHQgeD0iMTA5IiB5PSI4MCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1zaXplPSIxMyIgZm9udC13ZWlnaHQ9ImJvbGQiIGZpbGw9IiNmZmZmZmYiPkJ1aWx0LWluIEJsb2NrczwvdGV4dD48cmVjdCB4PSI0NiIgeT0iOTQiIHdpZHRoPSIxMjYiIGhlaWdodD0iMTUiIHJ4PSI0IiBmaWxsPSIjZmZmZmZmIiBmaWxsLW9wYWNpdHk9IjAuOSIgc3Ryb2tlPSIjMmYzYTUyIiBzdHJva2Utd2lkdGg9IjAiLz48dGV4dCB4PSIxMDkiIHk9IjEwNSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1zaXplPSIxMSIgZm9udC13ZWlnaHQ9ImJvbGQiIGZpbGw9IiMyZjNhNTIiPk1hdGg8L3RleHQ+PHJlY3QgeD0iNDYiIHk9IjExMyIgd2lkdGg9IjEyNiIgaGVpZ2h0PSIxNSIgcng9IjQiIGZpbGw9IiNmZmZmZmYiIGZpbGwtb3BhY2l0eT0iMC45IiBzdHJva2U9IiMyZjNhNTIiIHN0cm9rZS13aWR0aD0iMCIvPjx0ZXh0IHg9IjEwOSIgeT0iMTI0IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXNpemU9IjExIiBmb250LXdlaWdodD0iYm9sZCIgZmlsbD0iIzJmM2E1MiI+VGV4dDwvdGV4dD48cmVjdCB4PSI0NiIgeT0iMTMyIiB3aWR0aD0iMTI2IiBoZWlnaHQ9IjE1IiByeD0iNCIgZmlsbD0iI2ZmZmZmZiIgZmlsbC1vcGFjaXR5PSIwLjkiIHN0cm9rZT0iIzJmM2E1MiIgc3Ryb2tlLXdpZHRoPSIwIi8+PHRleHQgeD0iMTA5IiB5PSIxNDMiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtc2l6ZT0iMTEiIGZvbnQtd2VpZ2h0PSJib2xkIiBmaWxsPSIjMmYzYTUyIj5Mb2dpYzwvdGV4dD48cmVjdCB4PSI0NiIgeT0iMTUxIiB3aWR0aD0iMTI2IiBoZWlnaHQ9IjE1IiByeD0iNCIgZmlsbD0iI2ZmZmZmZiIgZmlsbC1vcGFjaXR5PSIwLjkiIHN0cm9rZT0iIzJmM2E1MiIgc3Ryb2tlLXdpZHRoPSIwIi8+PHRleHQgeD0iMTA5IiB5PSIxNjIiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtc2l6ZT0iMTEiIGZvbnQtd2VpZ2h0PSJib2xkIiBmaWxsPSIjMmYzYTUyIj5Db250cm9sPC90ZXh0Pjx0ZXh0IHg9IjEwOSIgeT0iMTkwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXNpemU9IjExIiBmb250LXdlaWdodD0iYm9sZCIgZmlsbD0iIzJmM2E1MiI+aGFuZGxlcyB0aGU8L3RleHQ+PHRleHQgeD0iMTA5IiB5PSIyMDQiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtc2l6ZT0iMTEiIGZvbnQtd2VpZ2h0PSJib2xkIiBmaWxsPSIjMmYzYTUyIj5vcGVyYXRpb25zPC90ZXh0PjxyZWN0IHg9IjE5NiIgeT0iNTgiIHdpZHRoPSIxMjAiIGhlaWdodD0iMTE2IiByeD0iMTAiIGZpbGw9IiMyZWM0YjYiIHN0cm9rZT0iIzJmM2E1MiIgc3Ryb2tlLXdpZHRoPSIzIi8+PHRleHQgeD0iMjU2IiB5PSI4MCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1zaXplPSIxMiIgZm9udC13ZWlnaHQ9ImJvbGQiIGZpbGw9IiNmZmZmZmYiPkNvbXBvbmVudDwvdGV4dD48dGV4dCB4PSIyNTYiIHk9Ijk0IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXNpemU9IjEyIiBmb250LXdlaWdodD0iYm9sZCIgZmlsbD0iI2ZmZmZmZiI+QmxvY2tzPC90ZXh0PjxyZWN0IHg9IjIwOCIgeT0iMTA2IiB3aWR0aD0iOTYiIGhlaWdodD0iMTUiIHJ4PSI0IiBmaWxsPSIjZmZmZmZmIiBmaWxsLW9wYWNpdHk9IjAuOSIgc3Ryb2tlPSIjMmYzYTUyIiBzdHJva2Utd2lkdGg9IjAiLz48dGV4dCB4PSIyNTYiIHk9IjExNyIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1zaXplPSIxMSIgZm9udC13ZWlnaHQ9ImJvbGQiIGZpbGw9IiMyZjNhNTIiPkJ1dHRvbjwvdGV4dD48cmVjdCB4PSIyMDgiIHk9IjEyNSIgd2lkdGg9Ijk2IiBoZWlnaHQ9IjE1IiByeD0iNCIgZmlsbD0iI2ZmZmZmZiIgZmlsbC1vcGFjaXR5PSIwLjkiIHN0cm9rZT0iIzJmM2E1MiIgc3Ryb2tlLXdpZHRoPSIwIi8+PHRleHQgeD0iMjU2IiB5PSIxMzYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtc2l6ZT0iMTEiIGZvbnQtd2VpZ2h0PSJib2xkIiBmaWxsPSIjMmYzYTUyIj5MYWJlbDwvdGV4dD48cmVjdCB4PSIyMDgiIHk9IjE0NCIgd2lkdGg9Ijk2IiBoZWlnaHQ9IjE1IiByeD0iNCIgZmlsbD0iI2ZmZmZmZiIgZmlsbC1vcGFjaXR5PSIwLjkiIHN0cm9rZT0iIzJmM2E1MiIgc3Ryb2tlLXdpZHRoPSIwIi8+PHRleHQgeD0iMjU2IiB5PSIxNTUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtc2l6ZT0iMTEiIGZvbnQtd2VpZ2h0PSJib2xkIiBmaWxsPSIjMmYzYTUyIj5Tb3VuZDwvdGV4dD48dGV4dCB4PSIyNTYiIHk9IjE5MCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1zaXplPSIxMSIgZm9udC13ZWlnaHQ9ImJvbGQiIGZpbGw9IiMyZjNhNTIiPmJsb2NrcyBmb3IgdGhlPC90ZXh0Pjx0ZXh0IHg9IjI1NiIgeT0iMjA0IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXNpemU9IjExIiBmb250LXdlaWdodD0iYm9sZCIgZmlsbD0iIzJmM2E1MiI+cGFydHMgeW91IGFkZGVkPC90ZXh0PjxyZWN0IHg9IjMyOCIgeT0iNTgiIHdpZHRoPSIxOTgiIGhlaWdodD0iMTE2IiByeD0iMTAiIGZpbGw9IiNmNGY5ZmYiIHN0cm9rZT0iIzJmM2E1MiIgc3Ryb2tlLXdpZHRoPSIzIi8+PHRleHQgeD0iNDI3IiB5PSI4MCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1zaXplPSIxMyIgZm9udC13ZWlnaHQ9ImJvbGQiIGZpbGw9IiMyZjNhNTIiPldvcmtzcGFjZTwvdGV4dD48cmVjdCB4PSIzNDIiIHk9IjkyIiB3aWR0aD0iMTcwIiBoZWlnaHQ9IjI0IiByeD0iNSIgZmlsbD0iI2ZmYjAyMCIgc3Ryb2tlPSIjMmYzYTUyIiBzdHJva2Utd2lkdGg9IjIiLz48dGV4dCB4PSI0MjciIHk9IjEwOSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1zaXplPSIxMSIgZm9udC13ZWlnaHQ9ImJvbGQiIGZpbGw9IiMyZjNhNTIiPndoZW4gQnV0dG9uLkNsaWNrIGRvPC90ZXh0PjxyZWN0IHg9IjM1NCIgeT0iMTIwIiB3aWR0aD0iMTQ2IiBoZWlnaHQ9IjI0IiByeD0iNSIgZmlsbD0iIzNlYzQ2YiIgc3Ryb2tlPSIjMmYzYTUyIiBzdHJva2Utd2lkdGg9IjIiLz48dGV4dCB4PSI0MjciIHk9IjEzNyIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1zaXplPSIxMSIgZm9udC13ZWlnaHQ9ImJvbGQiIGZpbGw9IiMyZjNhNTIiPnNldCBsYWJlbC50ZXh0IHRvPC90ZXh0Pjx0ZXh0IHg9IjQyNyIgeT0iMTkwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXNpemU9IjExIiBmb250LXdlaWdodD0iYm9sZCIgZmlsbD0iIzJmM2E1MiI+d2hlcmUgeW91IGFycmFuZ2U8L3RleHQ+PHRleHQgeD0iNDI3IiB5PSIyMDQiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtc2l6ZT0iMTEiIGZvbnQtd2VpZ2h0PSJib2xkIiBmaWxsPSIjMmYzYTUyIj5hbGwgdGhlIGJsb2NrczwvdGV4dD48cmVjdCB4PSIzNCIgeT0iMTg2IiB3aWR0aD0iMTUwIiBoZWlnaHQ9Ijc2IiByeD0iMTAiIGZpbGw9IiNmZjZiNmIiIHN0cm9rZT0iIzJmM2E1MiIgc3Ryb2tlLXdpZHRoPSIzIi8+PHRleHQgeD0iMTA5IiB5PSIyMTAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtc2l6ZT0iMTQiIGZvbnQtd2VpZ2h0PSJib2xkIiBmaWxsPSIjZmZmZmZmIj5UcmFzaDwvdGV4dD48dGV4dCB4PSIxMDkiIHk9IjI0OCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1zaXplPSIyNiI+8J+XkTwvdGV4dD48cmVjdCB4PSIxOTYiIHk9IjE4NiIgd2lkdGg9IjE1MCIgaGVpZ2h0PSI3NiIgcng9IjEwIiBmaWxsPSIjOWI1ZGU1IiBzdHJva2U9IiMyZjNhNTIiIHN0cm9rZS13aWR0aD0iMyIvPjx0ZXh0IHg9IjI3MSIgeT0iMjEwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXNpemU9IjE0IiBmb250LXdlaWdodD0iYm9sZCIgZmlsbD0iI2ZmZmZmZiI+QmFja3BhY2s8L3RleHQ+PHRleHQgeD0iMjcxIiB5PSIyNDgiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtc2l6ZT0iMjYiPvCfjpI8L3RleHQ+PHJlY3QgeD0iMzU4IiB5PSIxODYiIHdpZHRoPSIxNjgiIGhlaWdodD0iNzYiIHJ4PSIxMCIgZmlsbD0iIzNlYzQ2YiIgc3Ryb2tlPSIjMmYzYTUyIiBzdHJva2Utd2lkdGg9IjMiLz48dGV4dCB4PSI0NDIiIHk9IjIxMCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1zaXplPSIxMiIgZm9udC13ZWlnaHQ9ImJvbGQiIGZpbGw9IiNmZmZmZmYiPmtlZXBzIGEgY29weSBvZjwvdGV4dD48dGV4dCB4PSI0NDIiIHk9IjIyNiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1zaXplPSIxMiIgZm9udC13ZWlnaHQ9ImJvbGQiIGZpbGw9IiNmZmZmZmYiPmV2ZXJ5IGJsb2NrIHlvdTwvdGV4dD48dGV4dCB4PSI0NDIiIHk9IjI0MiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1zaXplPSIxMiIgZm9udC13ZWlnaHQ9ImJvbGQiIGZpbGw9IiNmZmZmZmYiPmRyYWcgaW50byBpdDwvdGV4dD48dGV4dCB4PSIyODAiIHk9IjMwMCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1zaXplPSIxNCIgZm9udC13ZWlnaHQ9ImJvbGQiIGZpbGw9IiMyZjNhNTIiPkJ1aWx0LWluIEJsb2NrcyBydW4gdGhlIE1hdGgsIFRleHQsIExvZ2ljIGFuZCBDb250cm9sIHdvcmsuPC90ZXh0Pjwvc3ZnPg==",
+      "alt": "Built-in Blocks, Component Blocks, Workspace, Trash and Backpack",
+      "caption": "Built-in Blocks, Component Blocks, Workspace, Trash and Backpack"
+     },
+     "imageNote": "Labelled Block Editor window showing Built-in Blocks, Component Blocks, Workspace, Trash and Backpack."
+    },
+    {
+     "id": "app-development-p3-q11",
+     "section": "Making click event for button",
+     "question": "Which block do you drag into the workspace for the button's click event?",
+     "options": [
+      "when Screen1.Initialize do",
+      "call TextToSpeech1.Speak message",
+      "set TextToSpeech1.Text to",
+      "when Talking_Me.Click do"
+     ],
+     "correctIndex": 3,
+     "explanation": "The when Talking_Me.Click do block is an Event Handler that runs what happens on a click.",
+     "image": {
+      "type": "svg",
+      "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1NjAgMzIwIiB3aWR0aD0iNTYwIiBoZWlnaHQ9IjMyMCIgZm9udC1mYW1pbHk9IlZlcmRhbmEsICdEZWphVnUgU2FucycsICdTZWdvZSBVSScsIHNhbnMtc2VyaWYiPjxyZWN0IHdpZHRoPSI1NjAiIGhlaWdodD0iMzIwIiBmaWxsPSIjZWFmNmZmIi8+PHRleHQgeD0iMjgwIiB5PSIzMCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1zaXplPSIxOSIgZm9udC13ZWlnaHQ9ImJvbGQiIGZpbGw9IiMyZjNhNTIiPk1ha2luZyBhIGNsaWNrIGV2ZW50IGZvciB0aGUgYnV0dG9uPC90ZXh0PjxyZWN0IHg9IjIwIiB5PSI0NCIgd2lkdGg9IjUyMCIgaGVpZ2h0PSIyMDgiIHJ4PSIxNCIgZmlsbD0iI2ZmZmZmZiIgc3Ryb2tlPSIjMmYzYTUyIiBzdHJva2Utd2lkdGg9IjMiLz48dGV4dCB4PSIyODAiIHk9IjY2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXNpemU9IjEzIiBmb250LXdlaWdodD0iYm9sZCIgZmlsbD0iIzJmM2E1MiI+V29ya3NwYWNlPC90ZXh0PjxyZWN0IHg9IjUyIiB5PSI3OCIgd2lkdGg9IjQ1NiIgaGVpZ2h0PSIzOCIgcng9IjgiIGZpbGw9IiNmZmIwMjAiIHN0cm9rZT0iIzJmM2E1MiIgc3Ryb2tlLXdpZHRoPSIzIi8+PHRleHQgeD0iMjgwIiB5PSIxMDMiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtc2l6ZT0iMTYiIGZvbnQtd2VpZ2h0PSJib2xkIiBmaWxsPSIjMmYzYTUyIj53aGVuIFRhbGtpbmdfTWUuQ2xpY2sgZG88L3RleHQ+PHJlY3QgeD0iODQiIHk9IjEyNCIgd2lkdGg9IjM5MiIgaGVpZ2h0PSIzNiIgcng9IjgiIGZpbGw9IiMzZWM0NmIiIHN0cm9rZT0iIzJmM2E1MiIgc3Ryb2tlLXdpZHRoPSIzIi8+PHRleHQgeD0iMjgwIiB5PSIxNDgiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtc2l6ZT0iMTUiIGZvbnQtd2VpZ2h0PSJib2xkIiBmaWxsPSIjMmYzYTUyIj5jYWxsIFRleHRUb1NwZWVjaDEuU3BlYWsgbWVzc2FnZTwvdGV4dD48cmVjdCB4PSIxMTYiIHk9IjE2OCIgd2lkdGg9IjMyOCIgaGVpZ2h0PSIzNCIgcng9IjgiIGZpbGw9IiM5YjVkZTUiIHN0cm9rZT0iIzJmM2E1MiIgc3Ryb2tlLXdpZHRoPSIzIi8+PHRleHQgeD0iMjgwIiB5PSIxOTAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtc2l6ZT0iMTQiIGZvbnQtd2VpZ2h0PSJib2xkIiBmaWxsPSIjZmZmZmZmIj50ZXh0ICAiSGVsbG8hIEkgYW0gYSB0YWxraW5nIGFwcCI8L3RleHQ+PHBhdGggZD0iTTg0IDcwIEw4NCA0NCIgc3Ryb2tlPSIjZmY2YjZiIiBzdHJva2Utd2lkdGg9IjMiIHN0cm9rZS1kYXNoYXJyYXk9IjUgNSIvPjx0ZXh0IHg9Ijg0IiB5PSIzNiIgdGV4dC1hbmNob3I9InN0YXJ0IiBmb250LXNpemU9IjEyIiBmb250LXdlaWdodD0iYm9sZCIgZmlsbD0iI2ZmNmI2YiI+ZXZlbnQ8L3RleHQ+PHBhdGggZD0iTTUwOCA3MCBMNTA4IDQ0IiBzdHJva2U9IiMzZWM0NmIiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWRhc2hhcnJheT0iNSA1Ii8+PHRleHQgeD0iNTA4IiB5PSIzNiIgdGV4dC1hbmNob3I9ImVuZCIgZm9udC1zaXplPSIxMiIgZm9udC13ZWlnaHQ9ImJvbGQiIGZpbGw9IiMzZWM0NmIiPmFjdGlvbjwvdGV4dD48cmVjdCB4PSI2MCIgeT0iMjY2IiB3aWR0aD0iNDQwIiBoZWlnaHQ9IjMwIiByeD0iMTUiIGZpbGw9IiNmZmIwMjAiIGZpbGwtb3BhY2l0eT0iMC4xOCIgc3Ryb2tlPSIjMmYzYTUyIiBzdHJva2Utd2lkdGg9IjAiLz48dGV4dCB4PSIyODAiIHk9IjI4NiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1zaXplPSIxNCIgZm9udC13ZWlnaHQ9ImJvbGQiIGZpbGw9IiM4YTVhMDAiPlRhcCB0aGUgYnV0dG9uIOKGkiB0aGUgcGhvbmUgc3BlYWtzIHRoZSBtZXNzYWdlIGFsb3VkPC90ZXh0Pjwvc3ZnPg==",
+      "alt": "when Talking_Me.Click do, then call TextToSpeech1.Speak message",
+      "caption": "when Talking_Me.Click do, then call TextToSpeech1.Speak message"
+     },
+     "imageNote": "Block Editor showing the when Talking_Me.Click do event block in the workspace with the Speak block inside it."
+    },
+    {
+     "id": "app-development-p4-q10",
+     "section": "Block Editor",
+     "question": "Which button do you click in App Inventor to open the Project Designer window?",
+     "options": [
+      "Designer",
+      "Blocks",
+      "Save",
+      "Connect"
+     ],
+     "correctIndex": 0,
+     "explanation": "The Designer button opens the Project Designer window; the Blocks button opens the Block Editor.",
+     "image": {
+      "type": "svg",
+      "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1NjAgMzIwIiB3aWR0aD0iNTYwIiBoZWlnaHQ9IjMyMCIgZm9udC1mYW1pbHk9IlZlcmRhbmEsICdEZWphVnUgU2FucycsICdTZWdvZSBVSScsIHNhbnMtc2VyaWYiPjxyZWN0IHdpZHRoPSI1NjAiIGhlaWdodD0iMzIwIiBmaWxsPSIjZWFmNmZmIi8+PHRleHQgeD0iMjgwIiB5PSIzMiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1zaXplPSIxOSIgZm9udC13ZWlnaHQ9ImJvbGQiIGZpbGw9IiMyZjNhNTIiPlRoZSB0d28gYnV0dG9ucyBhdCB0aGUgdG9wIG9mIEFwcCBJbnZlbnRvcjwvdGV4dD48cmVjdCB4PSIyNCIgeT0iNTIiIHdpZHRoPSI1MTIiIGhlaWdodD0iMTA4IiByeD0iMTQiIGZpbGw9IiNmZmZmZmYiIHN0cm9rZT0iIzJmM2E1MiIgc3Ryb2tlLXdpZHRoPSIzIi8+PGNpcmNsZSBjeD0iNDYiIGN5PSI3MCIgcj0iNSIgZmlsbD0iI2ZmNmI2YiIvPjxjaXJjbGUgY3g9IjYyIiBjeT0iNzAiIHI9IjUiIGZpbGw9IiNmZmIwMjAiLz48cmVjdCB4PSI5MCIgeT0iNjAiIHdpZHRoPSIxODAiIGhlaWdodD0iMjAiIHJ4PSIxMCIgZmlsbD0iI2M5ZDRlMyIvPjxyZWN0IHg9IjcyIiB5PSI5NiIgd2lkdGg9IjE5MCIgaGVpZ2h0PSI0OCIgcng9IjEwIiBmaWxsPSIjYzlkNGUzIiBzdHJva2U9IiMyZjNhNTIiIHN0cm9rZS13aWR0aD0iMyIvPjx0ZXh0IHg9IjE2NyIgeT0iMTIwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXNpemU9IjE2IiBmb250LXdlaWdodD0iYm9sZCIgZmlsbD0iIzJmM2E1MiI+QmxvY2tzPC90ZXh0Pjx0ZXh0IHg9IjE2NyIgeT0iMTM4IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXNpemU9IjEyIiBmb250LXdlaWdodD0iYm9sZCIgZmlsbD0iIzJmM2E1MiI+b3BlbnMgQmxvY2sgRWRpdG9yPC90ZXh0PjxyZWN0IHg9IjI4OCIgeT0iOTYiIHdpZHRoPSIyMTQiIGhlaWdodD0iNDgiIHJ4PSIxMCIgZmlsbD0iIzJlYzRiNiIgc3Ryb2tlPSIjMmYzYTUyIiBzdHJva2Utd2lkdGg9IjUiLz48dGV4dCB4PSIzOTUiIHk9IjEyMCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1zaXplPSIxNiIgZm9udC13ZWlnaHQ9ImJvbGQiIGZpbGw9IiMwYjZiNjIiPkRlc2lnbmVyPC90ZXh0Pjx0ZXh0IHg9IjM5NSIgeT0iMTM4IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXNpemU9IjEyIiBmb250LXdlaWdodD0iYm9sZCIgZmlsbD0iIzBiNmI2MiI+b3BlbnMgUHJvamVjdCBEZXNpZ25lcjwvdGV4dD48cGF0aCBkPSJNMzk1IDE1NiBMMzk1IDE4NiIgc3Ryb2tlPSIlcyIgc3Ryb2tlLXdpZHRoPSIzIiBzdHJva2UtZGFzaGFycmF5PSI2IDUiIG1hcmtlci1lbmQ9InVybCgjZSkiLz48ZGVmcz48bWFya2VyIGlkPSJlIiBtYXJrZXJXaWR0aD0iOSIgbWFya2VySGVpZ2h0PSI5IiByZWZYPSI3IiByZWZZPSI0LjUiIG9yaWVudD0iYXV0byI+PHBhdGggZD0iTTAgMCBMOSA0LjUgTDAgOSB6IiBmaWxsPSIjZmY2YjZiIi8+PC9tYXJrZXI+PC9kZWZzPjxyZWN0IHg9IjI0IiB5PSIxOTIiIHdpZHRoPSIyNTAiIGhlaWdodD0iOTAiIHJ4PSIxMiIgZmlsbD0iI2Y0ZjlmZiIgc3Ryb2tlPSIjMmYzYTUyIiBzdHJva2Utd2lkdGg9IjIiLz48dGV4dCB4PSIxNDkiIHk9IjIxNCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1zaXplPSIxNCIgZm9udC13ZWlnaHQ9ImJvbGQiIGZpbGw9IiMyZjNhNTIiPkJsb2NrIEVkaXRvcjwvdGV4dD48cmVjdCB4PSI0OCIgeT0iMjI2IiB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwIiByeD0iNSIgZmlsbD0iI2ZmYjAyMCIgc3Ryb2tlPSIjMmYzYTUyIiBzdHJva2Utd2lkdGg9IjIiLz48dGV4dCB4PSIxNDgiIHk9IjI0MSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1zaXplPSIxMSIgZm9udC13ZWlnaHQ9ImJvbGQiIGZpbGw9IiMyZjNhNTIiPndoZW4gQnV0dG9uLkNsaWNrIGRvPC90ZXh0PjxyZWN0IHg9IjYyIiB5PSIyNTAiIHdpZHRoPSIxNzIiIGhlaWdodD0iMjAiIHJ4PSI1IiBmaWxsPSIjM2VjNDZiIiBzdHJva2U9IiMyZjNhNTIiIHN0cm9rZS13aWR0aD0iMiIvPjx0ZXh0IHg9IjE0OCIgeT0iMjY1IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXNpemU9IjExIiBmb250LXdlaWdodD0iYm9sZCIgZmlsbD0iIzJmM2E1MiI+Y2FsbCBTb3VuZC5WaWJyYXRlPC90ZXh0PjxyZWN0IHg9IjI4NiIgeT0iMTkyIiB3aWR0aD0iMjUwIiBoZWlnaHQ9IjkwIiByeD0iMTIiIGZpbGw9IiNmNGY5ZmYiIHN0cm9rZT0iIzJmM2E1MiIgc3Ryb2tlLXdpZHRoPSIzIi8+PHRleHQgeD0iNDExIiB5PSIyMTQiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtc2l6ZT0iMTQiIGZvbnQtd2VpZ2h0PSJib2xkIiBmaWxsPSIjMmYzYTUyIj5Qcm9qZWN0IERlc2lnbmVyPC90ZXh0PjxyZWN0IHg9IjMwMiIgeT0iMjI4IiB3aWR0aD0iMTAwIiBoZWlnaHQ9IjI0IiByeD0iNiIgZmlsbD0iI2ZmYjAyMCIgc3Ryb2tlPSIjMmYzYTUyIiBzdHJva2Utd2lkdGg9IjIiLz48dGV4dCB4PSIzNTIiIHk9IjI0NSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1zaXplPSIxMSIgZm9udC13ZWlnaHQ9ImJvbGQiIGZpbGw9IiMyZjNhNTIiPkJ1dHRvbjwvdGV4dD48cmVjdCB4PSI0MjAiIHk9IjIyOCIgd2lkdGg9IjEwMCIgaGVpZ2h0PSIyNCIgcng9IjYiIGZpbGw9IiMzYWEwZmYiIHN0cm9rZT0iIzJmM2E1MiIgc3Ryb2tlLXdpZHRoPSIyIi8+PHRleHQgeD0iNDcwIiB5PSIyNDUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtc2l6ZT0iMTEiIGZvbnQtd2VpZ2h0PSJib2xkIiBmaWxsPSIjMmYzYTUyIj5MYWJlbDwvdGV4dD48cmVjdCB4PSIxMjAiIHk9IjI5NCIgd2lkdGg9IjMyMCIgaGVpZ2h0PSIyNiIgcng9IjEzIiBmaWxsPSIjMmVjNGI2IiBmaWxsLW9wYWNpdHk9IjAuMiIgc3Ryb2tlPSIjMmYzYTUyIiBzdHJva2Utd2lkdGg9IjAiLz48dGV4dCB4PSIyODAiIHk9IjMxMiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1zaXplPSIxNCIgZm9udC13ZWlnaHQ9ImJvbGQiIGZpbGw9IiMwYjZiNjIiPkRlc2lnbmVyIOKGkiBQcm9qZWN0IERlc2lnbmVyIHdpbmRvdzwvdGV4dD48L3N2Zz4=",
+      "alt": "Blocks opens the Block Editor; Designer opens the Project Designer",
+      "caption": "Blocks opens the Block Editor; Designer opens the Project Designer"
+     },
+     "imageNote": "App Inventor screen showing the Blocks button beside the Screen Design button."
+    }
+   ]
+  }
+ ]
+}</script>
+
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <linearGradient id="gradA" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4ecdc4"/><stop offset="100%" stop-color="#4f9de8"/>
+    </linearGradient>
+  </defs>
+</svg>
+
+<script>
+(() => {
+"use strict";
+/* ══════════════════════════════════════════════════════════════
+   html-quiz runtime — self-contained, no libraries, no network.
+   Question data is parsed from the #quiz-data script tag.
+   ══════════════════════════════════════════════════════════════ */
+
+// ── Data & config ─────────────────────────────────────────────
+const QUIZ = JSON.parse(document.getElementById('quiz-data').textContent.trim());
+const params = new URLSearchParams(location.search);
+const cfg = {
+  secs: parseTimerSecs(),                 // 0 = no timer (unlimited); ?secs=N (2-60) restores a timer
+  max:  clampInt(params.get('max'), 25, 1, 100),   // (informational only; cap applied at build)
+  tts:  params.get('tts') !== 'off' && params.get('tts') !== '0'
+};
+function clampInt(v, d, lo, hi){ const n = parseInt(v,10); return Number.isFinite(n) ? Math.min(hi, Math.max(lo, n)) : d; }
+function parseTimerSecs(){
+  const raw = params.get('secs');
+  if (raw === null || raw === '' || raw === '0') return 0;   // default: unlimited time
+  const n = parseInt(raw, 10);
+  return Number.isFinite(n) ? Math.min(60, Math.max(2, n)) : 0;
+}
+
+// Build a flat ordered question list across all sections.
+const FLAT = [];
+QUIZ.sections.forEach(s => {
+  s.questions.forEach(q => {
+    FLAT.push({ q, sectionId: s.id, sectionTitle: s.title });
+  });
+});
+const TOTAL = FLAT.length;
+
+// ── State machine ─────────────────────────────────────────────
+let state = {
+  mode: 'intro',        // intro | question | revealed | results
+  scope: null,          // null = all sections, else sectionId
+  list: [],             // ordered [{q, sectionId, sectionTitle}] for current scope
+  iq: 0,
+  answers: [],          // {qid, chosen(-1=timeout), status, pts}
+  score: 0,
+  runToken: 0,
+  transitioning: false
+};
+
+const elStage  = document.getElementById('stage');
+const elScore  = document.getElementById('score-chip');
+const elProg   = document.getElementById('progress-fill');
+const elTree   = document.getElementById('tree');
+const elSide   = document.getElementById('sidebar');
+const overlay  = document.getElementById('overlay');
+const elMute   = document.getElementById('mute-btn');
+let muted = false;
+
+// ── DOM helpers (NO innerHTML anywhere) ───────────────────────
+const h = (tag, cls, text) => {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (text !== undefined) e.textContent = text;   // untrusted text → textContent only
+  return e;
+};
+function clear(node){ while(node.firstChild) node.removeChild(node.firstChild); }
+
+// ── Sound (WebAudio, synthesised; lazy context for autoplay) ─
+let AC = null;
+function ensureAudio(){
+  if (!AC){ try{ AC = new (window.AudioContext || window.webkitAudioContext)(); }catch(e){ return null; } }
+  if (AC.state === 'suspended') AC.resume();
+  return AC;
+}
+function blip(freq, dur, type, delay, vol){
+  const ac = AC || ensureAudio();
+  if (!ac) return;
+  const t0 = ac.currentTime + (delay || 0);
+  const o = ac.createOscillator(), g = ac.createGain();
+  o.type = type || 'sine'; o.frequency.value = freq;
+  g.gain.setValueAtTime(vol || 0.14, t0);
+  g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+  o.connect(g); g.connect(ac.destination);
+  o.start(t0); o.stop(t0 + dur + 0.03);
+}
+const sTick   = () => blip(880, 0.06, 'square');
+const sCorrect= () => { blip(523,0.12,'sine',0); blip(659,0.12,'sine',0.11); blip(784,0.2,'sine',0.22); };
+const sWrong  = () => { blip(220,0.22,'triangle',0); blip(170,0.28,'triangle',0.14); };
+const sTimesUp= () => { blip(440,0.18,'triangle',0); blip(330,0.3,'triangle',0.16); };
+const sPop    = () => { blip(660,0.09,'sine',0,0.1); blip(880,0.1,'sine',0.07,0.08); };
+
+// ── TTS (Web Speech API) ──────────────────────────────────────
+function ttsAvailable(){ return 'speechSynthesis' in window; }
+function pickVoice(){
+  if (!ttsAvailable()) return null;
+  const vs = speechSynthesis.getVoices();
+  return vs.find(v => /^en/i.test(v.lang)) || vs[0] || null;
+}
+function speak(text, onEnd){
+  if (!cfg.tts || muted || !ttsAvailable() || !text) { if (onEnd) onEnd(); return; }
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.rate = 1; u.pitch = 1.05;
+  const v = pickVoice(); if (v) u.voice = v;
+  if (onEnd) u.onend = onEnd;
+  speechSynthesis.speak(u);
+}
+if ('speechSynthesis' in window){
+  speechSynthesis.onvoiceschanged = () => {};   // warm the voice list
+}
+
+// ── Timer ring ────────────────────────────────────────────────
+let rafId = 0;
+function stopTimer(){ if (rafId){ cancelAnimationFrame(rafId); rafId = 0; } }
+function startTimer(secs, token){
+  stopTimer();
+  const C = 2 * Math.PI * 30;                    // r=30 ring
+  const ring = document.getElementById('ring-fg');
+  const count = document.getElementById('t-count');
+  const wrap = document.getElementById('timer-wrap');
+  ring.setAttribute('stroke-dasharray', C);
+  ring.setAttribute('stroke-dashoffset', 0);
+  const deadline = performance.now() + secs * 1000;
+  let lastSec = Math.ceil(secs);
+  const loop = (now) => {
+    if (state.runToken !== token) return;        // stale — question changed
+    const remMs = deadline - now;
+    const remSec = Math.max(0, Math.ceil(remMs / 1000));
+    const frac = Math.max(0, Math.min(1, remMs / (secs * 1000)));
+    ring.setAttribute('stroke-dashoffset', String(C * (1 - frac)));   // SVG attr, not CSS
+    count.textContent = String(remSec);
+    wrap.classList.toggle('low', remSec <= 3);
+    if (remSec < lastSec){ lastSec = remSec; if (remSec > 0 && remSec <= 3 && state.mode === 'question') sTick(); }
+    if (remMs <= 0){ onTimeout(token); return; }
+    rafId = requestAnimationFrame(loop);
+  };
+  rafId = requestAnimationFrame(loop);
+}
+
+// ── Timer markup builder (returned to slot in question card) ──
+function timerMarkup(){
+  if (cfg.secs <= 0) return null;          // no-timer mode: no ring, no countdown
+  const wrap = h('div', 'timer-wrap'); wrap.id = 'timer-wrap';
+  const ns = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(ns, 'svg');
+  svg.setAttribute('viewBox', '0 0 74 74');
+  const bg = document.createElementNS(ns, 'circle');
+  bg.setAttribute('cx','37'); bg.setAttribute('cy','37'); bg.setAttribute('r','30'); bg.setAttribute('class','circle-bg');
+  const fg = document.createElementNS(ns, 'circle');
+  fg.setAttribute('cx','37'); fg.setAttribute('cy','37'); fg.setAttribute('r','30'); fg.setAttribute('class','circle-fg');
+  fg.id = 'ring-fg';
+  svg.appendChild(bg); svg.appendChild(fg);
+  const c = h('div', 't-count', String(cfg.secs)); c.id = 't-count';
+  wrap.appendChild(svg); wrap.appendChild(c);
+  return wrap;
+}
+
+// ── Confetti ──────────────────────────────────────────────────
+const CONF_COLORS = ['#ff6b6b','#ffd93d','#2ecc71','#4f9de8','#9b59b6','#ff9d2e'];
+function burstConfetti(n){
+  const layer = document.getElementById('confetti');
+  for (let i = 0; i < n; i++){
+    const c = h('div', 'confetti');
+    c.style.left = (Math.random() * 100) + 'vw';
+    c.style.background = CONF_COLORS[i % CONF_COLORS.length];
+    c.style.setProperty('--rx', (Math.random() * 540 - 270) + 'deg');
+    c.style.animationDuration = (1.6 + Math.random() * 1.6) + 's';
+    c.style.animationDelay = (Math.random() * 0.5) + 's';
+    c.style.width = (7 + Math.random() * 8) + 'px';
+    c.style.height = (7 + Math.random() * 8) + 'px';
+    c.addEventListener('animationend', () => c.remove());
+    layer.appendChild(c);
+  }
+}
+
+// ── Tree building ─────────────────────────────────────────────
+function renderTree(){
+  clear(elTree);
+  QUIZ.sections.forEach(sec => {
+    const node = h('div', 'tree-node');
+    node.setAttribute('data-sec', sec.id);
+    const arrow = h('span', 'arrow', '▶');
+    const dot = h('span', 'dot');
+    dot.style.background = sectionColor(sec.id);
+    const label = h('span', null, sec.emoji + ' ' + sec.title);
+    const badge = h('span', 'badge', String(sec.questions.length));
+    node.appendChild(arrow); node.appendChild(dot); node.appendChild(label); node.appendChild(badge);
+    node.addEventListener('click', () => {
+      arrow.classList.toggle('open');
+      const kids = document.getElementById('children-' + sec.id);
+      if (kids) kids.classList.toggle('open');
+    });
+    elTree.appendChild(node);
+
+    const kids = h('div', 'tree-children');
+    kids.id = 'children-' + sec.id;
+    sec.questions.forEach(q => {
+      const leaf = h('div', 'tree-node tree-leaf');
+      leaf.setAttribute('data-qid', q.id);
+      const qn = h('span', null, 'Q' + (FLAT.length ? '' : '') + q.id.split('-q')[1]);
+      const st = h('span', 'st');
+      leaf.appendChild(h('span', 'arrow', '•'));
+      leaf.appendChild(qn); leaf.appendChild(st);
+      leaf.addEventListener('click', () => startAtSection(sec.id, q.id));
+      kids.appendChild(leaf);
+    });
+    elTree.appendChild(kids);
+  });
+}
+function sectionColor(id){
+  const pal = ['#4ecdc4','#ffb300','#9b59b6','#4f9de8','#ff6b6b','#2ecc71','#e67e22','#e84393'];
+  let x = 0; for (const ch of id) x = (x + ch.charCodeAt(0)) % pal.length;
+  return pal[x];
+}
+function updateTreeStatus(){
+  const answered = new Map(state.answers.map(a => [a.qid, a.status]));
+  document.querySelectorAll('#tree .tree-leaf').forEach(leaf => {
+    const st = leaf.querySelector('.st');
+    const qid = leaf.getAttribute('data-qid');
+    const s = answered.get(qid);
+    st.textContent = '';
+    st.className = 'st';
+    if (s === 'correct'){ st.textContent = '✓'; st.classList.add('good'); }
+    else if (s === 'wrong'){ st.textContent = '✗'; st.classList.add('bad'); }
+    else if (s === 'timeout'){ st.textContent = '⏰'; st.classList.add('slow'); }
+  });
+  // highlight active section node
+  document.querySelectorAll('#tree .tree-node[data-sec]').forEach(n => {
+    n.classList.toggle('active', state.scope === null || n.getAttribute('data-sec') === state.scope);
+  });
+}
+
+// ── Scope / nav ───────────────────────────────────────────────
+function shuffle(arr){
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--){ const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+  return a;
+}
+function startScope(scopeId){
+  state.scope = scopeId || null;
+  if (state.scope) {
+    state.list = FLAT.filter(f => f.sectionId === state.scope);
+  } else {
+    // group by section, shuffle sections, keep questions in source order within each
+    const bySec = [];
+    const secOrder = [];
+    FLAT.forEach(f => { if (!secOrder.includes(f.sectionId)) secOrder.push(f.sectionId); });
+    secOrder.forEach(sid => bySec.push(FLAT.filter(f => f.sectionId === sid)));
+    state.list = shuffle(bySec).flat();
+  }
+  state.iq = 0; state.answers = []; state.score = 0; state.runToken++;
+  updateScore();
+  if (state.list.length === 0){ renderIntro(); return; }
+  renderQuestion();
+}
+function startAtSection(secId, qid){
+  state.scope = secId;
+  state.list = FLAT.filter(f => f.sectionId === secId);
+  const idx = state.list.findIndex(f => f.q.id === qid);
+  state.iq = idx >= 0 ? idx : 0;
+  state.answers = []; state.score = 0; state.runToken++;
+  updateScore();
+  closeDrawer();
+  renderQuestion();
+}
+function currentQ(){
+  const f = state.list[state.iq];
+  return f ? f.q : null;
+}
+
+// ── Views ─────────────────────────────────────────────────────
+function renderIntro(){
+  state.mode = 'intro';
+  clear(elStage);
+  const card = h('div', 'card intro card-in');
+  const big = h('div', 'big-emoji', QUIZ.emoji || '🧠');
+  const title = h('h1', null, QUIZ.title || 'App Development Quiz');
+  const sub = h('div', 'sub', QUIZ.subtitle || 'Test yourself & learn with fun quiz!');
+  const meta = h('div', 'meta-chip', '🎯 ' + TOTAL + ' questions · ⭐ up to ' + (TOTAL * 10) + ' points · ' + (cfg.secs > 0 ? '⏱️ ' + cfg.secs + 's each' : '⏱️ no time limit'));
+  const start = h('button', 'big-btn', '▶ Start Quiz');
+  start.addEventListener('click', () => { ensureAudio(); state.runToken++; startScope(null); });
+  card.appendChild(big); card.appendChild(title); card.appendChild(sub);
+  const row = h('div', 'ghost-row');
+  const samp = h('button', 'big-btn ghost', '🔊 Hear me');
+  samp.addEventListener('click', () => { ensureAudio(); speak('Hello friend! Let’s play and learn together!'); });
+  const imgAll = h('div', 'hint-line', 'Open a section in the left menu to play a single topic.');
+  row.appendChild(samp);
+  card.appendChild(meta); card.appendChild(start); card.appendChild(row); card.appendChild(imgAll);
+  elStage.appendChild(card);
+  updateProgress(0);
+}
+function speakQuestion(q, onEnd){
+  const all = 'Question ' + q.question + '. Options: ' +
+    q.options.map((o, i) => String.fromCharCode(65 + i) + '. ' + o).join('. ') + '.';
+  speak(all, onEnd);
+}
+function renderQuestion(){
+  state.mode = 'question';
+  const q = currentQ();
+  if (!q){ renderResults(); return; }
+  const token = ++state.runToken;
+  stopTimer();
+  clear(elStage);
+  const card = h('div', 'card card-in');
+  const head = h('div', 'q-head');
+  head.appendChild(h('div', 'q-progress', 'Question ' + (state.iq + 1) + ' of ' + state.list.length));
+  const tm = timerMarkup();
+  if (tm) head.appendChild(tm);
+  card.appendChild(head);
+
+  // question text
+  card.appendChild(h('div', 'q-text', q.question));
+
+  // optional image
+  if (q.image){
+    const iw = h('div', 'qimg-wrap');
+    if (q.image.type === 'emoji'){
+      iw.appendChild(h('div', 'emoji-big', q.image.src));
+    } else {
+      const img = h('img', 'qimg');
+      img.setAttribute('src', q.image.src);
+      img.setAttribute('alt', q.image.alt || '');
+      iw.appendChild(img);
+    }
+    if (q.image.caption) iw.appendChild(h('div', 'caption', q.image.caption));
+    card.appendChild(iw);
+  }
+
+  // options
+  const opts = h('div', 'options');
+  q.options.forEach((text, i) => {
+    const b = h('button', 'opt');
+    b.setAttribute('data-idx', String(i));
+    b.appendChild(h('span', 'key', String.fromCharCode(65 + i)));
+    b.appendChild(h('span', null, text));
+    b.appendChild(h('span', 'mark'));
+    b.addEventListener('click', () => { ensureAudio(); if (state.mode === 'question') answer(i); });
+    opts.appendChild(b);
+  });
+  card.appendChild(opts);
+
+  // speak button
+  const foot = h('div', 'q-foot');
+  const spk = h('button', 'speak-btn', '🔊 Read aloud');
+  spk.addEventListener('click', () => { ensureAudio(); speakQuestion(q); });
+  foot.appendChild(spk);
+  card.appendChild(foot);
+  elStage.appendChild(card);
+
+  updateProgress(state.iq / state.list.length);
+  speakQuestion(q, () => {
+    if (state.runToken === token && state.mode === 'question' && cfg.secs > 0) startTimer(cfg.secs, token);
+  });
+}
+function reveal(q, status, chosen){
+  state.mode = 'revealed';
+  stopTimer();
+  state.answers.push({ qid: q.id, chosen, status, pts: status === 'correct' ? 10 : 0 });
+  if (status === 'correct') state.score += 10;
+  updateScore();
+  updateTreeStatus();
+  burstConfetti(status === 'correct' ? 60 : 0);
+
+  const card = document.querySelector('#stage .card');
+  // banner
+  const banner = h('div', 'reveal-banner ' + (status === 'correct' ? 'good' : status === 'wrong' ? 'bad' : 'slow'));
+  const icon = status === 'correct' ? '✅' : status === 'wrong' ? '❌' : '⏰';
+  const msg = status === 'correct' ? 'Correct! Great job!' : status === 'wrong' ? 'Oops! Not quite.' : "Time's up!";
+  banner.appendChild(h('span', null, icon + ' ' + msg));
+  card.appendChild(banner);
+  // explanation
+  const exp = h('div', 'reveal-exp');
+  const b = h('b', null, '💡 '); b.textContent = '💡 ' + q.options[q.correctIndex];
+  exp.appendChild(b);
+  exp.appendChild(h('div', null, q.explanation));
+  card.appendChild(exp);
+  // highlight options
+  const buttons = card.querySelectorAll('.opt');
+  buttons.forEach((btn, i) => {
+    btn.disabled = true;
+    const mark = btn.querySelector('.mark');
+    if (i === q.correctIndex){ btn.classList.add('correct'); mark.textContent = '✓'; }
+    else if (i === chosen){ btn.classList.add('wrong-chosen'); mark.textContent = '✗'; }
+    else btn.classList.add('dim');
+  });
+  // next row
+  const row = h('div', 'next-row');
+  const pts = h('div', 'pts-gain ' + (status === 'correct' ? 'gain' : 'none'),
+                status === 'correct' ? '+10 points' : '+0 points');
+  const nb = h('button', 'next-btn', state.iq + 1 >= state.list.length ? 'See results 🏆' : 'Next ➡️');
+  nb.addEventListener('click', () => { state.iq++; if (state.iq >= state.list.length) renderResults(); else renderQuestion(); });
+  row.appendChild(pts); row.appendChild(nb);
+  const head = card.querySelector('.q-head');
+  if (head) head.appendChild(row); else card.appendChild(row);
+  // duplicate next-row at bottom for easy access
+  const row2 = h('div', 'next-row');
+  row2.appendChild(h('div', 'pts-gain ' + (status === 'correct' ? 'gain' : 'none'),
+                status === 'correct' ? '+10 points' : '+0 points'));
+  const nb2 = h('button', 'next-btn', state.iq + 1 >= state.list.length ? 'See results 🏆' : 'Next ➡️');
+  nb2.addEventListener('click', () => { state.iq++; if (state.iq >= state.list.length) renderResults(); else renderQuestion(); });
+  row2.appendChild(nb2);
+  card.appendChild(row2);
+}
+function answer(i){
+  const q = currentQ();
+  ensureAudio();
+  if (i === q.correctIndex) sCorrect(); else sWrong();
+  reveal(q, i === q.correctIndex ? 'correct' : 'wrong', i);
+}
+function onTimeout(token){
+  if (state.runToken !== token) return;   // stale
+  const q = currentQ();
+  ensureAudio(); sTimesUp();
+  reveal(q, 'timeout', -1);
+  speak(q.explanation);
+}
+function renderResults(){
+  state.mode = 'results';
+  stopTimer();
+  clear(elStage);
+  const card = h('div', 'card results card-in');
+  const count = state.list.length;
+  const maxPts = count * 10;
+  const words = pctWord(state.score / maxPts);
+  card.appendChild(h('div', 'big-emoji', words.emoji));
+  card.appendChild(h('h2', null, words.title));
+  card.appendChild(h('div', 'sub', 'You scored ' + state.score + ' of ' + maxPts + ' points'));
+
+  // score ring
+  const rw = h('div', 'ring-wrap');
+  const ns = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(ns, 'svg');
+  svg.setAttribute('viewBox', '0 0 120 120');
+  const bg = document.createElementNS(ns, 'circle');
+  bg.setAttribute('cx','60'); bg.setAttribute('cy','60'); bg.setAttribute('r','45'); bg.setAttribute('class','rbg');
+  const fg = document.createElementNS(ns, 'circle');
+  fg.setAttribute('cx','60'); fg.setAttribute('cy','60'); fg.setAttribute('r','45'); fg.setAttribute('class','rfg');
+  fg.id = 'ring-fg-r';
+  svg.appendChild(bg); svg.appendChild(fg);
+  rw.appendChild(svg);
+  const rs = h('div', 'rscore');
+  const n = h('div', 'n', String(state.score)); n.id = 'rscore-n'; n.className = 'n rscore-n';
+  rs.appendChild(n); rs.appendChild(h('div', 'pts', 'points'));
+  rw.appendChild(rs);
+  card.appendChild(rw);
+
+  const stars = h('div', 'stars', '⭐'.repeat(words.stars) + '☆'.repeat(5 - words.stars));
+  card.appendChild(stars);
+
+  // review
+  const review = h('div', 'review');
+  state.answers.forEach((a, i) => {
+    const f = state.list[i];
+    const row = h('div', 'review-row');
+    row.appendChild(h('div', 'qi', 'Q' + (i + 1)));
+    const body = h('div', 'qbody');
+    body.appendChild(h('div', 'qq', f.q.question));
+    const your = a.chosen >= 0 ? f.q.options[a.chosen] : 'No answer';
+    body.appendChild(h('div', 'aa', 'Your answer: ' + your));
+    body.appendChild(h('div', 'aa', '✅ ' + f.q.options[f.q.correctIndex]));
+    row.appendChild(body);
+    row.appendChild(h('div', 'pts ' + (a.pts ? 'gain' : 'none'), (a.pts ? '+' : '') + a.pts));
+    review.appendChild(row);
+  });
+  card.appendChild(review);
+
+  if (QUIZ.truncated){
+    card.appendChild(h('div', 'hint-line', 'Showing ' + QUIZ.truncated.shown + ' of ' + QUIZ.truncated.total + ' questions.'));
+  }
+
+  const row2 = h('div', 'ghost-row');
+  const again = h('button', 'big-btn ghost', '🔄 Play again');
+  again.addEventListener('click', () => { burstConfetti(0); startScope(state.scope); });
+  const menu = h('button', 'big-btn ghost', '🏠 Menu');
+  menu.addEventListener('click', () => renderIntro());
+  row2.appendChild(again); row2.appendChild(menu);
+  card.appendChild(row2);
+  elStage.appendChild(card);
+
+  // deferred: animate ring + settle score number + confetti
+  setTimeout(() => {
+    const C = 283;
+    const fgR = document.getElementById('ring-fg-r');
+    fgR.setAttribute('stroke-dashoffset', String(C * (1 - (state.score / maxPts))));
+    const num = document.getElementById('rscore-n');
+    if (num) num.textContent = String(state.score);   // settle immediately so chip & ring always agree
+    burstConfetti(140);
+    sPop();
+  }, 60);
+}
+function pctWord(p){
+  if (p >= 0.9)  return { emoji:'🏆', title:'Amazing!', stars:5 };
+  if (p >= 0.7)  return { emoji:'🌟', title:'Great job!', stars:4 };
+  if (p >= 0.5)  return { emoji:'😄', title:'Good try!', stars:3 };
+  if (p >= 0.3)  return { emoji:'🙂', title:'Keep going!', stars:2 };
+  return { emoji:'💪', title:'Practice makes better!', stars:1 };
+}
+function updateScore(){ elScore.textContent = '⭐ Score: ' + state.score; }
+function updateProgress(p){
+  if (elProg) elProg.style.width = Math.round(Math.max(0, Math.min(1, p)) * 100) + '%';
+  // track is shared for all-scope run; on intro show 0
+}
+
+// ── Mobile drawer ─────────────────────────────────────────────
+function closeDrawer(){
+  elSide.classList.remove('open'); overlay.classList.remove('open');
+}
+document.getElementById('hamburger').addEventListener('click', () => {
+  elSide.classList.toggle('open'); overlay.classList.toggle('open');
+});
+overlay.addEventListener('click', closeDrawer);
+document.getElementById('sidebar-home').addEventListener('click', () => { closeDrawer(); renderIntro(); });
+elMute.addEventListener('click', () => {
+  muted = !muted;
+  elMute.textContent = muted ? '🔇' : '🔊';
+  if (muted && 'speechSynthesis' in window) speechSynthesis.cancel();
+});
+
+// ── Boot ──────────────────────────────────────────────────────
+renderTree();
+renderIntro();
+})();
+</script>
+</body>
+</html>
