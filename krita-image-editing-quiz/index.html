@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Krita — Image Editing — Quiz</title>
+<link rel="icon" href="data:,">
+<style>
+  /* ══════════════ KID-FRIENDLY PALETTE (bright daylight) ══════════════ */
+  :root {
+    --bg: linear-gradient(160deg, #fff8e1 0%, #e0f7fa 60%, #dff4ff 100%);
+    --panel: #ffffff;
+    --ink: #2d3436;
+    --ink-soft: #6b7a85;
+    --coral: #ff6b6b;
+    --sunny: #ffd93d;
+    --teal: #4ecdc4;
+    --sky: #4f9de8;
+    --violet: #9b59b6;
+    --green: #2ecc71;
+    --amber: #ffb300;
+    --red: #ff6b6b;
+    --sidebar-w: 264px;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { height:100%; }
+  body {
+    background: var(--bg); color: var(--ink); overflow:hidden;
+    font-family: 'Comic Sans MS','Chalkboard SE','Marker Felt','Segoe UI','Trebuchet MS',sans-serif;
+    display:flex;
+  }
+
+  /* ── Sidebar tree ── */
+  .sidebar {
+    width: var(--sidebar-w); min-width: var(--sidebar-w); height:100vh;
+    background: rgba(255,255,255,0.82); border-right:1px solid rgba(0,0,0,0.08);
+    display:flex; flex-direction:column; z-index:20; overflow-y:auto;
+    backdrop-filter: blur(4px);
+    transition: transform .3s ease;
+  }
+  .sidebar-header {
+    padding:1.1rem 1rem .8rem; border-bottom:1px solid rgba(0,0,0,0.08);
+    font-size:1.05rem; font-weight:bold; cursor:pointer; display:flex; gap:.4rem; align-items:center;
+    flex-shrink:0;
+  }
+  .sidebar-header .ticker { color:var(--sky); }
+  .tree { flex:1; padding:.5rem 0; overflow-y:auto; }
+  .tree-node {
+    padding:.5rem .8rem .5rem 1rem; cursor:pointer; display:flex; align-items:center; gap:.45rem;
+    font-size:.86rem; transition: background .15s; border-left:3px solid transparent;
+    user-select:none; color:var(--ink);
+  }
+  .tree-node:hover { background:rgba(79,157,232,0.1); }
+  .tree-node.active { border-left-color: var(--amber); background:rgba(255,217,61,0.14); }
+  .tree-node .arrow { font-size:.65rem; width:12px; text-align:center; flex-shrink:0; transition:transform .2s; color:var(--ink-soft); }
+  .tree-node .arrow.open { transform:rotate(90deg); }
+  .tree-node .dot { width:11px; height:11px; border-radius:50%; flex-shrink:0; }
+  .tree-node .badge {
+    margin-left:auto; font-size:.68rem; background:rgba(78,205,196,0.2); color:var(--teal);
+    border-radius:999px; padding:.05rem .5rem; flex-shrink:0;
+  }
+  .tree-children { overflow:hidden; max-height:0; transition:max-height .3s ease; }
+  .tree-children.open { max-height:600px; }
+  .tree-children .tree-node { padding-left:2.2rem; font-size:.8rem; }
+  .tree-leaf .st {
+    margin-left:auto; font-size:.72rem; width:1.1rem; text-align:center; flex-shrink:0;
+  }
+  .st.good { color:var(--green); }
+  .st.bad { color:var(--red); }
+  .st.slow { color:var(--amber); }
+
+  /* ── Main column ── */
+  .main { flex:1; display:flex; flex-direction:column; position:relative; z-index:5; min-width:0; }
+  .topbar {
+    padding:.6rem 1.1rem; display:flex; align-items:center; gap:.8rem; flex-shrink:0;
+    background:rgba(255,255,255,0.6); border-bottom:1px solid rgba(0,0,0,0.08);
+  }
+  .topbar .app-title { font-size:1.05rem; font-weight:bold; display:flex; gap:.4rem; align-items:center; }
+  .topbar .spacer { flex:1; }
+  .score-chip {
+    background:#fff; border:2px solid var(--sunny); color:var(--ink); border-radius:999px;
+    padding:.3rem .9rem; font-size:.9rem; font-weight:bold; box-shadow:0 2px 8px rgba(0,0,0,0.08);
+  }
+  .mute-btn {
+    background:#fff; border:2px solid rgba(0,0,0,0.12); border-radius:999px; cursor:pointer;
+    font-size:1rem; padding:.25rem .6rem; font-family:inherit;
+  }
+  .mute-btn:hover { border-color:var(--sky); }
+  .progress-track {
+    height:8px; border-radius:99px; background:rgba(0,0,0,0.08); overflow:hidden; flex:1; max-width:260px;
+  }
+  .progress-fill { height:100%; width:0%; background:linear-gradient(90deg,var(--teal),var(--sky)); border-radius:99px; transition:width .4s ease; }
+
+  /* ── Stage / views ── */
+  .stage { flex:1; display:flex; justify-content:center; align-content:center; padding:1.4rem; overflow:auto; min-height:0; }
+  .card {
+    background:var(--panel); border-radius:22px; box-shadow:0 14px 44px rgba(45,52,54,0.16);
+    width:100%; max-width:720px; padding:1.8rem 2rem 2rem; position:relative;
+    border:1px solid rgba(0,0,0,0.05); margin:auto;
+  }
+
+  /* Intro */
+  .intro { text-align:center; }
+  .intro .big-emoji { font-size:4rem; animation: bob 3s ease-in-out infinite; display:inline-block; }
+  .intro h1 { font-size:2rem; margin:.4rem 0 .3rem; background:linear-gradient(135deg,var(--sky),var(--violet)); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
+  .intro .sub { color:var(--ink-soft); margin-bottom:1.2rem; }
+  .intro .meta-chip { color:var(--ink-soft); font-size:.9rem; margin-bottom:1.4rem; }
+  .big-btn {
+    font-family:inherit; font-size:1.15rem; font-weight:bold; color:#fff; cursor:pointer;
+    background:linear-gradient(135deg,var(--green),#27ae60); border:none; border-radius:999px;
+    padding:.85rem 2.2rem; box-shadow:0 6px 18px rgba(46,204,113,0.4); transition:transform .15s, box-shadow .15s;
+  }
+  .big-btn:hover { transform:translateY(-2px); }
+  .big-btn.ghost { background:#fff; color:var(--ink); box-shadow:0 2px 8px rgba(0,0,0,0.1); border:2px solid rgba(0,0,0,0.1); margin-left:.7rem; }
+  .ghost-row { margin-top:1.1rem; display:flex; justify-content:center; gap:.4rem; flex-wrap:wrap; }
+  .hint-line { font-size:.82rem; color:var(--ink-soft); margin-top:1rem; }
+
+  /* Question */
+  .q-head { display:flex; justify-content:space-between; align-items:center; gap:.6rem; flex-wrap:wrap; }
+  .q-progress { font-size:.82rem; color:var(--ink-soft); font-weight:bold; padding:.2rem 0; }
+  .timer-wrap { position:relative; width:74px; height:74px; flex-shrink:0; }
+  .timer-wrap svg { width:74px; height:74px; transform:rotate(-90deg); }
+  .timer-wrap .circle-bg { fill:none; stroke:rgba(0,0,0,0.08); stroke-width:7; }
+  .timer-wrap .circle-fg { fill:none; stroke:var(--sky); stroke-width:7; stroke-linecap:round; }
+  .timer-wrap .t-count {
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    font-size:1.5rem; font-weight:bold; color:var(--ink);
+  }
+  .timer-wrap.low .circle-fg { stroke:var(--red); }
+  .timer-wrap.low .t-count { color:var(--red); }
+  .q-text { font-size:1.35rem; line-height:1.45; margin:.7rem 0 1rem; font-weight:bold; }
+  .qimg-wrap { text-align:center; margin:.2rem 0 1rem; }
+  .qimg-wrap img.qimg {
+    max-width:100%; max-height:240px; border-radius:14px; object-fit:contain;
+    border:1px solid rgba(0,0,0,0.08);
+  }
+  .qimg-wrap .emoji-big { font-size:4.2rem; animation: pop 0.5s ease; }
+  .qimg-wrap .caption { font-size:.78rem; color:var(--ink-soft); margin-top:.35rem; }
+
+  .options { display:flex; flex-direction:column; gap:.7rem; }
+  .opt {
+    display:flex; align-items:center; gap:.8rem; width:100%; text-align:left;
+    font-family:inherit; font-size:1.02rem; color:var(--ink); cursor:pointer;
+    background:#f7fbfc; border:2px solid rgba(0,0,0,0.08); border-radius:14px;
+    padding:.72rem 1rem; min-height:48px; transition:border-color .15s, background .15s, transform .1s;
+    position:relative; overflow:hidden;
+  }
+  .opt:hover { border-color:var(--sky); background:#eef6ff; transform:translateY(-1px); }
+  .opt .key {
+    width:30px; height:30px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center;
+    background:#fff; border:2px solid rgba(0,0,0,0.14); font-size:.9rem; font-weight:bold; color:var(--ink-soft);
+  }
+  .opt.correct { border-color:var(--green); background:#eafaf1; }
+  .opt.correct .key { border-color:var(--green); color:var(--green); background:#d5f5e3; }
+  .opt.wrong-chosen { border-color:var(--red); background:#fdecea; }
+  .opt.wrong-chosen .key { border-color:var(--red); color:var(--red); background:#fadbd8; }
+  .opt.dim { opacity:.55; }
+  .opt .mark { margin-left:auto; font-size:1.1rem; }
+
+  /* Reveal banner */
+  .reveal-banner {
+    margin-top:1rem; border-radius:14px; padding:.8rem 1rem; font-size:1.02rem; font-weight:bold;
+    display:flex; gap:.6rem; align-items:center; animation: slideUp .35s ease both;
+  }
+  .reveal-banner.good { background:#eafaf1; color:#1e8449; }
+  .reveal-banner.bad { background:#fdecea; color:#c0392b; }
+  .reveal-banner.slow { background:#fef5e7; color:#b9770e; }
+  .reveal-exp { margin-top:.6rem; background:#f4f8fa; border-radius:12px; padding:.8rem 1rem; font-size:.95rem; color:var(--ink-soft); line-height:1.5; }
+  .reveal-exp b { color:var(--ink); }
+  .next-row { display:flex; align-items:center; justify-content:space-between; gap:.6rem; }
+  .pts-gain { font-weight:bold; font-size:1rem; }
+  .pts-gain.gain { color:var(--green); }
+  .pts-gain.none { color:var(--ink-soft); }
+  .next-btn {
+    font-family:inherit; font-size:1.02rem; font-weight:bold; cursor:pointer; color:#fff;
+    background:linear-gradient(135deg,var(--sky),#2e86de); border:none; border-radius:999px;
+    padding:.7rem 1.7rem; box-shadow:0 4px 14px rgba(79,157,232,0.4); transition:transform .15s;
+  }
+  .next-btn:hover { transform:translateY(-2px); }
+
+  .q-foot { display:flex; justify-content:center; margin-top:1rem; }
+  .speak-btn {
+    font-family:inherit; font-size:.9rem; color:var(--ink-soft); cursor:pointer; background:none;
+    border:1px solid rgba(0,0,0,0.1); border-radius:999px; padding:.35rem 1rem;
+  }
+  .speak-btn:hover { border-color:var(--sky); color:var(--sky); }
+
+  /* Results */
+  .results { text-align:center; }
+  .results h2 { font-size:1.7rem; margin-bottom:.3rem; }
+  .results .sub { color:var(--ink-soft); margin-bottom:1rem; }
+  .ring-wrap { width:150px; height:150px; margin:0 auto .6rem; position:relative; }
+  .ring-wrap svg { width:150px; height:150px; transform:rotate(-90deg); }
+  .ring-wrap .rbg { fill:none; stroke:rgba(0,0,0,0.08); stroke-width:12; }
+  .ring-wrap .rfg { fill:none; stroke:url(#gradA); stroke-width:12; stroke-linecap:round;
+    stroke-dasharray:283; stroke-dashoffset:283; transition:stroke-dashoffset 1s ease; }
+  .ring-wrap .rscore {
+    position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
+  }
+  .ring-wrap .rscore .n { font-size:2rem; font-weight:bold; }
+  .ring-wrap .rscore .pts { font-size:.8rem; color:var(--ink-soft); }
+  .stars { font-size:1.9rem; letter-spacing:.15rem; margin:.2rem 0 .9rem; }
+  .review { text-align:left; margin:1rem 0; }
+  .review-row { display:flex; gap:.7rem; padding:.6rem .4rem; border-bottom:1px solid rgba(0,0,0,0.06); font-size:.86rem; align-items:flex-start; }
+  .review-row .qi { font-weight:bold; color:var(--ink-soft); min-width:1.6rem; }
+  .review-row .qbody { flex:1; }
+  .review-row .qbody .qq { font-weight:bold; margin-bottom:.15rem; }
+  .review-row .qbody .aa { color:var(--ink-soft); }
+  .review-row .pts { font-weight:bold; flex-shrink:0; }
+  .review-row .pts.gain { color:var(--green); }
+  .review-row .pts.none { color:var(--ink-soft); }
+
+  /* Confetti */
+  #confetti { position:fixed; inset:0; pointer-events:none; z-index:200; overflow:hidden; }
+  .confetti {
+    position:absolute; top:-3vh; width:12px; height:12px; border-radius:2px;
+    animation: confetti-fall linear forwards;
+  }
+
+  /* Hamburger / overlay (mobile) */
+  .hamburger { display:none; position:fixed; top:.7rem; left:.7rem; z-index:40;
+    background:#fff; border:1px solid rgba(0,0,0,0.15); border-radius:10px;
+    padding:.35rem .65rem; font-size:1.25rem; cursor:pointer; font-family:inherit; }
+  .overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:19; }
+  .overlay.open { display:block; }
+
+  /* Keyframes */
+  @keyframes bob { 0%,100%{ transform:translateY(0);} 50%{ transform:translateY(-8px);} }
+  @keyframes pop { 0%{ transform:scale(0.4); opacity:0;} 100%{ transform:scale(1); opacity:1;} }
+  @keyframes slideUp { from{ opacity:0; transform:translateY(14px);} to{ opacity:1; transform:translateY(0);} }
+  @keyframes cardIn { from{ opacity:0; transform:translateY(20px) scale(0.97);} to{ opacity:1; transform:none;} }
+  @keyframes confetti-fall { to { transform:translateY(108vh) rotate(var(--rx,180deg)); opacity:.9; } }
+  .card-in { animation:cardIn .35s ease both; }
+
+  @media (max-width:768px) {
+    .sidebar { position:fixed; left:0; top:0; bottom:0; transform:translateX(-100%); z-index:100; box-shadow:0 0 40px rgba(0,0,0,0.2); }
+    .sidebar.open { transform:translateX(0); }
+    .hamburger { display:block; }
+    .card { padding:1.4rem 1.2rem 1.6rem; }
+    .q-text { font-size:1.15rem; }
+  }
+</style>
+</head>
+<body>
+
+<div id="confetti"></div>
+
+<button class="hamburger" id="hamburger">☰</button>
+<div class="overlay" id="overlay"></div>
+
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header" id="sidebar-home"><span class="ticker">🧠</span> <span id="side-title">Krita — Image Editing</span></div>
+  <div class="tree" id="tree"></div>
+</aside>
+
+<main class="main">
+  <div class="topbar">
+    <span class="app-title"><span>🧠</span><span id="top-title" title="Krita — Image Editing">Krita — Image Editing</span></span>
+    <span class="spacer"></span>
+    <div class="progress-track" title="Progress"><div class="progress-fill" id="progress-fill"></div></div>
+    <span class="score-chip" id="score-chip">⭐ Score: 0</span>
+    <button class="mute-btn" id="mute-btn" title="Toggle read-aloud (TTS)">🔊</button>
+  </div>
+  <div class="stage" id="stage"></div>
+</main>
+
+<script type="application/json" id="quiz-data">{"title":"Krita — Image Editing","sections":[{"id":"intro-krita","title":"What is Krita?","emoji":"🎨","questions":[{"id":"krita-image-editing-q1","question":"Who developed and gave out the Krita graphics application?","options":["The Krita Foundation","Microsoft Windows","The Swedish school","The Website krita.org"],"correctIndex":0,"explanation":"The chapter says Krita is developed and distributed by the Krita Foundation.","suggestImage":false},{"id":"krita-image-editing-q2","question":"Which of these can you make using Krita?","options":["Posters, banners and brochures","Music and songs","Video games only","Printed newspapers"],"correctIndex":0,"explanation":"The text says Krita can be used to create posters, banners, brochures and more.","suggestImage":false}]},{"id":"install","title":"Download & Install","emoji":"⬇️","questions":[{"id":"krita-image-editing-q3","question":"Which webpage should you visit to download Krita?","options":["www.krita.org/en/","www.pictures.com","www.paint.net","www.download-free.com"],"correctIndex":0,"explanation":"The first step is to visit the Krita webpage at www.krita.org/en/.","suggestImage":false},{"id":"krita-image-editing-q4","question":"On a Windows computer, which button do you click, and what file do you get?","options":["WINDOWS INSTALLER, and the setup.exe file","MAC INSTALLER, and the notes file","LINUX INSTALLER, and the brush file","DOWNLOAD button, and the layer file"],"correctIndex":0,"explanation":"Clicking WINDOWS INSTALLER downloads the setup.exe file you then install.","suggestImage":false}]},{"id":"start","title":"Starting Krita","emoji":"▶️","questions":[{"id":"krita-image-editing-q5","question":"The name Krita comes from Swedish words. What do they mean?","options":["k means chalk or crayon, rita means to draw","k means picture, rita means to save","k means colour, rita means to print","k means window, rita means to click"],"correctIndex":0,"explanation":"The chapter says k refers to chalk or crayon, and rita means to draw.","suggestImage":true,"imageNote":"Simple drawing of a piece of chalk and a crayon next to the word 'rita = to draw'.","image":{"id":"krita-image-editing-q5","type":"svg","src":"data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCA0MDAgMjcwJyB3aWR0aD0nNDAwJyBoZWlnaHQ9JzI3MCc+PHJlY3QgeD0nMicgeT0nMicgd2lkdGg9JzM5NicgaGVpZ2h0PScyNjYnIHJ4PScxOCcgZmlsbD0nI2ZmZjZlMCcgc3Ryb2tlPSIjMmQzNDM2IiBzdHJva2Utd2lkdGg9IjMiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjx0ZXh0IHg9JzIwMCcgeT0nMzInIGZvbnQtZmFtaWx5PSdWZXJkYW5hLERlamFWdSBTYW5zLHNhbnMtc2VyaWYnIGZvbnQtc2l6ZT0nMTYnIGZvbnQtd2VpZ2h0PSdib2xkJyBmaWxsPScjMmQzNDM2JyB0ZXh0LWFuY2hvcj0nbWlkZGxlJz5XaGVyZSB0aGUgbmFtZSBLcml0YSBjb21lcyBmcm9tPC90ZXh0PjxyZWN0IHg9JzM0JyB5PSc1OCcgd2lkdGg9JzE1MCcgaGVpZ2h0PScxNzAnIHJ4PScxNCcgZmlsbD0nI2ZmZmZmZicgc3Ryb2tlPSIjMmQzNDM2IiBzdHJva2Utd2lkdGg9IjMiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjx0ZXh0IHg9JzEwOScgeT0nOTInIGZvbnQtZmFtaWx5PSdWZXJkYW5hLERlamFWdSBTYW5zLHNhbnMtc2VyaWYnIGZvbnQtc2l6ZT0nNDQnIGZvbnQtd2VpZ2h0PSdib2xkJyBmaWxsPScjOWI1OWI2JyB0ZXh0LWFuY2hvcj0nbWlkZGxlJz5rPC90ZXh0PjxyZWN0IHg9JzU4JyB5PScxMTgnIHdpZHRoPScxMDInIGhlaWdodD0nMTcnIHJ4PSc4JyBmaWxsPScjNGVjZGM0JyBzdHJva2U9IiMyZDM0MzYiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PHRleHQgeD0nMTA5JyB5PScxNTInIGZvbnQtZmFtaWx5PSdWZXJkYW5hLERlamFWdSBTYW5zLHNhbnMtc2VyaWYnIGZvbnQtc2l6ZT0nMTMnIGZvbnQtd2VpZ2h0PSdib2xkJyBmaWxsPScjNGY5ZGU4JyB0ZXh0LWFuY2hvcj0nbWlkZGxlJz5jaGFsazwvdGV4dD48cmVjdCB4PSc1OCcgeT0nMTcyJyB3aWR0aD0nMTAyJyBoZWlnaHQ9JzE3JyByeD0nOCcgZmlsbD0nI2ZmNmI2Yicgc3Ryb2tlPSIjMmQzNDM2IiBzdHJva2Utd2lkdGg9IjMiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjx0ZXh0IHg9JzEwOScgeT0nMjA4JyBmb250LWZhbWlseT0nVmVyZGFuYSxEZWphVnUgU2FucyxzYW5zLXNlcmlmJyBmb250LXNpemU9JzEzJyBmb250LXdlaWdodD0nYm9sZCcgZmlsbD0nI2ZmNmI2YicgdGV4dC1hbmNob3I9J21pZGRsZSc+Y3JheW9uPC90ZXh0PjxwYXRoIGQ9J00xOTYgMTQzIGgzMCBtLTExIC0xMCBsMTEgMTAgbC0xMSAxMCcgZmlsbD0nbm9uZScgc3Ryb2tlPSIjMmQzNDM2IiBzdHJva2Utd2lkdGg9IjMiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjxyZWN0IHg9JzIzNicgeT0nNTgnIHdpZHRoPScxMzAnIGhlaWdodD0nMTcwJyByeD0nMTQnIGZpbGw9JyNmZmZmZmYnIHN0cm9rZT0iIzJkMzQzNiIgc3Ryb2tlLXdpZHRoPSIzIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48dGV4dCB4PSczMDEnIHk9JzkyJyBmb250LWZhbWlseT0nVmVyZGFuYSxEZWphVnUgU2FucyxzYW5zLXNlcmlmJyBmb250LXNpemU9JzM0JyBmb250LXdlaWdodD0nYm9sZCcgZmlsbD0nIzJlY2M3MScgdGV4dC1hbmNob3I9J21pZGRsZSc+cml0YTwvdGV4dD48cmVjdCB4PScyNTgnIHk9JzExMicgd2lkdGg9Jzg2JyBoZWlnaHQ9Jzc2JyByeD0nOCcgZmlsbD0nI2VhZjZmZicgc3Ryb2tlPSIjMmQzNDM2IiBzdHJva2Utd2lkdGg9IjMiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjxwYXRoIGQ9J00yNzAgMTY4IGwyMiAtMjYgbDE2IDE4IGwxNCAtMTIgbDE2IDIwIHonIGZpbGw9JyM0ZWNkYzQnIHN0cm9rZT0iIzJkMzQzNiIgc3Ryb2tlLXdpZHRoPSIzIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48cGF0aCBkPSdNMjYyIDIwMCBsNDQgLTQwIGw4IDggbC00NCA0MCB6JyBmaWxsPScjZmZkOTNkJyBzdHJva2U9IiMyZDM0MzYiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PHRleHQgeD0nMzAxJyB5PScyMTQnIGZvbnQtZmFtaWx5PSdWZXJkYW5hLERlamFWdSBTYW5zLHNhbnMtc2VyaWYnIGZvbnQtc2l6ZT0nMTMnIGZvbnQtd2VpZ2h0PSdib2xkJyBmaWxsPScjMmVjYzcxJyB0ZXh0LWFuY2hvcj0nbWlkZGxlJz50byBkcmF3PC90ZXh0Pjx0ZXh0IHg9JzIwMCcgeT0nMjU2JyBmb250LWZhbWlseT0nVmVyZGFuYSxEZWphVnUgU2FucyxzYW5zLXNlcmlmJyBmb250LXNpemU9JzEzJyBmb250LXdlaWdodD0nYm9sZCcgZmlsbD0nIzZiN2E4NScgdGV4dC1hbmNob3I9J21pZGRsZSc+S3JpdGEgaXMgYSBTd2VkaXNoIHdvcmQgZm9yIGNoYWxrIGRyYXdpbmc8L3RleHQ+PC9zdmc+","alt":"Chalk and crayon for the letter k, and a pencil drawing for the word rita"}}]},{"id":"components","title":"Parts of Krita","emoji":"🧩","questions":[{"id":"krita-image-editing-q6","question":"How many different menus does the Menu Bar of Krita contain?","options":["11","3","25","100"],"correctIndex":0,"explanation":"The Menu Bar holds 11 menus, such as File, Edit, View, Image, Layer and Tools.","suggestImage":true,"imageNote":"Labelled screenshot of the Krita window with the Menu Bar (File, Edit, View, Image, Layer, Tools) circled.","image":{"id":"krita-image-editing-q6","type":"svg","src":"data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCA0MDAgMjcwJyB3aWR0aD0nNDAwJyBoZWlnaHQ9JzI3MCc+PHJlY3QgeD0nMicgeT0nMicgd2lkdGg9JzM5NicgaGVpZ2h0PScyNjYnIHJ4PScxOCcgZmlsbD0nI2U4ZjZmZicgc3Ryb2tlPSIjMmQzNDM2IiBzdHJva2Utd2lkdGg9IjMiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjx0ZXh0IHg9JzIwMCcgeT0nMzInIGZvbnQtZmFtaWx5PSdWZXJkYW5hLERlamFWdSBTYW5zLHNhbnMtc2VyaWYnIGZvbnQtc2l6ZT0nMTYnIGZvbnQtd2VpZ2h0PSdib2xkJyBmaWxsPScjMmQzNDM2JyB0ZXh0LWFuY2hvcj0nbWlkZGxlJz5UaGUgTWVudSBCYXIgaGFzIDExIG1lbnVzPC90ZXh0PjxyZWN0IHg9JzMwJyB5PSc1Nicgd2lkdGg9JzM0MCcgaGVpZ2h0PSczMCcgcng9JzknIGZpbGw9JyNmZmZmZmYnIHN0cm9rZT0iIzJkMzQzNiIgc3Ryb2tlLXdpZHRoPSIzIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48dGV4dCB4PSc1OC4zMzMzMzMzMzMzMzMzMycgeT0nNzYnIGZvbnQtZmFtaWx5PSdWZXJkYW5hLERlamFWdSBTYW5zLHNhbnMtc2VyaWYnIGZvbnQtc2l6ZT0nMTEnIGZvbnQtd2VpZ2h0PSdib2xkJyBmaWxsPScjMmQzNDM2JyB0ZXh0LWFuY2hvcj0nbWlkZGxlJz5GaWxlPC90ZXh0Pjx0ZXh0IHg9JzExNS4wJyB5PSc3NicgZm9udC1mYW1pbHk9J1ZlcmRhbmEsRGVqYVZ1IFNhbnMsc2Fucy1zZXJpZicgZm9udC1zaXplPScxMScgZm9udC13ZWlnaHQ9J2JvbGQnIGZpbGw9JyMyZDM0MzYnIHRleHQtYW5jaG9yPSdtaWRkbGUnPkVkaXQ8L3RleHQ+PHRleHQgeD0nMTcxLjY2NjY2NjY2NjY2NjY2JyB5PSc3NicgZm9udC1mYW1pbHk9J1ZlcmRhbmEsRGVqYVZ1IFNhbnMsc2Fucy1zZXJpZicgZm9udC1zaXplPScxMScgZm9udC13ZWlnaHQ9J2JvbGQnIGZpbGw9JyMyZDM0MzYnIHRleHQtYW5jaG9yPSdtaWRkbGUnPlZpZXc8L3RleHQ+PHRleHQgeD0nMjI4LjMzMzMzMzMzMzMzMzMxJyB5PSc3NicgZm9udC1mYW1pbHk9J1ZlcmRhbmEsRGVqYVZ1IFNhbnMsc2Fucy1zZXJpZicgZm9udC1zaXplPScxMScgZm9udC13ZWlnaHQ9J2JvbGQnIGZpbGw9JyMyZDM0MzYnIHRleHQtYW5jaG9yPSdtaWRkbGUnPkltYWdlPC90ZXh0Pjx0ZXh0IHg9JzI4NS4wJyB5PSc3NicgZm9udC1mYW1pbHk9J1ZlcmRhbmEsRGVqYVZ1IFNhbnMsc2Fucy1zZXJpZicgZm9udC1zaXplPScxMScgZm9udC13ZWlnaHQ9J2JvbGQnIGZpbGw9JyMyZDM0MzYnIHRleHQtYW5jaG9yPSdtaWRkbGUnPkxheWVyPC90ZXh0Pjx0ZXh0IHg9JzM0MS42NjY2NjY2NjY2NjY2MycgeT0nNzYnIGZvbnQtZmFtaWx5PSdWZXJkYW5hLERlamFWdSBTYW5zLHNhbnMtc2VyaWYnIGZvbnQtc2l6ZT0nMTEnIGZvbnQtd2VpZ2h0PSdib2xkJyBmaWxsPScjMmQzNDM2JyB0ZXh0LWFuY2hvcj0nbWlkZGxlJz5TZWxlY3Q8L3RleHQ+PHJlY3QgeD0nMzAnIHk9Jzk2JyB3aWR0aD0nMzQwJyBoZWlnaHQ9JzMwJyByeD0nOScgZmlsbD0nI2ZmZmZmZicgc3Ryb2tlPSIjMmQzNDM2IiBzdHJva2Utd2lkdGg9IjMiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjx0ZXh0IHg9JzY0LjAnIHk9JzExNicgZm9udC1mYW1pbHk9J1ZlcmRhbmEsRGVqYVZ1IFNhbnMsc2Fucy1zZXJpZicgZm9udC1zaXplPScxMScgZm9udC13ZWlnaHQ9J2JvbGQnIGZpbGw9JyMyZDM0MzYnIHRleHQtYW5jaG9yPSdtaWRkbGUnPkZpbHRlcjwvdGV4dD48dGV4dCB4PScxMzIuMCcgeT0nMTE2JyBmb250LWZhbWlseT0nVmVyZGFuYSxEZWphVnUgU2FucyxzYW5zLXNlcmlmJyBmb250LXNpemU9JzExJyBmb250LXdlaWdodD0nYm9sZCcgZmlsbD0nIzJkMzQzNicgdGV4dC1hbmNob3I9J21pZGRsZSc+VG9vbHM8L3RleHQ+PHRleHQgeD0nMjAwLjAnIHk9JzExNicgZm9udC1mYW1pbHk9J1ZlcmRhbmEsRGVqYVZ1IFNhbnMsc2Fucy1zZXJpZicgZm9udC1zaXplPScxMScgZm9udC13ZWlnaHQ9J2JvbGQnIGZpbGw9JyMyZDM0MzYnIHRleHQtYW5jaG9yPSdtaWRkbGUnPlNldHRpbmdzPC90ZXh0Pjx0ZXh0IHg9JzI2OC4wJyB5PScxMTYnIGZvbnQtZmFtaWx5PSdWZXJkYW5hLERlamFWdSBTYW5zLHNhbnMtc2VyaWYnIGZvbnQtc2l6ZT0nMTEnIGZvbnQtd2VpZ2h0PSdib2xkJyBmaWxsPScjMmQzNDM2JyB0ZXh0LWFuY2hvcj0nbWlkZGxlJz5XaW5kb3c8L3RleHQ+PHRleHQgeD0nMzM2LjAnIHk9JzExNicgZm9udC1mYW1pbHk9J1ZlcmRhbmEsRGVqYVZ1IFNhbnMsc2Fucy1zZXJpZicgZm9udC1zaXplPScxMScgZm9udC13ZWlnaHQ9J2JvbGQnIGZpbGw9JyMyZDM0MzYnIHRleHQtYW5jaG9yPSdtaWRkbGUnPkhlbHA8L3RleHQ+PGNpcmNsZSBjeD0nMjAwJyBjeT0nMTgyJyByPSczNCcgZmlsbD0nI2ZmZDkzZCcgc3Ryb2tlPSIjMmQzNDM2IiBzdHJva2Utd2lkdGg9IjMiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjx0ZXh0IHg9JzIwMCcgeT0nMTkzJyBmb250LWZhbWlseT0nVmVyZGFuYSxEZWphVnUgU2FucyxzYW5zLXNlcmlmJyBmb250LXNpemU9JzMwJyBmb250LXdlaWdodD0nYm9sZCcgZmlsbD0nIzJkMzQzNicgdGV4dC1hbmNob3I9J21pZGRsZSc+MTE8L3RleHQ+PHRleHQgeD0nMjAwJyB5PScyNDAnIGZvbnQtZmFtaWx5PSdWZXJkYW5hLERlamFWdSBTYW5zLHNhbnMtc2VyaWYnIGZvbnQtc2l6ZT0nMTMnIGZvbnQtd2VpZ2h0PSdib2xkJyBmaWxsPScjNmI3YTg1JyB0ZXh0LWFuY2hvcj0nbWlkZGxlJz5FYWNoIG1lbnUgaG9sZHMgdGhlIGNvbW1hbmRzIGZvciBhIHRhc2s8L3RleHQ+PHRleHQgeD0nMjAwJyB5PScyNTknIGZvbnQtZmFtaWx5PSdWZXJkYW5hLERlamFWdSBTYW5zLHNhbnMtc2VyaWYnIGZvbnQtc2l6ZT0nMTInIGZvbnQtd2VpZ2h0PSdib2xkJyBmaWxsPScjNmI3YTg1JyB0ZXh0LWFuY2hvcj0nbWlkZGxlJz5zdWNoIGFzIEZpbGUsIEVkaXQsIFZpZXcsIEltYWdlLCBMYXllciwgVG9vbHM8L3RleHQ+PC9zdmc+","alt":"The Krita Menu Bar showing eleven menus: File, Edit, View, Image, Layer, Select, Filter, Tools, Settings, Window and Help"}},{"id":"krita-image-editing-q7","question":"What is kept inside the Toolbox of Krita?","options":["Tools used to create, edit and enhance an image","The pictures you have already saved","The names of all your colours","The zoom level of your image"],"correctIndex":0,"explanation":"The Toolbox holds the tools used to create, edit and enhance an image.","suggestImage":true,"imageNote":"Labelled screenshot of the Krita window with the Toolbox column on the left highlighted.","image":{"id":"krita-image-editing-q7","type":"svg","src":"data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCA0MDAgMjcwJyB3aWR0aD0nNDAwJyBoZWlnaHQ9JzI3MCc+PHJlY3QgeD0nMicgeT0nMicgd2lkdGg9JzM5NicgaGVpZ2h0PScyNjYnIHJ4PScxOCcgZmlsbD0nI2YyZjBmZicgc3Ryb2tlPSIjMmQzNDM2IiBzdHJva2Utd2lkdGg9IjMiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjx0ZXh0IHg9JzIwMCcgeT0nMzInIGZvbnQtZmFtaWx5PSdWZXJkYW5hLERlamFWdSBTYW5zLHNhbnMtc2VyaWYnIGZvbnQtc2l6ZT0nMTUnIGZvbnQtd2VpZ2h0PSdib2xkJyBmaWxsPScjMmQzNDM2JyB0ZXh0LWFuY2hvcj0nbWlkZGxlJz5UaGUgVG9vbGJveCBob2xkcyB0aGUgZHJhd2luZyB0b29sczwvdGV4dD48cmVjdCB4PSc1MicgeT0nNTAnIHdpZHRoPScyOTYnIGhlaWdodD0nMTc2JyByeD0nMTQnIGZpbGw9JyNmZmZmZmYnIHN0cm9rZT0iIzJkMzQzNiIgc3Ryb2tlLXdpZHRoPSIzIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48cGF0aCBkPSdNODIgNzQgbDAgMjYgbDcgLTcgbDYgOSBsNSAtMyBsLTYgLTkgbDkgLTEgeicgZmlsbD0nIzRmOWRlOCcgc3Ryb2tlPSIjMmQzNDM2IiBzdHJva2Utd2lkdGg9IjMiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjxwYXRoIGQ9J00xNzYgOTYgbDE0IC0xNiBsNiA2IGwtMTQgMTYgeicgZmlsbD0nI2M5YTA2YScgc3Ryb2tlPSIjMmQzNDM2IiBzdHJva2Utd2lkdGg9IjMiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjxwYXRoIGQ9J00xODggNzQgbDEyIC00IGw0IDEyIGwtMTIgNCB6JyBmaWxsPScjZmY2YjZiJyBzdHJva2U9IiMyZDM0MzYiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PHRleHQgeD0nMjgxJyB5PSc5MicgZm9udC1mYW1pbHk9J1ZlcmRhbmEsRGVqYVZ1IFNhbnMsc2Fucy1zZXJpZicgZm9udC1zaXplPScyMicgZm9udC13ZWlnaHQ9J2JvbGQnIGZpbGw9JyM5YjU5YjYnIHRleHQtYW5jaG9yPSdtaWRkbGUnPlQ8L3RleHQ+PHJlY3QgeD0nODAnIHk9JzE1Micgd2lkdGg9JzIwJyBoZWlnaHQ9JzE4JyBmaWxsPScjMmVjYzcxJyBzdHJva2U9IiMyZDM0MzYiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PGVsbGlwc2UgY3g9JzE4NicgY3k9JzE2MScgcng9JzEyJyByeT0nOScgZmlsbD0nI2ZmYjMwMCcgc3Ryb2tlPSIjMmQzNDM2IiBzdHJva2Utd2lkdGg9IjMiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjxwYXRoIGQ9J00yNzIgMTUyIHYxOCBoMjAnIGZpbGw9J25vbmUnIHN0cm9rZT0iIzJkMzQzNiIgc3Ryb2tlLXdpZHRoPSIzIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48cGF0aCBkPSdNMjg4IDE2NiBsMTAgMTAgbTAgLTEwIGwtMTAgMTAnIGZpbGw9J25vbmUnIHN0cm9rZT0iIzJkMzQzNiIgc3Ryb2tlLXdpZHRoPSIzIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48cmVjdCB4PSc2OCcgeT0nMTk2JyB3aWR0aD0nMjY0JyBoZWlnaHQ9JzQnIHJ4PScyJyBmaWxsPScjZGZlNmU5Jy8+PHRleHQgeD0nMjAwJyB5PScyNTAnIGZvbnQtZmFtaWx5PSdWZXJkYW5hLERlamFWdSBTYW5zLHNhbnMtc2VyaWYnIGZvbnQtc2l6ZT0nMTInIGZvbnQtd2VpZ2h0PSdib2xkJyBmaWxsPScjNmI3YTg1JyB0ZXh0LWFuY2hvcj0nbWlkZGxlJz5Ub29scyBhcmUgdXNlZCB0byBjcmVhdGUsIGVkaXQgYW5kIGVuaGFuY2UgYW4gaW1hZ2U8L3RleHQ+PC9zdmc+","alt":"The Krita Toolbox holding the tools used to create, edit and enhance an image"}},{"id":"krita-image-editing-q8","question":"Which of these does the Status Bar show at the bottom of Krita?","options":["Zoom level, cursor coordinates, brush settings and colour details","The names of your computer's folders","The price of the Krita software","The list of all websites you visited"],"correctIndex":0,"explanation":"The Status Bar displays zoom level, cursor coordinates, brush settings, colour details and more.","suggestImage":false}]},{"id":"new-file","title":"Creating a New File","emoji":"📄","questions":[{"id":"krita-image-editing-q9","question":"Which category is already selected by default in the Create new document dialog box?","options":["Custom Document","Animation","Print A4","Sketch"],"correctIndex":0,"explanation":"The dialog box opens with the Custom Document category selected by default.","suggestImage":false},{"id":"krita-image-editing-q10","question":"What does the Resolution setting in the Dimensions tab tell Krita?","options":["The number of pixels per inch","The number of colours in the file","The length of the file name","The number of layers in the file"],"correctIndex":0,"explanation":"Resolution is the number of pixels per inch, and more resolution makes the image clear.","suggestImage":false},{"id":"krita-image-editing-q11","question":"What name does a brand new Krita file get by default?","options":["Unnamed","New Picture","Untitled Untitled","Blank"],"correctIndex":0,"explanation":"The Name option defaults to 'Unnamed' until you give the file a name of your own.","suggestImage":false}]},{"id":"open-image","title":"Opening an Image","emoji":"📂","questions":[{"id":"krita-image-editing-q12","question":"You want to edit a picture that is already on your computer. What do you click?","options":["The File menu, and then the Open option","The Edit menu, and then the Undo option","The View menu, and then the Zoom option","The Tools menu, and then the Brush option"],"correctIndex":0,"explanation":"To open an existing image you click the File menu and then the Open option.","suggestImage":false}]},{"id":"selection","title":"Selection Tools","emoji":"🔲","questions":[{"id":"krita-image-editing-q13","question":"What does the Rectangular Selection Tool select on an image?","options":["A rectangular portion of the image","A round or oval portion of the image","A section with many straight sides","The edges of the image by colour"],"correctIndex":0,"explanation":"The Rectangular Selection Tool selects a rectangular portion by clicking and dragging the mouse.","suggestImage":true,"imageNote":"Diagram of a photo with a dashed rectangular box drawn on part of it.","image":{"id":"krita-image-editing-q13","type":"svg","src":"data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCA0MDAgMjgwJyB3aWR0aD0nNDAwJyBoZWlnaHQ9JzI4MCc+PHJlY3QgeD0nMicgeT0nMicgd2lkdGg9JzM5NicgaGVpZ2h0PScyNzYnIHJ4PScxOCcgZmlsbD0nI2VhZjZmZicgc3Ryb2tlPSIjMmQzNDM2IiBzdHJva2Utd2lkdGg9IjMiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjx0ZXh0IHg9JzIwMCcgeT0nMzInIGZvbnQtZmFtaWx5PSdWZXJkYW5hLERlamFWdSBTYW5zLHNhbnMtc2VyaWYnIGZvbnQtc2l6ZT0nMTYnIGZvbnQtd2VpZ2h0PSdib2xkJyBmaWxsPScjMmQzNDM2JyB0ZXh0LWFuY2hvcj0nbWlkZGxlJz5SZWN0YW5ndWxhciBTZWxlY3Rpb24gVG9vbDwvdGV4dD48Y2xpcFBhdGggaWQ9J2MzMDUwJz48cmVjdCB4PSczMCcgeT0nNTAnIHdpZHRoPSczNDAnIGhlaWdodD0nMTcwJyByeD0nMTAnLz48L2NsaXBQYXRoPjxnIGNsaXAtcGF0aD0ndXJsKCNjMzA1MCknPjxyZWN0IHg9JzMwJyB5PSc1MCcgd2lkdGg9JzM0MCcgaGVpZ2h0PScxNzAnIGZpbGw9JyNiZmU2ZmYnLz48Y2lyY2xlIGN4PScyODgnIGN5PSc5MScgcj0nMjInIGZpbGw9JyNmZmQ5M2QnIHN0cm9rZT0iIzJkMzQzNiIgc3Ryb2tlLXdpZHRoPSIzIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48ZWxsaXBzZSBjeD0nMTI1JyBjeT0nODQnIHJ4PSc1NCcgcnk9JzE0JyBmaWxsPScjZmZmZmZmJyBzdHJva2U9IiMyZDM0MzYiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PGVsbGlwc2UgY3g9JzE2NicgY3k9Jzc5JyByeD0nNDEnIHJ5PScxMicgZmlsbD0nI2ZmZmZmZicgc3Ryb2tlPSIjMmQzNDM2IiBzdHJva2Utd2lkdGg9IjMiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjxwYXRoIGQ9J00zMCAxNzIuMzk5OTk5OTk5OTk5OTggcTEwMiAtNDQuMiAyMDQgMCB6JyBmaWxsPScjMmVjYzcxJyBzdHJva2U9IiMyZDM0MzYiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PHJlY3QgeD0nNzgnIHk9JzEzNScgd2lkdGg9JzY4JyBoZWlnaHQ9JzM3JyBmaWxsPScjZmY2YjZiJyBzdHJva2U9IiMyZDM0MzYiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PHBhdGggZD0nTTY0IDEzNSBsMzQgLTIwIGwzNCAyMCB6JyBmaWxsPScjZmY5ZjQzJyBzdHJva2U9IiMyZDM0MzYiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PC9nPjxyZWN0IHg9JzMwJyB5PSc1MCcgd2lkdGg9JzM0MCcgaGVpZ2h0PScxNzAnIHJ4PScxMCcgZmlsbD0nbm9uZScgc3Ryb2tlPSIjMmQzNDM2IiBzdHJva2Utd2lkdGg9IjMiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjxyZWN0IHg9JzcwJyB5PSc4Nicgd2lkdGg9JzEyMCcgaGVpZ2h0PSc5Micgcng9JzQnIGZpbGw9J25vbmUnIHN0cm9rZT0nI2ZmNmI2Yicgc3Ryb2tlLXdpZHRoPSczLjUnIHN0cm9rZS1kYXNoYXJyYXk9JzcgNicvPjxyZWN0IHg9JzY1JyB5PSc4MScgd2lkdGg9JzEwJyBoZWlnaHQ9JzEwJyByeD0nMicgZmlsbD0nI2ZmZmZmZicgc3Ryb2tlPScjZmY2YjZiJyBzdHJva2Utd2lkdGg9JzIuNScvPjxyZWN0IHg9JzE4NScgeT0nODEnIHdpZHRoPScxMCcgaGVpZ2h0PScxMCcgcng9JzInIGZpbGw9JyNmZmZmZmYnIHN0cm9rZT0nI2ZmNmI2Yicgc3Ryb2tlLXdpZHRoPScyLjUnLz48cmVjdCB4PSc2NScgeT0nMTczJyB3aWR0aD0nMTAnIGhlaWdodD0nMTAnIHJ4PScyJyBmaWxsPScjZmZmZmZmJyBzdHJva2U9JyNmZjZiNmInIHN0cm9rZS13aWR0aD0nMi41Jy8+PHJlY3QgeD0nMTg1JyB5PScxNzMnIHdpZHRoPScxMCcgaGVpZ2h0PScxMCcgcng9JzInIGZpbGw9JyNmZmZmZmYnIHN0cm9rZT0nI2ZmNmI2Yicgc3Ryb2tlLXdpZHRoPScyLjUnLz48dGV4dCB4PScyMDAnIHk9JzI1MicgZm9udC1mYW1pbHk9J1ZlcmRhbmEsRGVqYVZ1IFNhbnMsc2Fucy1zZXJpZicgZm9udC1zaXplPScxMicgZm9udC13ZWlnaHQ9J2JvbGQnIGZpbGw9JyM2YjdhODUnIHRleHQtYW5jaG9yPSdtaWRkbGUnPlRoZSBtYXJjaGluZyBhbnRzIG1hcmsgdGhlIHBhcnQgeW91IHNlbGVjdGVkPC90ZXh0Pjwvc3ZnPg==","alt":"A rectangular marching-ants box around part of a landscape picture"}},{"id":"krita-image-editing-q14","question":"Which tool should you use to select an oval or circular part of an image?","options":["Elliptical Selection Tool","Rectangular Selection Tool","Text Tool","Crop Tool"],"correctIndex":0,"explanation":"The Elliptical Selection Tool selects an oval or circular portion of an image.","suggestImage":true,"imageNote":"Diagram of a photo with a dashed oval and a dashed circle drawn on it.","image":{"id":"krita-image-editing-q14","type":"svg","src":"data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCA0MDAgMjgwJyB3aWR0aD0nNDAwJyBoZWlnaHQ9JzI4MCc+PHJlY3QgeD0nMicgeT0nMicgd2lkdGg9JzM5NicgaGVpZ2h0PScyNzYnIHJ4PScxOCcgZmlsbD0nI2VhZjZmZicgc3Ryb2tlPSIjMmQzNDM2IiBzdHJva2Utd2lkdGg9IjMiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjx0ZXh0IHg9JzIwMCcgeT0nMzInIGZvbnQtZmFtaWx5PSdWZXJkYW5hLERlamFWdSBTYW5zLHNhbnMtc2VyaWYnIGZvbnQtc2l6ZT0nMTYnIGZvbnQtd2VpZ2h0PSdib2xkJyBmaWxsPScjMmQzNDM2JyB0ZXh0LWFuY2hvcj0nbWlkZGxlJz5FbGxpcHRpY2FsIFNlbGVjdGlvbiBUb29sPC90ZXh0PjxjbGlwUGF0aCBpZD0nYzMwNTAnPjxyZWN0IHg9JzMwJyB5PSc1MCcgd2lkdGg9JzM0MCcgaGVpZ2h0PScxNzAnIHJ4PScxMCcvPjwvY2xpcFBhdGg+PGcgY2xpcC1wYXRoPSd1cmwoI2MzMDUwKSc+PHJlY3QgeD0nMzAnIHk9JzUwJyB3aWR0aD0nMzQwJyBoZWlnaHQ9JzE3MCcgZmlsbD0nI2JmZTZmZicvPjxjaXJjbGUgY3g9JzI4OCcgY3k9JzkxJyByPScyMicgZmlsbD0nI2ZmZDkzZCcgc3Ryb2tlPSIjMmQzNDM2IiBzdHJva2Utd2lkdGg9IjMiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjxlbGxpcHNlIGN4PScxMjUnIGN5PSc4NCcgcng9JzU0JyByeT0nMTQnIGZpbGw9JyNmZmZmZmYnIHN0cm9rZT0iIzJkMzQzNiIgc3Ryb2tlLXdpZHRoPSIzIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48ZWxsaXBzZSBjeD0nMTY2JyBjeT0nNzknIHJ4PSc0MScgcnk9JzEyJyBmaWxsPScjZmZmZmZmJyBzdHJva2U9IiMyZDM0MzYiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PHBhdGggZD0nTTMwIDE3Mi4zOTk5OTk5OTk5OTk5OCBxMTAyIC00NC4yIDIwNCAwIHonIGZpbGw9JyMyZWNjNzEnIHN0cm9rZT0iIzJkMzQzNiIgc3Ryb2tlLXdpZHRoPSIzIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48cmVjdCB4PSc3OCcgeT0nMTM1JyB3aWR0aD0nNjgnIGhlaWdodD0nMzcnIGZpbGw9JyNmZjZiNmInIHN0cm9rZT0iIzJkMzQzNiIgc3Ryb2tlLXdpZHRoPSIzIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48cGF0aCBkPSdNNjQgMTM1IGwzNCAtMjAgbDM0IDIwIHonIGZpbGw9JyNmZjlmNDMnIHN0cm9rZT0iIzJkMzQzNiIgc3Ryb2tlLXdpZHRoPSIzIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48L2c+PHJlY3QgeD0nMzAnIHk9JzUwJyB3aWR0aD0nMzQwJyBoZWlnaHQ9JzE3MCcgcng9JzEwJyBmaWxsPSdub25lJyBzdHJva2U9IiMyZDM0MzYiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PGVsbGlwc2UgY3g9JzIxMCcgY3k9JzEzNCcgcng9Jzc0JyByeT0nNjInIGZpbGw9J25vbmUnIHN0cm9rZT0nI2ZmNmI2Yicgc3Ryb2tlLXdpZHRoPSczLjUnIHN0cm9rZS1kYXNoYXJyYXk9JzcgNicvPjxyZWN0IHg9JzEzMScgeT0nNjcnIHdpZHRoPScxMCcgaGVpZ2h0PScxMCcgcng9JzInIGZpbGw9JyNmZmZmZmYnIHN0cm9rZT0nI2ZmNmI2Yicgc3Ryb2tlLXdpZHRoPScyLjUnLz48cmVjdCB4PScyNzknIHk9JzY3JyB3aWR0aD0nMTAnIGhlaWdodD0nMTAnIHJ4PScyJyBmaWxsPScjZmZmZmZmJyBzdHJva2U9JyNmZjZiNmInIHN0cm9rZS13aWR0aD0nMi41Jy8+PHJlY3QgeD0nMTMxJyB5PScxOTEnIHdpZHRoPScxMCcgaGVpZ2h0PScxMCcgcng9JzInIGZpbGw9JyNmZmZmZmYnIHN0cm9rZT0nI2ZmNmI2Yicgc3Ryb2tlLXdpZHRoPScyLjUnLz48cmVjdCB4PScyNzknIHk9JzE5MScgd2lkdGg9JzEwJyBoZWlnaHQ9JzEwJyByeD0nMicgZmlsbD0nI2ZmZmZmZicgc3Ryb2tlPScjZmY2YjZiJyBzdHJva2Utd2lkdGg9JzIuNScvPjx0ZXh0IHg9JzIwMCcgeT0nMjUyJyBmb250LWZhbWlseT0nVmVyZGFuYSxEZWphVnUgU2FucyxzYW5zLXNlcmlmJyBmb250LXNpemU9JzEyJyBmb250LXdlaWdodD0nYm9sZCcgZmlsbD0nIzZiN2E4NScgdGV4dC1hbmNob3I9J21pZGRsZSc+VGhlIG1hcmNoaW5nIGFudHMgbWFyayB0aGUgcGFydCB5b3Ugc2VsZWN0ZWQ8L3RleHQ+PC9zdmc+","alt":"An oval marching-ants outline around part of a landscape picture"}},{"id":"krita-image-editing-q15","question":"Which tool selects a multi-side section, like a shape with straight edges?","options":["Polygonal Selection Tool","Freehand Selection Tool","Elliptical Selection Tool","Smart Patch Tool"],"correctIndex":0,"explanation":"The Polygonal Selection Tool selects a multi-side section by clicking points to form a closed polygon.","suggestImage":true,"imageNote":"Diagram of a photo with a dashed many-sided polygon outline and click points marked.","image":{"id":"krita-image-editing-q15","type":"svg","src":"data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCA0MDAgMjgwJyB3aWR0aD0nNDAwJyBoZWlnaHQ9JzI4MCc+PHJlY3QgeD0nMicgeT0nMicgd2lkdGg9JzM5NicgaGVpZ2h0PScyNzYnIHJ4PScxOCcgZmlsbD0nI2VhZjZmZicgc3Ryb2tlPSIjMmQzNDM2IiBzdHJva2Utd2lkdGg9IjMiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjx0ZXh0IHg9JzIwMCcgeT0nMzInIGZvbnQtZmFtaWx5PSdWZXJkYW5hLERlamFWdSBTYW5zLHNhbnMtc2VyaWYnIGZvbnQtc2l6ZT0nMTYnIGZvbnQtd2VpZ2h0PSdib2xkJyBmaWxsPScjMmQzNDM2JyB0ZXh0LWFuY2hvcj0nbWlkZGxlJz5Qb2x5Z29uYWwgU2VsZWN0aW9uIFRvb2w8L3RleHQ+PGNsaXBQYXRoIGlkPSdjMzA1MCc+PHJlY3QgeD0nMzAnIHk9JzUwJyB3aWR0aD0nMzQwJyBoZWlnaHQ9JzE3MCcgcng9JzEwJy8+PC9jbGlwUGF0aD48ZyBjbGlwLXBhdGg9J3VybCgjYzMwNTApJz48cmVjdCB4PSczMCcgeT0nNTAnIHdpZHRoPSczNDAnIGhlaWdodD0nMTcwJyBmaWxsPScjYmZlNmZmJy8+PGNpcmNsZSBjeD0nMjg4JyBjeT0nOTEnIHI9JzIyJyBmaWxsPScjZmZkOTNkJyBzdHJva2U9IiMyZDM0MzYiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PGVsbGlwc2UgY3g9JzEyNScgY3k9Jzg0JyByeD0nNTQnIHJ5PScxNCcgZmlsbD0nI2ZmZmZmZicgc3Ryb2tlPSIjMmQzNDM2IiBzdHJva2Utd2lkdGg9IjMiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjxlbGxpcHNlIGN4PScxNjYnIGN5PSc3OScgcng9JzQxJyByeT0nMTInIGZpbGw9JyNmZmZmZmYnIHN0cm9rZT0iIzJkMzQzNiIgc3Ryb2tlLXdpZHRoPSIzIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48cGF0aCBkPSdNMzAgMTcyLjM5OTk5OTk5OTk5OTk4IHExMDIgLTQ0LjIgMjA0IDAgeicgZmlsbD0nIzJlY2M3MScgc3Ryb2tlPSIjMmQzNDM2IiBzdHJva2Utd2lkdGg9IjMiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjxyZWN0IHg9Jzc4JyB5PScxMzUnIHdpZHRoPSc2OCcgaGVpZ2h0PSczNycgZmlsbD0nI2ZmNmI2Yicgc3Ryb2tlPSIjMmQzNDM2IiBzdHJva2Utd2lkdGg9IjMiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjxwYXRoIGQ9J002NCAxMzUgbDM0IC0yMCBsMzQgMjAgeicgZmlsbD0nI2ZmOWY0Mycgc3Ryb2tlPSIjMmQzNDM2IiBzdHJva2Utd2lkdGg9IjMiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjwvZz48cmVjdCB4PSczMCcgeT0nNTAnIHdpZHRoPSczNDAnIGhlaWdodD0nMTcwJyByeD0nMTAnIGZpbGw9J25vbmUnIHN0cm9rZT0iIzJkMzQzNiIgc3Ryb2tlLXdpZHRoPSIzIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48cG9seWdvbiBwb2ludHM9JzgwLDkwIDE1MCw2NiAyMTYsMTA0IDIwMCwxNzggMTA4LDE4NiA2MiwxNDAnIGZpbGw9J25vbmUnIHN0cm9rZT0nI2ZmNmI2Yicgc3Ryb2tlLXdpZHRoPSczLjUnIHN0cm9rZS1kYXNoYXJyYXk9JzcgNicvPjxyZWN0IHg9JzU3JyB5PSc2MScgd2lkdGg9JzEwJyBoZWlnaHQ9JzEwJyByeD0nMicgZmlsbD0nI2ZmZmZmZicgc3Ryb2tlPScjZmY2YjZiJyBzdHJva2Utd2lkdGg9JzIuNScvPjxyZWN0IHg9JzIxMScgeT0nNjEnIHdpZHRoPScxMCcgaGVpZ2h0PScxMCcgcng9JzInIGZpbGw9JyNmZmZmZmYnIHN0cm9rZT0nI2ZmNmI2Yicgc3Ryb2tlLXdpZHRoPScyLjUnLz48cmVjdCB4PSc1NycgeT0nMTgxJyB3aWR0aD0nMTAnIGhlaWdodD0nMTAnIHJ4PScyJyBmaWxsPScjZmZmZmZmJyBzdHJva2U9JyNmZjZiNmInIHN0cm9rZS13aWR0aD0nMi41Jy8+PHJlY3QgeD0nMjExJyB5PScxODEnIHdpZHRoPScxMCcgaGVpZ2h0PScxMCcgcng9JzInIGZpbGw9JyNmZmZmZmYnIHN0cm9rZT0nI2ZmNmI2Yicgc3Ryb2tlLXdpZHRoPScyLjUnLz48dGV4dCB4PScyMDAnIHk9JzI1MicgZm9udC1mYW1pbHk9J1ZlcmRhbmEsRGVqYVZ1IFNhbnMsc2Fucy1zZXJpZicgZm9udC1zaXplPScxMicgZm9udC13ZWlnaHQ9J2JvbGQnIGZpbGw9JyM2YjdhODUnIHRleHQtYW5jaG9yPSdtaWRkbGUnPlRoZSBtYXJjaGluZyBhbnRzIG1hcmsgdGhlIHBhcnQgeW91IHNlbGVjdGVkPC90ZXh0Pjwvc3ZnPg==","alt":"A six sided polygon marching-ants outline around part of a landscape picture"}},{"id":"krita-image-editing-q16","question":"How does the Contiguous Selection Tool find the area to select?","options":["It finds the edges automatically using the colour codes","You type in the number of pixels","It always selects the whole image","You must draw a rectangle by hand"],"correctIndex":0,"explanation":"The Contiguous Selection Tool detects edges automatically from colour codes using a round brush tip.","suggestImage":true,"imageNote":"Diagram of a photo with a round brush dab on one object and a dashed line following its edges.","image":{"id":"krita-image-editing-q16","type":"svg","src":"data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCA0MDAgMjcwJyB3aWR0aD0nNDAwJyBoZWlnaHQ9JzI3MCc+PHJlY3QgeD0nMicgeT0nMicgd2lkdGg9JzM5NicgaGVpZ2h0PScyNjYnIHJ4PScxOCcgZmlsbD0nI2VhZjZmZicgc3Ryb2tlPSIjMmQzNDM2IiBzdHJva2Utd2lkdGg9IjMiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjx0ZXh0IHg9JzIwMCcgeT0nMzAnIGZvbnQtZmFtaWx5PSdWZXJkYW5hLERlamFWdSBTYW5zLHNhbnMtc2VyaWYnIGZvbnQtc2l6ZT0nMTYnIGZvbnQtd2VpZ2h0PSdib2xkJyBmaWxsPScjMmQzNDM2JyB0ZXh0LWFuY2hvcj0nbWlkZGxlJz5Db250aWd1b3VzIFNlbGVjdGlvbiBUb29sPC90ZXh0Pjx0ZXh0IHg9JzIwMCcgeT0nNTAnIGZvbnQtZmFtaWx5PSdWZXJkYW5hLERlamFWdSBTYW5zLHNhbnMtc2VyaWYnIGZvbnQtc2l6ZT0nMTInIGZvbnQtd2VpZ2h0PSdib2xkJyBmaWxsPScjNmI3YTg1JyB0ZXh0LWFuY2hvcj0nbWlkZGxlJz5pdCBmaW5kcyB0aGUgZWRnZXMgYnkgaXRzZWxmPC90ZXh0PjxyZWN0IHg9JzMwJyB5PSc2Micgd2lkdGg9JzI1MCcgaGVpZ2h0PScxNzAnIHJ4PScxMCcgZmlsbD0nI2JmZTZmZicgc3Ryb2tlPSIjMmQzNDM2IiBzdHJva2Utd2lkdGg9IjMiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjxwYXRoIGQ9J00zMCAxOTAgcTYwIC00MCAxMjAgLTggcTcwIDMyIDEzMCAtNiB2NTYgaC0yNTAgeicgZmlsbD0nIzJlY2M3MScgc3Ryb2tlPSIjMmQzNDM2IiBzdHJva2Utd2lkdGg9IjMiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjxwb2x5Z29uIHBvaW50cz0nMTU1LjAsNzguMCAxNzIuNiwxMjEuNyAyMTkuNywxMjUuMCAxODMuNSwxNTUuMyAxOTUuMCwyMDEuMCAxNTUuMCwxNzYuMCAxMTUuMCwyMDEuMCAxMjYuNSwxNTUuMyA5MC4zLDEyNS4wIDEzNy40LDEyMS43JyBmaWxsPScjZmZkOTNkJyBzdHJva2U9IiMyZDM0MzYiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PHBvbHlnb24gcG9pbnRzPScxNTUuMCw3MC4wIDE3Ny4zLDExNS4zIDIyNy4zLDEyMi41IDE5MS4xLDE1Ny43IDE5OS43LDIwNy41IDE1NS4wLDE4NC4wIDExMC4zLDIwNy41IDExOC45LDE1Ny43IDgyLjcsMTIyLjUgMTMyLjcsMTE1LjMnIGZpbGw9J25vbmUnIHN0cm9rZT0nI2ZmNmI2Yicgc3Ryb2tlLXdpZHRoPSczLjUnIHN0cm9rZS1kYXNoYXJyYXk9JzcgNicvPjxjaXJjbGUgY3g9JzMyMCcgY3k9JzEwMCcgcj0nMjYnIGZpbGw9JyM5YjU5YjYnIHN0cm9rZT0iIzJkMzQzNiIgc3Ryb2tlLXdpZHRoPSIzIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48cGF0aCBkPSdNMzIwIDEwMCBsMjIgLTMwIE0zNDIgNzAgbDYgLTEwIGwtMTIgMiB6JyBmaWxsPScjZmZmZmZmJyBzdHJva2U9IiMyZDM0MzYiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PHBhdGggZD0nTTMxMiA3OCBsMTYgMjIgTTMyOCA3OCBsLTE2IDIyJyBzdHJva2U9JyNmZmZmZmYnIHN0cm9rZS13aWR0aD0nMycvPjx0ZXh0IHg9JzMyMCcgeT0nMTUyJyBmb250LWZhbWlseT0nVmVyZGFuYSxEZWphVnUgU2FucyxzYW5zLXNlcmlmJyBmb250LXNpemU9JzExJyBmb250LXdlaWdodD0nYm9sZCcgZmlsbD0nI2ZmZmZmZicgdGV4dC1hbmNob3I9J21pZGRsZSc+bWFnaWM8L3RleHQ+PHRleHQgeD0nMzIwJyB5PScxOTYnIGZvbnQtZmFtaWx5PSdWZXJkYW5hLERlamFWdSBTYW5zLHNhbnMtc2VyaWYnIGZvbnQtc2l6ZT0nMTInIGZvbnQtd2VpZ2h0PSdib2xkJyBmaWxsPScjOWI1OWI2JyB0ZXh0LWFuY2hvcj0nbWlkZGxlJz53aXphcmQ8L3RleHQ+PHRleHQgeD0nMjAwJyB5PScyNTQnIGZvbnQtZmFtaWx5PSdWZXJkYW5hLERlamFWdSBTYW5zLHNhbnMtc2VyaWYnIGZvbnQtc2l6ZT0nMTInIGZvbnQtd2VpZ2h0PSdib2xkJyBmaWxsPScjNmI3YTg1JyB0ZXh0LWFuY2hvcj0nbWlkZGxlJz5JdCBmb2xsb3dzIHRoZSBjb2xvdXIgY29kZXMgdG8gZmluZCB0aGUgd2hvbGUgZWRnZTwvdGV4dD48L3N2Zz4=","alt":"A star whose edges are automatically traced with marching ants by the Contiguous Selection Tool"}}]},{"id":"more-tools","title":"More Editing Tools","emoji":"🛠️","questions":[{"id":"krita-image-editing-q17","question":"What does the Similar Color Selection Tool do?","options":["It selects areas of similar colour in an image","It removes dark spots from an image","It duplicates a part of an image","It trims away the unwanted outer part of an image"],"correctIndex":0,"explanation":"Clicking one colour with this tool selects every area that has a similar colour.","suggestImage":true,"imageNote":"A picture where one region is highlighted after clicking on a single colour of similar pixels.","image":{"id":"krita-image-editing-q17","type":"svg","src":"data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCA0MDAgMjcwJyB3aWR0aD0nNDAwJyBoZWlnaHQ9JzI3MCc+PHJlY3QgeD0nMicgeT0nMicgd2lkdGg9JzM5NicgaGVpZ2h0PScyNjYnIHJ4PScxOCcgZmlsbD0nI2VhZjZmZicgc3Ryb2tlPSIjMmQzNDM2IiBzdHJva2Utd2lkdGg9IjMiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjx0ZXh0IHg9JzIwMCcgeT0nMzAnIGZvbnQtZmFtaWx5PSdWZXJkYW5hLERlamFWdSBTYW5zLHNhbnMtc2VyaWYnIGZvbnQtc2l6ZT0nMTYnIGZvbnQtd2VpZ2h0PSdib2xkJyBmaWxsPScjMmQzNDM2JyB0ZXh0LWFuY2hvcj0nbWlkZGxlJz5TaW1pbGFyIENvbG9yIFNlbGVjdGlvbiBUb29sPC90ZXh0Pjx0ZXh0IHg9JzIwMCcgeT0nNTAnIGZvbnQtZmFtaWx5PSdWZXJkYW5hLERlamFWdSBTYW5zLHNhbnMtc2VyaWYnIGZvbnQtc2l6ZT0nMTInIGZvbnQtd2VpZ2h0PSdib2xkJyBmaWxsPScjNmI3YTg1JyB0ZXh0LWFuY2hvcj0nbWlkZGxlJz5vbmUgY2xpY2sgbGlnaHRzIHVwIGV2ZXJ5IHNhbWUgY29sb3VyPC90ZXh0PjxjbGlwUGF0aCBpZD0nYzMwNjInPjxyZWN0IHg9JzMwJyB5PSc2Micgd2lkdGg9JzM0MCcgaGVpZ2h0PScxNjAnIHJ4PScxMCcvPjwvY2xpcFBhdGg+PGcgY2xpcC1wYXRoPSd1cmwoI2MzMDYyKSc+PHJlY3QgeD0nMzAnIHk9JzYyJyB3aWR0aD0nMzQwJyBoZWlnaHQ9JzE2MCcgZmlsbD0nI2JmZTZmZicvPjxjaXJjbGUgY3g9JzI4OCcgY3k9JzEwMCcgcj0nMjEnIGZpbGw9JyNmZmQ5M2QnIHN0cm9rZT0iIzJkMzQzNiIgc3Ryb2tlLXdpZHRoPSIzIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48ZWxsaXBzZSBjeD0nMTI1JyBjeT0nOTQnIHJ4PSc1NCcgcnk9JzEzJyBmaWxsPScjZmZmZmZmJyBzdHJva2U9IiMyZDM0MzYiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PGVsbGlwc2UgY3g9JzE2NicgY3k9Jzg5JyByeD0nNDEnIHJ5PScxMScgZmlsbD0nI2ZmZmZmZicgc3Ryb2tlPSIjMmQzNDM2IiBzdHJva2Utd2lkdGg9IjMiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjxwYXRoIGQ9J00zMCAxNzcuMiBxMTAyIC00MS42IDIwNCAwIHonIGZpbGw9JyMyZWNjNzEnIHN0cm9rZT0iIzJkMzQzNiIgc3Ryb2tlLXdpZHRoPSIzIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48cmVjdCB4PSc3OCcgeT0nMTQyJyB3aWR0aD0nNjgnIGhlaWdodD0nMzUnIGZpbGw9JyNmZjZiNmInIHN0cm9rZT0iIzJkMzQzNiIgc3Ryb2tlLXdpZHRoPSIzIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48cGF0aCBkPSdNNjQgMTQyIGwzNCAtMTkgbDM0IDE5IHonIGZpbGw9JyNmZjlmNDMnIHN0cm9rZT0iIzJkMzQzNiIgc3Ryb2tlLXdpZHRoPSIzIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48L2c+PHJlY3QgeD0nMzAnIHk9JzYyJyB3aWR0aD0nMzQwJyBoZWlnaHQ9JzE2MCcgcng9JzEwJyBmaWxsPSdub25lJyBzdHJva2U9IiMyZDM0MzYiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PHBhdGggZD0nTTMwIDE3NyBxMTAyIC00NSAyMDQgLTYgcTY4IDIyIDEzNiAtOCB2NTkgaC0zNDAgeicgZmlsbD0nbm9uZScgc3Ryb2tlPScjZmY2YjZiJyBzdHJva2Utd2lkdGg9JzMuNScgc3Ryb2tlLWRhc2hhcnJheT0nNyA2Jy8+PGNpcmNsZSBjeD0nMTUwJyBjeT0nMTUwJyByPScxNicgZmlsbD0nbm9uZScgc3Ryb2tlPSIjMmQzNDM2IiBzdHJva2Utd2lkdGg9IjMiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjxwYXRoIGQ9J00xNTAgMTUwIGwwIC0yNiBtMCAyNiBsMjQgMTQnIHN0cm9rZT0iIzJkMzQzNiIgc3Ryb2tlLXdpZHRoPSIzIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48dGV4dCB4PScxNTAnIHk9JzI0NicgZm9udC1mYW1pbHk9J1ZlcmRhbmEsRGVqYVZ1IFNhbnMsc2Fucy1zZXJpZicgZm9udC1zaXplPScxMycgZm9udC13ZWlnaHQ9J2JvbGQnIGZpbGw9JyM0ZjlkZTgnIHRleHQtYW5jaG9yPSdtaWRkbGUnPkNsaWNrIG9uY2Ugb24gYSBjb2xvdXI8L3RleHQ+PHRleHQgeD0nMTUwJyB5PScyNjQnIGZvbnQtZmFtaWx5PSdWZXJkYW5hLERlamFWdSBTYW5zLHNhbnMtc2VyaWYnIGZvbnQtc2l6ZT0nMTInIGZvbnQtd2VpZ2h0PSdib2xkJyBmaWxsPScjNmI3YTg1JyB0ZXh0LWFuY2hvcj0nbWlkZGxlJz5Lcml0YSBmaW5kcyBhbGwgdGhlIHNpbWlsYXIgcGl4ZWxzPC90ZXh0Pjwvc3ZnPg==","alt":"One blue region of a picture highlighted by the Similar Color Selection Tool after a single click"}},{"id":"krita-image-editing-q18","question":"Which letter key on the keyboard quickly selects the Crop Tool?","options":["C","B","T","S"],"correctIndex":0,"explanation":"Pressing the C key selects the Crop Tool, which trims away unwanted parts of an image.","suggestImage":false},{"id":"krita-image-editing-q19","question":"In the Text Tool, what does the Font Anchoring option do?","options":["It aligns the text to the left margin, right margin or centre","It changes the size of the letters","It changes the space between the letters","It chooses the face of the font"],"correctIndex":0,"explanation":"Font Anchoring lines the text up with the left margin, right margin or the centre.","suggestImage":true,"imageNote":"Three short lines of typed text aligned left, centre and right to show Font Anchoring.","image":{"id":"krita-image-editing-q19","type":"svg","src":"data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCA0MDAgMjgwJyB3aWR0aD0nNDAwJyBoZWlnaHQ9JzI4MCc+PHJlY3QgeD0nMicgeT0nMicgd2lkdGg9JzM5NicgaGVpZ2h0PScyNzYnIHJ4PScxOCcgZmlsbD0nI2ZkZjZmZicgc3Ryb2tlPSIjMmQzNDM2IiBzdHJva2Utd2lkdGg9IjMiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjx0ZXh0IHg9JzIwMCcgeT0nMzInIGZvbnQtZmFtaWx5PSdWZXJkYW5hLERlamFWdSBTYW5zLHNhbnMtc2VyaWYnIGZvbnQtc2l6ZT0nMTUnIGZvbnQtd2VpZ2h0PSdib2xkJyBmaWxsPScjMmQzNDM2JyB0ZXh0LWFuY2hvcj0nbWlkZGxlJz5Gb250IEFuY2hvcmluZyBsaW5lcyB0aGUgdGV4dCB1cDwvdGV4dD48cmVjdCB4PSc0NicgeT0nNTInIHdpZHRoPSczMDgnIGhlaWdodD0nMTcwJyByeD0nMTQnIGZpbGw9JyNmZmZmZmYnIHN0cm9rZT0iIzJkMzQzNiIgc3Ryb2tlLXdpZHRoPSIzIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48cGF0aCBkPSdNMjAwIDYwIHYxNTQnIHN0cm9rZT0nI2M5ZDZkZCcgc3Ryb2tlLXdpZHRoPScyJyBzdHJva2UtZGFzaGFycmF5PSc1IDUnLz48cmVjdCB4PSc2MCcgeT0nNzQnIHdpZHRoPSc4NicgaGVpZ2h0PScxNycgcng9JzUnIGZpbGw9JyM0ZjlkZTgnIHN0cm9rZT0iIzJkMzQzNiIgc3Ryb2tlLXdpZHRoPSIzIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48dGV4dCB4PSc0NicgeT0nMTIyJyBmb250LWZhbWlseT0nVmVyZGFuYSxEZWphVnUgU2FucyxzYW5zLXNlcmlmJyBmb250LXNpemU9JzExJyBmb250LXdlaWdodD0nYm9sZCcgZmlsbD0nIzRmOWRlOCcgdGV4dC1hbmNob3I9J3N0YXJ0Jz5sZWZ0IG1hcmdpbjwvdGV4dD48cmVjdCB4PScxMTgnIHk9JzEzOCcgd2lkdGg9JzE2NCcgaGVpZ2h0PScxNycgcng9JzUnIGZpbGw9JyM5YjU5YjYnIHN0cm9rZT0iIzJkMzQzNiIgc3Ryb2tlLXdpZHRoPSIzIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48dGV4dCB4PScyMDAnIHk9JzE4NicgZm9udC1mYW1pbHk9J1ZlcmRhbmEsRGVqYVZ1IFNhbnMsc2Fucy1zZXJpZicgZm9udC1zaXplPScxMScgZm9udC13ZWlnaHQ9J2JvbGQnIGZpbGw9JyM5YjU5YjYnIHRleHQtYW5jaG9yPSdtaWRkbGUnPmNlbnRyZTwvdGV4dD48cmVjdCB4PScyNTQnIHk9JzIwMicgd2lkdGg9Jzg2JyBoZWlnaHQ9JzE3JyByeD0nNScgZmlsbD0nIzJlY2M3MScgc3Ryb2tlPSIjMmQzNDM2IiBzdHJva2Utd2lkdGg9IjMiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjx0ZXh0IHg9JzM1NCcgeT0nMjUwJyBmb250LWZhbWlseT0nVmVyZGFuYSxEZWphVnUgU2FucyxzYW5zLXNlcmlmJyBmb250LXNpemU9JzExJyBmb250LXdlaWdodD0nYm9sZCcgZmlsbD0nIzJlY2M3MScgdGV4dC1hbmNob3I9J2VuZCc+cmlnaHQgbWFyZ2luPC90ZXh0Pjx0ZXh0IHg9JzIwMCcgeT0nMjY4JyBmb250LWZhbWlseT0nVmVyZGFuYSxEZWphVnUgU2FucyxzYW5zLXNlcmlmJyBmb250LXNpemU9JzEyJyBmb250LXdlaWdodD0nYm9sZCcgZmlsbD0nIzZiN2E4NScgdGV4dC1hbmNob3I9J21pZGRsZSc+TGVmdCwgY2VudHJlIGFuZCByaWdodCBhbmNob3Jpbmc8L3RleHQ+PC9zdmc+","alt":"Three lines of typed text anchored left, centre and right in the Text Tool"}},{"id":"krita-image-editing-q20","question":"What does the Smart Patch Tool remove from an image?","options":["Dark spots, scratches and other unwanted parts","The unwanted outer portion of the image","Areas of similar colour","A duplicate of part of the image"],"correctIndex":0,"explanation":"You drag over a dark spot or scratch and the Smart Patch Tool makes it disappear.","suggestImage":true,"imageNote":"Two pictures side by side: the original image with a dark scratch, and the same image after it is removed.","image":{"id":"krita-image-editing-q20","type":"svg","src":"data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCA0MDAgMjgwJyB3aWR0aD0nNDAwJyBoZWlnaHQ9JzI4MCc+PHJlY3QgeD0nMicgeT0nMicgd2lkdGg9JzM5NicgaGVpZ2h0PScyNzYnIHJ4PScxOCcgZmlsbD0nI2VhZjZmZicgc3Ryb2tlPSIjMmQzNDM2IiBzdHJva2Utd2lkdGg9IjMiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjx0ZXh0IHg9JzIwMCcgeT0nMjgnIGZvbnQtZmFtaWx5PSdWZXJkYW5hLERlamFWdSBTYW5zLHNhbnMtc2VyaWYnIGZvbnQtc2l6ZT0nMTYnIGZvbnQtd2VpZ2h0PSdib2xkJyBmaWxsPScjMmQzNDM2JyB0ZXh0LWFuY2hvcj0nbWlkZGxlJz5TbWFydCBQYXRjaCBUb29sPC90ZXh0Pjx0ZXh0IHg9JzEwNCcgeT0nNTInIGZvbnQtZmFtaWx5PSdWZXJkYW5hLERlamFWdSBTYW5zLHNhbnMtc2VyaWYnIGZvbnQtc2l6ZT0nMTMnIGZvbnQtd2VpZ2h0PSdib2xkJyBmaWxsPScjZmY2YjZiJyB0ZXh0LWFuY2hvcj0nbWlkZGxlJz5CZWZvcmU8L3RleHQ+PHRleHQgeD0nMjk2JyB5PSc1MicgZm9udC1mYW1pbHk9J1ZlcmRhbmEsRGVqYVZ1IFNhbnMsc2Fucy1zZXJpZicgZm9udC1zaXplPScxMycgZm9udC13ZWlnaHQ9J2JvbGQnIGZpbGw9JyMyZWNjNzEnIHRleHQtYW5jaG9yPSdtaWRkbGUnPkFmdGVyPC90ZXh0PjxjbGlwUGF0aCBpZD0nYzI2NjInPjxyZWN0IHg9JzI2JyB5PSc2Micgd2lkdGg9JzE1MCcgaGVpZ2h0PScxMTgnIHJ4PScxMCcvPjwvY2xpcFBhdGg+PGcgY2xpcC1wYXRoPSd1cmwoI2MyNjYyKSc+PHJlY3QgeD0nMjYnIHk9JzYyJyB3aWR0aD0nMTUwJyBoZWlnaHQ9JzExOCcgZmlsbD0nI2JmZTZmZicvPjxjaXJjbGUgY3g9JzE0MCcgY3k9JzkwJyByPScxNScgZmlsbD0nI2ZmZDkzZCcgc3Ryb2tlPSIjMmQzNDM2IiBzdHJva2Utd2lkdGg9IjMiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjxlbGxpcHNlIGN4PSc2OCcgY3k9Jzg2JyByeD0nMjQnIHJ5PSc5JyBmaWxsPScjZmZmZmZmJyBzdHJva2U9IiMyZDM0MzYiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PGVsbGlwc2UgY3g9Jzg2JyBjeT0nODInIHJ4PScxOCcgcnk9JzgnIGZpbGw9JyNmZmZmZmYnIHN0cm9rZT0iIzJkMzQzNiIgc3Ryb2tlLXdpZHRoPSIzIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48cGF0aCBkPSdNMjYgMTQ2Ljk1OTk5OTk5OTk5OTk4IHE0NSAtMzAuNjggOTAgMCB6JyBmaWxsPScjMmVjYzcxJyBzdHJva2U9IiMyZDM0MzYiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PHJlY3QgeD0nNDcnIHk9JzEyMScgd2lkdGg9JzMwJyBoZWlnaHQ9JzI2JyBmaWxsPScjZmY2YjZiJyBzdHJva2U9IiMyZDM0MzYiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PHBhdGggZD0nTTQxIDEyMSBsMTUgLTE0IGwxNSAxNCB6JyBmaWxsPScjZmY5ZjQzJyBzdHJva2U9IiMyZDM0MzYiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PC9nPjxyZWN0IHg9JzI2JyB5PSc2Micgd2lkdGg9JzE1MCcgaGVpZ2h0PScxMTgnIHJ4PScxMCcgZmlsbD0nbm9uZScgc3Ryb2tlPSIjMmQzNDM2IiBzdHJva2Utd2lkdGg9IjMiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjxjbGlwUGF0aCBpZD0nYzIyNDYyJz48cmVjdCB4PScyMjQnIHk9JzYyJyB3aWR0aD0nMTUwJyBoZWlnaHQ9JzExOCcgcng9JzEwJy8+PC9jbGlwUGF0aD48ZyBjbGlwLXBhdGg9J3VybCgjYzIyNDYyKSc+PHJlY3QgeD0nMjI0JyB5PSc2Micgd2lkdGg9JzE1MCcgaGVpZ2h0PScxMTgnIGZpbGw9JyNiZmU2ZmYnLz48Y2lyY2xlIGN4PSczMzgnIGN5PSc5MCcgcj0nMTUnIGZpbGw9JyNmZmQ5M2QnIHN0cm9rZT0iIzJkMzQzNiIgc3Ryb2tlLXdpZHRoPSIzIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48ZWxsaXBzZSBjeD0nMjY2JyBjeT0nODYnIHJ4PScyNCcgcnk9JzknIGZpbGw9JyNmZmZmZmYnIHN0cm9rZT0iIzJkMzQzNiIgc3Ryb2tlLXdpZHRoPSIzIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48ZWxsaXBzZSBjeD0nMjg0JyBjeT0nODInIHJ4PScxOCcgcnk9JzgnIGZpbGw9JyNmZmZmZmYnIHN0cm9rZT0iIzJkMzQzNiIgc3Ryb2tlLXdpZHRoPSIzIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48cGF0aCBkPSdNMjI0IDE0Ni45NTk5OTk5OTk5OTk5OCBxNDUgLTMwLjY4IDkwIDAgeicgZmlsbD0nIzJlY2M3MScgc3Ryb2tlPSIjMmQzNDM2IiBzdHJva2Utd2lkdGg9IjMiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjxyZWN0IHg9JzI0NScgeT0nMTIxJyB3aWR0aD0nMzAnIGhlaWdodD0nMjYnIGZpbGw9JyNmZjZiNmInIHN0cm9rZT0iIzJkMzQzNiIgc3Ryb2tlLXdpZHRoPSIzIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48cGF0aCBkPSdNMjM5IDEyMSBsMTUgLTE0IGwxNSAxNCB6JyBmaWxsPScjZmY5ZjQzJyBzdHJva2U9IiMyZDM0MzYiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PC9nPjxyZWN0IHg9JzIyNCcgeT0nNjInIHdpZHRoPScxNTAnIGhlaWdodD0nMTE4JyByeD0nMTAnIGZpbGw9J25vbmUnIHN0cm9rZT0iIzJkMzQzNiIgc3Ryb2tlLXdpZHRoPSIzIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48cGF0aCBkPSdNNzAgNzYgbDM0IDQ0IG0tMiAtNDggbC0zMCA0OCcgc3Ryb2tlPScjNWE0YTNhJyBzdHJva2Utd2lkdGg9JzYnIHN0cm9rZS1saW5lY2FwPSdyb3VuZCcvPjxwYXRoIGQ9J00yNjIgODAgbDMwIDQwIG0tMiAtNDQgbC0yOCA0NCcgc3Ryb2tlPScjNWE0YTNhJyBzdHJva2Utd2lkdGg9JzYnIHN0cm9rZS1saW5lY2FwPSdyb3VuZCcgb3BhY2l0eT0nMC4yNScvPjx0ZXh0IHg9JzEwNCcgeT0nMjA2JyBmb250LWZhbWlseT0nVmVyZGFuYSxEZWphVnUgU2FucyxzYW5zLXNlcmlmJyBmb250LXNpemU9JzExJyBmb250LXdlaWdodD0nYm9sZCcgZmlsbD0nI2ZmNmI2YicgdGV4dC1hbmNob3I9J21pZGRsZSc+ZGFyayBzcG90cyBhbmQgc2NyYXRjaGVzPC90ZXh0Pjx0ZXh0IHg9JzI5NicgeT0nMjA2JyBmb250LWZhbWlseT0nVmVyZGFuYSxEZWphVnUgU2FucyxzYW5zLXNlcmlmJyBmb250LXNpemU9JzExJyBmb250LXdlaWdodD0nYm9sZCcgZmlsbD0nIzJlY2M3MScgdGV4dC1hbmNob3I9J21pZGRsZSc+c21vb3RoIGFuZCBjbGVhbjwvdGV4dD48Y2lyY2xlIGN4PScyMDAnIGN5PScxMjAnIHI9JzI0JyBmaWxsPScjZmZkOTNkJyBzdHJva2U9IiMyZDM0MzYiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PHBhdGggZD0nTTE5MiAxMDggbDE2IDEyIGwtMTYgMTIgeicgZmlsbD0nI2ZmZmZmZicgc3Ryb2tlPSIjMmQzNDM2IiBzdHJva2Utd2lkdGg9IjMiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjx0ZXh0IHg9JzIwMCcgeT0nMjUwJyBmb250LWZhbWlseT0nVmVyZGFuYSxEZWphVnUgU2FucyxzYW5zLXNlcmlmJyBmb250LXNpemU9JzEyJyBmb250LXdlaWdodD0nYm9sZCcgZmlsbD0nIzZiN2E4NScgdGV4dC1hbmNob3I9J21pZGRsZSc+SXQgcnVicyB0aGUgZ29vZCBwaXhlbHMgb3ZlciB0aGUgYmFkIG9uZXM8L3RleHQ+PC9zdmc+","alt":"Before and after: a dark scratch on a photo is removed by the Smart Patch Tool"}},{"id":"krita-image-editing-q21","question":"Where can you find the Clone Tool in Krita?","options":["In the Toolbox with the other tools","As a Brush Preset in the Brush Presets docker","In the File menu","In the Save As dialog box"],"correctIndex":1,"explanation":"Krita keeps the Clone Tool inside the Brush Presets docker instead of the Toolbox.","suggestImage":true,"imageNote":"A screenshot of the Brush Presets docker showing the Clone brush preset being chosen.","image":{"id":"krita-image-editing-q21","type":"svg","src":"data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCA0MDAgMjgwJyB3aWR0aD0nNDAwJyBoZWlnaHQ9JzI4MCc+PHJlY3QgeD0nMicgeT0nMicgd2lkdGg9JzM5NicgaGVpZ2h0PScyNzYnIHJ4PScxOCcgZmlsbD0nI2VlZmFmMicgc3Ryb2tlPSIjMmQzNDM2IiBzdHJva2Utd2lkdGg9IjMiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjx0ZXh0IHg9JzIwMCcgeT0nMzInIGZvbnQtZmFtaWx5PSdWZXJkYW5hLERlamFWdSBTYW5zLHNhbnMtc2VyaWYnIGZvbnQtc2l6ZT0nMTQnIGZvbnQtd2VpZ2h0PSdib2xkJyBmaWxsPScjMmQzNDM2JyB0ZXh0LWFuY2hvcj0nbWlkZGxlJz5DbG9uZSBUb29sIGxpdmVzIGluIEJydXNoIFByZXNldHM8L3RleHQ+PHJlY3QgeD0nNzYnIHk9JzQ4JyB3aWR0aD0nMjQ4JyBoZWlnaHQ9JzE5MCcgcng9JzE0JyBmaWxsPScjZmZmZmZmJyBzdHJva2U9IiMyZDM0MzYiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PHJlY3QgeD0nNzYnIHk9JzQ4JyB3aWR0aD0nMjQ4JyBoZWlnaHQ9JzI4JyByeD0nMTQnIGZpbGw9JyM0ZWNkYzQnIHN0cm9rZT0iIzJkMzQzNiIgc3Ryb2tlLXdpZHRoPSIzIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48dGV4dCB4PScyMDAnIHk9JzY4JyBmb250LWZhbWlseT0nVmVyZGFuYSxEZWphVnUgU2FucyxzYW5zLXNlcmlmJyBmb250LXNpemU9JzEzJyBmb250LXdlaWdodD0nYm9sZCcgZmlsbD0nI2ZmZmZmZicgdGV4dC1hbmNob3I9J21pZGRsZSc+QnJ1c2ggUHJlc2V0czwvdGV4dD48cmVjdCB4PSc4NicgeT0nODQnIHdpZHRoPScyMjgnIGhlaWdodD0nMjYnIHJ4PSc3JyBmaWxsPScjZjRmN2Y5JyBzdHJva2U9IiMyZDM0MzYiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PHRleHQgeD0nMjAwJyB5PScxMDInIGZvbnQtZmFtaWx5PSdWZXJkYW5hLERlamFWdSBTYW5zLHNhbnMtc2VyaWYnIGZvbnQtc2l6ZT0nMTMnIGZvbnQtd2VpZ2h0PSdib2xkJyBmaWxsPScjMmQzNDM2JyB0ZXh0LWFuY2hvcj0nbWlkZGxlJz5hUGVuY2lsLTE8L3RleHQ+PHJlY3QgeD0nODYnIHk9JzExNCcgd2lkdGg9JzIyOCcgaGVpZ2h0PScyNicgcng9JzcnIGZpbGw9JyNmNGY3ZjknIHN0cm9rZT0iIzJkMzQzNiIgc3Ryb2tlLXdpZHRoPSIzIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48dGV4dCB4PScyMDAnIHk9JzEzMicgZm9udC1mYW1pbHk9J1ZlcmRhbmEsRGVqYVZ1IFNhbnMsc2Fucy1zZXJpZicgZm9udC1zaXplPScxMycgZm9udC13ZWlnaHQ9J2JvbGQnIGZpbGw9JyMyZDM0MzYnIHRleHQtYW5jaG9yPSdtaWRkbGUnPmFQZW5jaWwtMjwvdGV4dD48cmVjdCB4PSc4NicgeT0nMTQ0JyB3aWR0aD0nMjI4JyBoZWlnaHQ9JzI2JyByeD0nNycgZmlsbD0nI2Y0ZjdmOScgc3Ryb2tlPSIjMmQzNDM2IiBzdHJva2Utd2lkdGg9IjMiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjx0ZXh0IHg9JzIwMCcgeT0nMTYyJyBmb250LWZhbWlseT0nVmVyZGFuYSxEZWphVnUgU2FucyxzYW5zLXNlcmlmJyBmb250LXNpemU9JzEzJyBmb250LXdlaWdodD0nYm9sZCcgZmlsbD0nIzJkMzQzNicgdGV4dC1hbmNob3I9J21pZGRsZSc+YUluay0xPC90ZXh0PjxyZWN0IHg9Jzg2JyB5PScxNzQnIHdpZHRoPScyMjgnIGhlaWdodD0nMjYnIHJ4PSc3JyBmaWxsPScjZmZkOTNkJyBzdHJva2U9IiMyZDM0MzYiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PHRleHQgeD0nMjAwJyB5PScxOTInIGZvbnQtZmFtaWx5PSdWZXJkYW5hLERlamFWdSBTYW5zLHNhbnMtc2VyaWYnIGZvbnQtc2l6ZT0nMTMnIGZvbnQtd2VpZ2h0PSdib2xkJyBmaWxsPScjMmQzNDM2JyB0ZXh0LWFuY2hvcj0nbWlkZGxlJz5DbG9uZTwvdGV4dD48cmVjdCB4PScyODYnIHk9JzE3OCcgd2lkdGg9JzIwJyBoZWlnaHQ9JzE4JyByeD0nNCcgZmlsbD0nI2ZmZmZmZicgc3Ryb2tlPSIjMmQzNDM2IiBzdHJva2Utd2lkdGg9IjMiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjxyZWN0IHg9Jzg2JyB5PScyMDQnIHdpZHRoPScyMjgnIGhlaWdodD0nMjYnIHJ4PSc3JyBmaWxsPScjZjRmN2Y5JyBzdHJva2U9IiMyZDM0MzYiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PHRleHQgeD0nMjAwJyB5PScyMjInIGZvbnQtZmFtaWx5PSdWZXJkYW5hLERlamFWdSBTYW5zLHNhbnMtc2VyaWYnIGZvbnQtc2l6ZT0nMTMnIGZvbnQtd2VpZ2h0PSdib2xkJyBmaWxsPScjMmQzNDM2JyB0ZXh0LWFuY2hvcj0nbWlkZGxlJz5BaXJicnVzaCBTb2Z0PC90ZXh0Pjx0ZXh0IHg9JzIwMCcgeT0nMjYyJyBmb250LWZhbWlseT0nVmVyZGFuYSxEZWphVnUgU2FucyxzYW5zLXNlcmlmJyBmb250LXNpemU9JzEyJyBmb250LXdlaWdodD0nYm9sZCcgZmlsbD0nIzZiN2E4NScgdGV4dC1hbmNob3I9J21pZGRsZSc+Q2hvb3NlIHRoZSBDbG9uZSBwcmVzZXQsIHRoZW4gcGFpbnQgb3ZlciB0aGUgaW1hZ2U8L3RleHQ+PC9zdmc+","alt":"The Brush Presets docker in Krita with the Clone brush preset picked"}}]},{"id":"saving","title":"Saving an Image","emoji":"💾","questions":[{"id":"krita-image-editing-q22","question":"Which menu do you click first when you want to save an image in Krita?","options":["File menu","Layer menu","Select menu","Settings menu"],"correctIndex":0,"explanation":"Saving begins in the File menu, where you then choose the Save As option.","suggestImage":false}]},{"id":"review-mcq","title":"Review: Multiple Choice","emoji":"✅","questions":[{"id":"krita-image-editing-q23","question":"Krita is developed and distributed by which organisation?","options":["Krita Inc.","Krita Ltd.","Krita Foundation","Krita Charitable"],"correctIndex":2,"explanation":"Krita is a free graphics application that is developed and distributed by the Krita Foundation.","suggestImage":false},{"id":"krita-image-editing-q24","question":"Which file extension is used to save a Krita file?","options":[".kra",".kri",".kft",".kta"],"correctIndex":0,"explanation":"When you save an image in Krita, the .kra extension is added to its file name.","suggestImage":false},{"id":"krita-image-editing-q25","question":"Which tool helps us remove the unwanted portions of an image?","options":["Crop Tool","Clone Tool","Rectangular Selection Tool","None of these"],"correctIndex":0,"explanation":"The Crop Tool deletes the part of an image that you did not drag-select.","suggestImage":true,"imageNote":"Before-and-after photo showing a drag-selected box kept while the outside portion is cut away.","image":{"id":"krita-image-editing-q25","type":"svg","src":"data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCA0MDAgMjcwJyB3aWR0aD0nNDAwJyBoZWlnaHQ9JzI3MCc+PHJlY3QgeD0nMicgeT0nMicgd2lkdGg9JzM5NicgaGVpZ2h0PScyNjYnIHJ4PScxOCcgZmlsbD0nI2VhZjZmZicgc3Ryb2tlPSIjMmQzNDM2IiBzdHJva2Utd2lkdGg9IjMiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjx0ZXh0IHg9JzIwMCcgeT0nMzAnIGZvbnQtZmFtaWx5PSdWZXJkYW5hLERlamFWdSBTYW5zLHNhbnMtc2VyaWYnIGZvbnQtc2l6ZT0nMTUnIGZvbnQtd2VpZ2h0PSdib2xkJyBmaWxsPScjMmQzNDM2JyB0ZXh0LWFuY2hvcj0nbWlkZGxlJz5Dcm9wIFRvb2wgY3V0cyBhd2F5IHRoZSByZXN0PC90ZXh0PjxjbGlwUGF0aCBpZD0nYzMwNDgnPjxyZWN0IHg9JzMwJyB5PSc0OCcgd2lkdGg9JzM0MCcgaGVpZ2h0PScxNTAnIHJ4PScxMCcvPjwvY2xpcFBhdGg+PGcgY2xpcC1wYXRoPSd1cmwoI2MzMDQ4KSc+PHJlY3QgeD0nMzAnIHk9JzQ4JyB3aWR0aD0nMzQwJyBoZWlnaHQ9JzE1MCcgZmlsbD0nI2JmZTZmZicvPjxjaXJjbGUgY3g9JzI4OCcgY3k9Jzg0JyByPScyMCcgZmlsbD0nI2ZmZDkzZCcgc3Ryb2tlPSIjMmQzNDM2IiBzdHJva2Utd2lkdGg9IjMiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjxlbGxpcHNlIGN4PScxMjUnIGN5PSc3OCcgcng9JzU0JyByeT0nMTInIGZpbGw9JyNmZmZmZmYnIHN0cm9rZT0iIzJkMzQzNiIgc3Ryb2tlLXdpZHRoPSIzIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48ZWxsaXBzZSBjeD0nMTY2JyBjeT0nNzQnIHJ4PSc0MScgcnk9JzExJyBmaWxsPScjZmZmZmZmJyBzdHJva2U9IiMyZDM0MzYiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PHBhdGggZD0nTTMwIDE1Ni4wIHExMDIgLTM5LjAgMjA0IDAgeicgZmlsbD0nIzJlY2M3MScgc3Ryb2tlPSIjMmQzNDM2IiBzdHJva2Utd2lkdGg9IjMiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjxyZWN0IHg9Jzc4JyB5PScxMjMnIHdpZHRoPSc2OCcgaGVpZ2h0PSczMycgZmlsbD0nI2ZmNmI2Yicgc3Ryb2tlPSIjMmQzNDM2IiBzdHJva2Utd2lkdGg9IjMiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjxwYXRoIGQ9J002NCAxMjMgbDM0IC0xOCBsMzQgMTggeicgZmlsbD0nI2ZmOWY0Mycgc3Ryb2tlPSIjMmQzNDM2IiBzdHJva2Utd2lkdGg9IjMiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjwvZz48cmVjdCB4PSczMCcgeT0nNDgnIHdpZHRoPSczNDAnIGhlaWdodD0nMTUwJyByeD0nMTAnIGZpbGw9J25vbmUnIHN0cm9rZT0iIzJkMzQzNiIgc3Ryb2tlLXdpZHRoPSIzIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48cmVjdCB4PSczMCcgeT0nNDgnIHdpZHRoPSczNDAnIGhlaWdodD0nMTUwJyByeD0nMTAnIGZpbGw9JyMyZDM0MzYnIG9wYWNpdHk9JzAuNDInLz48cmVjdCB4PSc5NicgeT0nNzInIHdpZHRoPScxODAnIGhlaWdodD0nMTAyJyBmaWxsPSdub25lJyBzdHJva2U9IiMyZDM0MzYiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PHJlY3QgeD0nOTEnIHk9JzY3JyB3aWR0aD0nMTAnIGhlaWdodD0nMTAnIHJ4PScyJyBmaWxsPScjZmZmZmZmJyBzdHJva2U9JyNmZjZiNmInIHN0cm9rZS13aWR0aD0nMi41Jy8+PHJlY3QgeD0nMjcxJyB5PSc2Nycgd2lkdGg9JzEwJyBoZWlnaHQ9JzEwJyByeD0nMicgZmlsbD0nI2ZmZmZmZicgc3Ryb2tlPScjZmY2YjZiJyBzdHJva2Utd2lkdGg9JzIuNScvPjxyZWN0IHg9JzkxJyB5PScxNjknIHdpZHRoPScxMCcgaGVpZ2h0PScxMCcgcng9JzInIGZpbGw9JyNmZmZmZmYnIHN0cm9rZT0nI2ZmNmI2Yicgc3Ryb2tlLXdpZHRoPScyLjUnLz48cmVjdCB4PScyNzEnIHk9JzE2OScgd2lkdGg9JzEwJyBoZWlnaHQ9JzEwJyByeD0nMicgZmlsbD0nI2ZmZmZmZicgc3Ryb2tlPScjZmY2YjZiJyBzdHJva2Utd2lkdGg9JzIuNScvPjxwYXRoIGQ9J00zMDAgMTA4IGwzMCAzMCBtMCAtMzAgbC0zMCAzMCBNMzMwIDEwOCBsLTQgLTEwIG00IDEwIGwxMCAtNCcgc3Ryb2tlPSIjMmQzNDM2IiBzdHJva2Utd2lkdGg9IjMiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjx0ZXh0IHg9JzIwMCcgeT0nMjI0JyBmb250LWZhbWlseT0nVmVyZGFuYSxEZWphVnUgU2FucyxzYW5zLXNlcmlmJyBmb250LXNpemU9JzEzJyBmb250LXdlaWdodD0nYm9sZCcgZmlsbD0nIzJlY2M3MScgdGV4dC1hbmNob3I9J21pZGRsZSc+VGhlIGJveCB5b3Uga2VlcCBpcyBhbGwgdGhhdCBzdGF5czwvdGV4dD48dGV4dCB4PScyMDAnIHk9JzI0NicgZm9udC1mYW1pbHk9J1ZlcmRhbmEsRGVqYVZ1IFNhbnMsc2Fucy1zZXJpZicgZm9udC1zaXplPScxMicgZm9udC13ZWlnaHQ9J2JvbGQnIGZpbGw9JyM2YjdhODUnIHRleHQtYW5jaG9yPSdtaWRkbGUnPkV2ZXJ5dGhpbmcgb3V0c2lkZSB0aGUgYm94IGlzIHJlbW92ZWQ8L3RleHQ+PC9zdmc+","alt":"The Crop Tool keeping a box of the picture and cutting away the rest with scissors"}}]},{"id":"review-tf","title":"Review: True or False","emoji":"✔️","questions":[{"id":"krita-image-editing-q26","question":"Krita is primarily designed for audio editing.","options":["True","False","It is designed for video editing","It is designed for photo printing"],"correctIndex":1,"explanation":"Krita is a graphics application for drawing and editing images, not for audio.","suggestImage":false},{"id":"krita-image-editing-q27","question":"The Polygonal Selection Tool is only capable of selecting circular regions.","options":["True","False","Only inside square images","Only inside colour images"],"correctIndex":1,"explanation":"The Polygonal Selection Tool selects a section with many sides, not only circles.","suggestImage":false},{"id":"krita-image-editing-q28","question":"The Rectangular Selection Tool is suitable for selecting square portions of an image.","options":["True","False","Only for round areas","Only for text boxes"],"correctIndex":0,"explanation":"A square is a kind of rectangle, so this tool can select square portions of an image.","suggestImage":false},{"id":"krita-image-editing-q29","question":"The Dimensions tab contains the Layers option in the Create new document Krita dialog box.","options":["True","False","It is found in the Help menu","It is found in the Brush Presets docker"],"correctIndex":1,"explanation":"Layers sits under the Content tab, not the Dimensions tab which holds Width, Height and Resolution.","suggestImage":false}]},{"id":"review-blanks","title":"Review: Fill in the Blanks","emoji":"✍️","questions":[{"id":"krita-image-editing-q30","question":"Which word fills the blank: ______ is the place where you create and edit an image.","options":["Clone","Freehand Selection","Text","Workspace"],"correctIndex":3,"explanation":"The workspace is the blank area where your image is created and edited.","suggestImage":false}]}]}</script>
+
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <linearGradient id="gradA" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4ecdc4"/><stop offset="100%" stop-color="#4f9de8"/>
+    </linearGradient>
+  </defs>
+</svg>
+
+<script>
+(() => {
+"use strict";
+/* ══════════════════════════════════════════════════════════════
+   html-quiz runtime — self-contained, no libraries, no network.
+   Question data is parsed from the #quiz-data script tag.
+   ══════════════════════════════════════════════════════════════ */
+
+// ── Data & config ─────────────────────────────────────────────
+const QUIZ = JSON.parse(document.getElementById('quiz-data').textContent.trim());
+const params = new URLSearchParams(location.search);
+const cfg = {
+  secs: parseTimerSecs(),                 // 0 = no timer (unlimited); ?secs=N (2-60) restores a timer
+  max:  clampInt(params.get('max'), 25, 1, 100),   // (informational only; cap applied at build)
+  tts:  params.get('tts') !== 'off' && params.get('tts') !== '0'
+};
+function clampInt(v, d, lo, hi){ const n = parseInt(v,10); return Number.isFinite(n) ? Math.min(hi, Math.max(lo, n)) : d; }
+function parseTimerSecs(){
+  const raw = params.get('secs');
+  if (raw === null || raw === '' || raw === '0') return 0;   // default: unlimited time
+  const n = parseInt(raw, 10);
+  return Number.isFinite(n) ? Math.min(60, Math.max(2, n)) : 0;
+}
+
+// Build a flat ordered question list across all sections.
+const FLAT = [];
+QUIZ.sections.forEach(s => {
+  s.questions.forEach(q => {
+    FLAT.push({ q, sectionId: s.id, sectionTitle: s.title });
+  });
+});
+const TOTAL = FLAT.length;
+
+// ── State machine ─────────────────────────────────────────────
+let state = {
+  mode: 'intro',        // intro | question | revealed | results
+  scope: null,          // null = all sections, else sectionId
+  list: [],             // ordered [{q, sectionId, sectionTitle}] for current scope
+  iq: 0,
+  answers: [],          // {qid, chosen(-1=timeout), status, pts}
+  score: 0,
+  runToken: 0,
+  transitioning: false
+};
+
+const elStage  = document.getElementById('stage');
+const elScore  = document.getElementById('score-chip');
+const elProg   = document.getElementById('progress-fill');
+const elTree   = document.getElementById('tree');
+const elSide   = document.getElementById('sidebar');
+const overlay  = document.getElementById('overlay');
+const elMute   = document.getElementById('mute-btn');
+let muted = false;
+
+// ── DOM helpers (NO innerHTML anywhere) ───────────────────────
+const h = (tag, cls, text) => {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (text !== undefined) e.textContent = text;   // untrusted text → textContent only
+  return e;
+};
+function clear(node){ while(node.firstChild) node.removeChild(node.firstChild); }
+
+// ── Sound (WebAudio, synthesised; lazy context for autoplay) ─
+let AC = null;
+function ensureAudio(){
+  if (!AC){ try{ AC = new (window.AudioContext || window.webkitAudioContext)(); }catch(e){ return null; } }
+  if (AC.state === 'suspended') AC.resume();
+  return AC;
+}
+function blip(freq, dur, type, delay, vol){
+  const ac = AC || ensureAudio();
+  if (!ac) return;
+  const t0 = ac.currentTime + (delay || 0);
+  const o = ac.createOscillator(), g = ac.createGain();
+  o.type = type || 'sine'; o.frequency.value = freq;
+  g.gain.setValueAtTime(vol || 0.14, t0);
+  g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+  o.connect(g); g.connect(ac.destination);
+  o.start(t0); o.stop(t0 + dur + 0.03);
+}
+const sTick   = () => blip(880, 0.06, 'square');
+const sCorrect= () => { blip(523,0.12,'sine',0); blip(659,0.12,'sine',0.11); blip(784,0.2,'sine',0.22); };
+const sWrong  = () => { blip(220,0.22,'triangle',0); blip(170,0.28,'triangle',0.14); };
+const sTimesUp= () => { blip(440,0.18,'triangle',0); blip(330,0.3,'triangle',0.16); };
+const sPop    = () => { blip(660,0.09,'sine',0,0.1); blip(880,0.1,'sine',0.07,0.08); };
+
+// ── TTS (Web Speech API) ──────────────────────────────────────
+function ttsAvailable(){ return 'speechSynthesis' in window; }
+function pickVoice(){
+  if (!ttsAvailable()) return null;
+  const vs = speechSynthesis.getVoices();
+  return vs.find(v => /^en/i.test(v.lang)) || vs[0] || null;
+}
+function speak(text, onEnd){
+  if (!cfg.tts || muted || !ttsAvailable() || !text) { if (onEnd) onEnd(); return; }
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.rate = 1; u.pitch = 1.05;
+  const v = pickVoice(); if (v) u.voice = v;
+  if (onEnd) u.onend = onEnd;
+  speechSynthesis.speak(u);
+}
+if ('speechSynthesis' in window){
+  speechSynthesis.onvoiceschanged = () => {};   // warm the voice list
+}
+
+// ── Timer ring ────────────────────────────────────────────────
+let rafId = 0;
+function stopTimer(){ if (rafId){ cancelAnimationFrame(rafId); rafId = 0; } }
+function startTimer(secs, token){
+  stopTimer();
+  const C = 2 * Math.PI * 30;                    // r=30 ring
+  const ring = document.getElementById('ring-fg');
+  const count = document.getElementById('t-count');
+  const wrap = document.getElementById('timer-wrap');
+  ring.setAttribute('stroke-dasharray', C);
+  ring.setAttribute('stroke-dashoffset', 0);
+  const deadline = performance.now() + secs * 1000;
+  let lastSec = Math.ceil(secs);
+  const loop = (now) => {
+    if (state.runToken !== token) return;        // stale — question changed
+    const remMs = deadline - now;
+    const remSec = Math.max(0, Math.ceil(remMs / 1000));
+    const frac = Math.max(0, Math.min(1, remMs / (secs * 1000)));
+    ring.setAttribute('stroke-dashoffset', String(C * (1 - frac)));   // SVG attr, not CSS
+    count.textContent = String(remSec);
+    wrap.classList.toggle('low', remSec <= 3);
+    if (remSec < lastSec){ lastSec = remSec; if (remSec > 0 && remSec <= 3 && state.mode === 'question') sTick(); }
+    if (remMs <= 0){ onTimeout(token); return; }
+    rafId = requestAnimationFrame(loop);
+  };
+  rafId = requestAnimationFrame(loop);
+}
+
+// ── Timer markup builder (returned to slot in question card) ──
+function timerMarkup(){
+  if (cfg.secs <= 0) return null;          // no-timer mode: no ring, no countdown
+  const wrap = h('div', 'timer-wrap'); wrap.id = 'timer-wrap';
+  const ns = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(ns, 'svg');
+  svg.setAttribute('viewBox', '0 0 74 74');
+  const bg = document.createElementNS(ns, 'circle');
+  bg.setAttribute('cx','37'); bg.setAttribute('cy','37'); bg.setAttribute('r','30'); bg.setAttribute('class','circle-bg');
+  const fg = document.createElementNS(ns, 'circle');
+  fg.setAttribute('cx','37'); fg.setAttribute('cy','37'); fg.setAttribute('r','30'); fg.setAttribute('class','circle-fg');
+  fg.id = 'ring-fg';
+  svg.appendChild(bg); svg.appendChild(fg);
+  const c = h('div', 't-count', String(cfg.secs)); c.id = 't-count';
+  wrap.appendChild(svg); wrap.appendChild(c);
+  return wrap;
+}
+
+// ── Confetti ──────────────────────────────────────────────────
+const CONF_COLORS = ['#ff6b6b','#ffd93d','#2ecc71','#4f9de8','#9b59b6','#ff9d2e'];
+function burstConfetti(n){
+  const layer = document.getElementById('confetti');
+  for (let i = 0; i < n; i++){
+    const c = h('div', 'confetti');
+    c.style.left = (Math.random() * 100) + 'vw';
+    c.style.background = CONF_COLORS[i % CONF_COLORS.length];
+    c.style.setProperty('--rx', (Math.random() * 540 - 270) + 'deg');
+    c.style.animationDuration = (1.6 + Math.random() * 1.6) + 's';
+    c.style.animationDelay = (Math.random() * 0.5) + 's';
+    c.style.width = (7 + Math.random() * 8) + 'px';
+    c.style.height = (7 + Math.random() * 8) + 'px';
+    c.addEventListener('animationend', () => c.remove());
+    layer.appendChild(c);
+  }
+}
+
+// ── Tree building ─────────────────────────────────────────────
+function renderTree(){
+  clear(elTree);
+  QUIZ.sections.forEach(sec => {
+    const node = h('div', 'tree-node');
+    node.setAttribute('data-sec', sec.id);
+    const arrow = h('span', 'arrow', '▶');
+    const dot = h('span', 'dot');
+    dot.style.background = sectionColor(sec.id);
+    const label = h('span', null, sec.emoji + ' ' + sec.title);
+    const badge = h('span', 'badge', String(sec.questions.length));
+    node.appendChild(arrow); node.appendChild(dot); node.appendChild(label); node.appendChild(badge);
+    node.addEventListener('click', () => {
+      arrow.classList.toggle('open');
+      const kids = document.getElementById('children-' + sec.id);
+      if (kids) kids.classList.toggle('open');
+    });
+    elTree.appendChild(node);
+
+    const kids = h('div', 'tree-children');
+    kids.id = 'children-' + sec.id;
+    sec.questions.forEach(q => {
+      const leaf = h('div', 'tree-node tree-leaf');
+      leaf.setAttribute('data-qid', q.id);
+      const qn = h('span', null, 'Q' + (FLAT.length ? '' : '') + q.id.split('-q')[1]);
+      const st = h('span', 'st');
+      leaf.appendChild(h('span', 'arrow', '•'));
+      leaf.appendChild(qn); leaf.appendChild(st);
+      leaf.addEventListener('click', () => startAtSection(sec.id, q.id));
+      kids.appendChild(leaf);
+    });
+    elTree.appendChild(kids);
+  });
+}
+function sectionColor(id){
+  const pal = ['#4ecdc4','#ffb300','#9b59b6','#4f9de8','#ff6b6b','#2ecc71','#e67e22','#e84393'];
+  let x = 0; for (const ch of id) x = (x + ch.charCodeAt(0)) % pal.length;
+  return pal[x];
+}
+function updateTreeStatus(){
+  const answered = new Map(state.answers.map(a => [a.qid, a.status]));
+  document.querySelectorAll('#tree .tree-leaf').forEach(leaf => {
+    const st = leaf.querySelector('.st');
+    const qid = leaf.getAttribute('data-qid');
+    const s = answered.get(qid);
+    st.textContent = '';
+    st.className = 'st';
+    if (s === 'correct'){ st.textContent = '✓'; st.classList.add('good'); }
+    else if (s === 'wrong'){ st.textContent = '✗'; st.classList.add('bad'); }
+    else if (s === 'timeout'){ st.textContent = '⏰'; st.classList.add('slow'); }
+  });
+  // highlight active section node
+  document.querySelectorAll('#tree .tree-node[data-sec]').forEach(n => {
+    n.classList.toggle('active', state.scope === null || n.getAttribute('data-sec') === state.scope);
+  });
+}
+
+// ── Scope / nav ───────────────────────────────────────────────
+function shuffle(arr){
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--){ const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+  return a;
+}
+function startScope(scopeId){
+  state.scope = scopeId || null;
+  if (state.scope) {
+    state.list = FLAT.filter(f => f.sectionId === state.scope);
+  } else {
+    // group by section, shuffle sections, keep questions in source order within each
+    const bySec = [];
+    const secOrder = [];
+    FLAT.forEach(f => { if (!secOrder.includes(f.sectionId)) secOrder.push(f.sectionId); });
+    secOrder.forEach(sid => bySec.push(FLAT.filter(f => f.sectionId === sid)));
+    state.list = shuffle(bySec).flat();
+  }
+  state.iq = 0; state.answers = []; state.score = 0; state.runToken++;
+  updateScore();
+  if (state.list.length === 0){ renderIntro(); return; }
+  renderQuestion();
+}
+function startAtSection(secId, qid){
+  state.scope = secId;
+  state.list = FLAT.filter(f => f.sectionId === secId);
+  const idx = state.list.findIndex(f => f.q.id === qid);
+  state.iq = idx >= 0 ? idx : 0;
+  state.answers = []; state.score = 0; state.runToken++;
+  updateScore();
+  closeDrawer();
+  renderQuestion();
+}
+function currentQ(){
+  const f = state.list[state.iq];
+  return f ? f.q : null;
+}
+
+// ── Views ─────────────────────────────────────────────────────
+function renderIntro(){
+  state.mode = 'intro';
+  clear(elStage);
+  const card = h('div', 'card intro card-in');
+  const big = h('div', 'big-emoji', QUIZ.emoji || '🧠');
+  const title = h('h1', null, QUIZ.title || 'Krita — Image Editing');
+  const sub = h('div', 'sub', QUIZ.subtitle || 'Test yourself & learn with fun quiz!');
+  const meta = h('div', 'meta-chip', '🎯 ' + TOTAL + ' questions · ⭐ up to ' + (TOTAL * 10) + ' points · ' + (cfg.secs > 0 ? '⏱️ ' + cfg.secs + 's each' : '⏱️ no time limit'));
+  const start = h('button', 'big-btn', '▶ Start Quiz');
+  start.addEventListener('click', () => { ensureAudio(); state.runToken++; startScope(null); });
+  card.appendChild(big); card.appendChild(title); card.appendChild(sub);
+  const row = h('div', 'ghost-row');
+  const samp = h('button', 'big-btn ghost', '🔊 Hear me');
+  samp.addEventListener('click', () => { ensureAudio(); speak('Hello friend! Let’s play and learn together!'); });
+  const imgAll = h('div', 'hint-line', 'Open a section in the left menu to play a single topic.');
+  row.appendChild(samp);
+  card.appendChild(meta); card.appendChild(start); card.appendChild(row); card.appendChild(imgAll);
+  elStage.appendChild(card);
+  updateProgress(0);
+}
+function speakQuestion(q, onEnd){
+  const all = 'Question ' + q.question + '. Options: ' +
+    q.options.map((o, i) => String.fromCharCode(65 + i) + '. ' + o).join('. ') + '.';
+  speak(all, onEnd);
+}
+function renderQuestion(){
+  state.mode = 'question';
+  const q = currentQ();
+  if (!q){ renderResults(); return; }
+  const token = ++state.runToken;
+  stopTimer();
+  clear(elStage);
+  const card = h('div', 'card card-in');
+  const head = h('div', 'q-head');
+  head.appendChild(h('div', 'q-progress', 'Question ' + (state.iq + 1) + ' of ' + state.list.length));
+  const tm = timerMarkup();
+  if (tm) head.appendChild(tm);
+  card.appendChild(head);
+
+  // question text
+  card.appendChild(h('div', 'q-text', q.question));
+
+  // optional image
+  if (q.image){
+    const iw = h('div', 'qimg-wrap');
+    if (q.image.type === 'emoji'){
+      iw.appendChild(h('div', 'emoji-big', q.image.src));
+    } else {
+      const img = h('img', 'qimg');
+      img.setAttribute('src', q.image.src);
+      img.setAttribute('alt', q.image.alt || '');
+      iw.appendChild(img);
+    }
+    if (q.image.caption) iw.appendChild(h('div', 'caption', q.image.caption));
+    card.appendChild(iw);
+  }
+
+  // options
+  const opts = h('div', 'options');
+  q.options.forEach((text, i) => {
+    const b = h('button', 'opt');
+    b.setAttribute('data-idx', String(i));
+    b.appendChild(h('span', 'key', String.fromCharCode(65 + i)));
+    b.appendChild(h('span', null, text));
+    b.appendChild(h('span', 'mark'));
+    b.addEventListener('click', () => { ensureAudio(); if (state.mode === 'question') answer(i); });
+    opts.appendChild(b);
+  });
+  card.appendChild(opts);
+
+  // speak button
+  const foot = h('div', 'q-foot');
+  const spk = h('button', 'speak-btn', '🔊 Read aloud');
+  spk.addEventListener('click', () => { ensureAudio(); speakQuestion(q); });
+  foot.appendChild(spk);
+  card.appendChild(foot);
+  elStage.appendChild(card);
+
+  updateProgress(state.iq / state.list.length);
+  speakQuestion(q, () => {
+    if (state.runToken === token && state.mode === 'question' && cfg.secs > 0) startTimer(cfg.secs, token);
+  });
+}
+function reveal(q, status, chosen){
+  state.mode = 'revealed';
+  stopTimer();
+  state.answers.push({ qid: q.id, chosen, status, pts: status === 'correct' ? 10 : 0 });
+  if (status === 'correct') state.score += 10;
+  updateScore();
+  updateTreeStatus();
+  burstConfetti(status === 'correct' ? 60 : 0);
+
+  const card = document.querySelector('#stage .card');
+  // banner
+  const banner = h('div', 'reveal-banner ' + (status === 'correct' ? 'good' : status === 'wrong' ? 'bad' : 'slow'));
+  const icon = status === 'correct' ? '✅' : status === 'wrong' ? '❌' : '⏰';
+  const msg = status === 'correct' ? 'Correct! Great job!' : status === 'wrong' ? 'Oops! Not quite.' : "Time's up!";
+  banner.appendChild(h('span', null, icon + ' ' + msg));
+  card.appendChild(banner);
+  // explanation
+  const exp = h('div', 'reveal-exp');
+  const b = h('b', null, '💡 '); b.textContent = '💡 ' + q.options[q.correctIndex];
+  exp.appendChild(b);
+  exp.appendChild(h('div', null, q.explanation));
+  card.appendChild(exp);
+  // highlight options
+  const buttons = card.querySelectorAll('.opt');
+  buttons.forEach((btn, i) => {
+    btn.disabled = true;
+    const mark = btn.querySelector('.mark');
+    if (i === q.correctIndex){ btn.classList.add('correct'); mark.textContent = '✓'; }
+    else if (i === chosen){ btn.classList.add('wrong-chosen'); mark.textContent = '✗'; }
+    else btn.classList.add('dim');
+  });
+  // next row
+  const row = h('div', 'next-row');
+  const pts = h('div', 'pts-gain ' + (status === 'correct' ? 'gain' : 'none'),
+                status === 'correct' ? '+10 points' : '+0 points');
+  const nb = h('button', 'next-btn', state.iq + 1 >= state.list.length ? 'See results 🏆' : 'Next ➡️');
+  nb.addEventListener('click', () => { state.iq++; if (state.iq >= state.list.length) renderResults(); else renderQuestion(); });
+  row.appendChild(pts); row.appendChild(nb);
+  const head = card.querySelector('.q-head');
+  if (head) head.appendChild(row); else card.appendChild(row);
+  // duplicate next-row at bottom for easy access
+  const row2 = h('div', 'next-row');
+  row2.appendChild(h('div', 'pts-gain ' + (status === 'correct' ? 'gain' : 'none'),
+                status === 'correct' ? '+10 points' : '+0 points'));
+  const nb2 = h('button', 'next-btn', state.iq + 1 >= state.list.length ? 'See results 🏆' : 'Next ➡️');
+  nb2.addEventListener('click', () => { state.iq++; if (state.iq >= state.list.length) renderResults(); else renderQuestion(); });
+  row2.appendChild(nb2);
+  card.appendChild(row2);
+}
+function answer(i){
+  const q = currentQ();
+  ensureAudio();
+  if (i === q.correctIndex) sCorrect(); else sWrong();
+  reveal(q, i === q.correctIndex ? 'correct' : 'wrong', i);
+}
+function onTimeout(token){
+  if (state.runToken !== token) return;   // stale
+  const q = currentQ();
+  ensureAudio(); sTimesUp();
+  reveal(q, 'timeout', -1);
+  speak(q.explanation);
+}
+function renderResults(){
+  state.mode = 'results';
+  stopTimer();
+  clear(elStage);
+  const card = h('div', 'card results card-in');
+  const count = state.list.length;
+  const maxPts = count * 10;
+  const words = pctWord(state.score / maxPts);
+  card.appendChild(h('div', 'big-emoji', words.emoji));
+  card.appendChild(h('h2', null, words.title));
+  card.appendChild(h('div', 'sub', 'You scored ' + state.score + ' of ' + maxPts + ' points'));
+
+  // score ring
+  const rw = h('div', 'ring-wrap');
+  const ns = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(ns, 'svg');
+  svg.setAttribute('viewBox', '0 0 120 120');
+  const bg = document.createElementNS(ns, 'circle');
+  bg.setAttribute('cx','60'); bg.setAttribute('cy','60'); bg.setAttribute('r','45'); bg.setAttribute('class','rbg');
+  const fg = document.createElementNS(ns, 'circle');
+  fg.setAttribute('cx','60'); fg.setAttribute('cy','60'); fg.setAttribute('r','45'); fg.setAttribute('class','rfg');
+  fg.id = 'ring-fg-r';
+  svg.appendChild(bg); svg.appendChild(fg);
+  rw.appendChild(svg);
+  const rs = h('div', 'rscore');
+  const n = h('div', 'n', String(state.score)); n.id = 'rscore-n'; n.className = 'n rscore-n';
+  rs.appendChild(n); rs.appendChild(h('div', 'pts', 'points'));
+  rw.appendChild(rs);
+  card.appendChild(rw);
+
+  const stars = h('div', 'stars', '⭐'.repeat(words.stars) + '☆'.repeat(5 - words.stars));
+  card.appendChild(stars);
+
+  // review
+  const review = h('div', 'review');
+  state.answers.forEach((a, i) => {
+    const f = state.list[i];
+    const row = h('div', 'review-row');
+    row.appendChild(h('div', 'qi', 'Q' + (i + 1)));
+    const body = h('div', 'qbody');
+    body.appendChild(h('div', 'qq', f.q.question));
+    const your = a.chosen >= 0 ? f.q.options[a.chosen] : 'No answer';
+    body.appendChild(h('div', 'aa', 'Your answer: ' + your));
+    body.appendChild(h('div', 'aa', '✅ ' + f.q.options[f.q.correctIndex]));
+    row.appendChild(body);
+    row.appendChild(h('div', 'pts ' + (a.pts ? 'gain' : 'none'), (a.pts ? '+' : '') + a.pts));
+    review.appendChild(row);
+  });
+  card.appendChild(review);
+
+  if (QUIZ.truncated){
+    card.appendChild(h('div', 'hint-line', 'Showing ' + QUIZ.truncated.shown + ' of ' + QUIZ.truncated.total + ' questions.'));
+  }
+
+  const row2 = h('div', 'ghost-row');
+  const again = h('button', 'big-btn ghost', '🔄 Play again');
+  again.addEventListener('click', () => { burstConfetti(0); startScope(state.scope); });
+  const menu = h('button', 'big-btn ghost', '🏠 Menu');
+  menu.addEventListener('click', () => renderIntro());
+  row2.appendChild(again); row2.appendChild(menu);
+  card.appendChild(row2);
+  elStage.appendChild(card);
+
+  // deferred: animate ring + settle score number + confetti
+  setTimeout(() => {
+    const C = 283;
+    const fgR = document.getElementById('ring-fg-r');
+    fgR.setAttribute('stroke-dashoffset', String(C * (1 - (state.score / maxPts))));
+    const num = document.getElementById('rscore-n');
+    if (num) num.textContent = String(state.score);   // settle immediately so chip & ring always agree
+    burstConfetti(140);
+    sPop();
+  }, 60);
+}
+function pctWord(p){
+  if (p >= 0.9)  return { emoji:'🏆', title:'Amazing!', stars:5 };
+  if (p >= 0.7)  return { emoji:'🌟', title:'Great job!', stars:4 };
+  if (p >= 0.5)  return { emoji:'😄', title:'Good try!', stars:3 };
+  if (p >= 0.3)  return { emoji:'🙂', title:'Keep going!', stars:2 };
+  return { emoji:'💪', title:'Practice makes better!', stars:1 };
+}
+function updateScore(){ elScore.textContent = '⭐ Score: ' + state.score; }
+function updateProgress(p){
+  if (elProg) elProg.style.width = Math.round(Math.max(0, Math.min(1, p)) * 100) + '%';
+  // track is shared for all-scope run; on intro show 0
+}
+
+// ── Mobile drawer ─────────────────────────────────────────────
+function closeDrawer(){
+  elSide.classList.remove('open'); overlay.classList.remove('open');
+}
+document.getElementById('hamburger').addEventListener('click', () => {
+  elSide.classList.toggle('open'); overlay.classList.toggle('open');
+});
+overlay.addEventListener('click', closeDrawer);
+document.getElementById('sidebar-home').addEventListener('click', () => { closeDrawer(); renderIntro(); });
+elMute.addEventListener('click', () => {
+  muted = !muted;
+  elMute.textContent = muted ? '🔇' : '🔊';
+  if (muted && 'speechSynthesis' in window) speechSynthesis.cancel();
+});
+
+// ── Boot ──────────────────────────────────────────────────────
+renderTree();
+renderIntro();
+})();
+</script>
+</body>
+</html>
